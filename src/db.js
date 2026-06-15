@@ -90,6 +90,28 @@ if (!fileCols.some((c) => c.name === 'interview_id')) {
   db.exec('CREATE INDEX IF NOT EXISTS idx_files_interview ON files(interview_id)');
 }
 
+// Bootstrap: crea un administrador inicial desde variables de entorno si aún
+// no existe. Útil en despliegues (Hostinger, etc.) donde la BD arranca vacía.
+// Es idempotente: solo crea la cuenta si ese usuario no existe.
+(function seedAdminFromEnv() {
+  const username = String(process.env.ADMIN_USERNAME || '').trim().toLowerCase();
+  const password = process.env.ADMIN_PASSWORD || '';
+  if (!username || password.length < 8) return;
+  const exists = db.prepare('SELECT id FROM users WHERE username = ?').get(username);
+  if (exists) return;
+  try {
+    const bcrypt = require('bcryptjs');
+    const hash = bcrypt.hashSync(password, 12);
+    db.prepare(
+      `INSERT INTO users (username, password_hash, role, display_name, must_change_password)
+       VALUES (?, ?, 'admin', ?, 0)`
+    ).run(username, hash, username);
+    console.log(`[seed] Administrador inicial "${username}" creado desde variables de entorno.`);
+  } catch (err) {
+    console.error('[seed] No se pudo crear el admin inicial:', err.message);
+  }
+})();
+
 function logAction(userId, action, detail, ip) {
   try {
     db.prepare(
