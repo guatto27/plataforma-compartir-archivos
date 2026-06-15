@@ -1,0 +1,52 @@
+<%- include('../partials/header') %>
+
+<div class="page-head">
+  <div class="head-row">
+    <div>
+      <h1>Archivos</h1>
+      <p class="muted">Sube y consulta los archivos de tu diagnóstico con <%= brand.name %>.</p>
+    </div>
+    <details class="add">
+      <summary class="btn btn-primary">+ Agregar</summary>
+      <div class="add-pop">
+        <form method="post" action="/app/upload" enctype="multipart/form-data">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <label>Archivos
+            <input type="file" name="files" multiple required />
+          </label>
+          <p class="meta">Imagen, Word, Excel, PowerPoint, PDF, audio, video… Máx. <%= maxFileMb %> MB por archivo (hasta 10).</p>
+          <label>Descripción (opcional)
+            <input type="text" name="description" maxlength="500" placeholder="Para qué es este archivo" />
+          </label>
+          <button class="btn btn-primary" type="submit">Subir archivos</button>
+        </form>
+      </div>
+    </details>
+  </div>
+</div>
+
+<%- include('../partials/filetable') %>
+
+<section class="card interview">
+  <h2>Entrevista de diagnóstico</h2>
+  <p class="muted">Realiza la entrevista en el asistente de Gemini y, al terminar, pega aquí el enlace de la conversación.</p>
+  <form method="post" action="/app/interview" class="row-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <input type="url" name="url" placeholder="https://..." required maxlength="2000" />
+    <input type="text" name="notes" maxlength="500" placeholder="Notas (opcional)" />
+    <button class="btn btn-primary" type="submit">Enviar enlace</button>
+  </form>
+  <% if (links.length) { %>
+    <ul class="list">
+      <% links.forEach((l) => { %>
+        <li>
+          <a href="<%= l.url %>" target="_blank" rel="noopener noreferrer">Entrevista enviada</a>
+          <span class="meta"><%= fmtDate(l.created_at) %></span>
+          <% if (l.notes) { %><div class="meta"><%= l.notes %></div><% } %>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+</section>
+
+<%- include('../partials/footer') %>

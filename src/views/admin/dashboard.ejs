@@ -1,0 +1,83 @@
+<%- include('../partials/header') %>
+
+<div class="page-head">
+  <h1>Clientes</h1>
+  <p class="muted">Crea accesos, comparte plantillas y revisa lo que envían tus clientes.</p>
+</div>
+
+<section class="stats">
+  <div class="stat"><span class="stat-num"><%= summary.total %></span><span class="stat-lbl">Clientes</span></div>
+  <div class="stat"><span class="stat-num"><%= summary.withInterview %></span><span class="stat-lbl">Con entrevista</span></div>
+  <div class="stat"><span class="stat-num"><%= summary.withUploads %></span><span class="stat-lbl">Con archivos</span></div>
+  <div class="stat <%= summary.pending ? 'warn' : '' %>"><span class="stat-num"><%= summary.pending %></span><span class="stat-lbl">Pendientes</span></div>
+</section>
+
+<% if (newCredentials) { %>
+  <div class="card credentials">
+    <h2>Credenciales generadas</h2>
+    <p class="muted">Cópialas y compártelas con tu cliente por un canal seguro. <strong>No se volverán a mostrar.</strong></p>
+    <div class="cred-row">
+      <span>Usuario:</span> <code id="cred-user"><%= newCredentials.username %></code>
+    </div>
+    <div class="cred-row">
+      <span>Contraseña temporal:</span> <code id="cred-pass"><%= newCredentials.password %></code>
+    </div>
+    <button class="btn btn-ghost" type="button" data-copy="cred-user|cred-pass">Copiar credenciales</button>
+    <p class="meta">El cliente deberá cambiar la contraseña en su primer acceso.</p>
+  </div>
+<% } %>
+
+<div class="grid grid-2">
+  <section class="card">
+    <h2>Nuevo cliente</h2>
+    <form method="post" action="/admin/clients" autocomplete="off">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <label>Usuario (para iniciar sesión)
+        <input type="text" name="username" required pattern="[a-z0-9._\-]{3,40}" placeholder="ej. acme" maxlength="40" />
+      </label>
+      <label>Nombre de contacto
+        <input type="text" name="display_name" maxlength="120" placeholder="ej. Juan Pérez" />
+      </label>
+      <label>Empresa
+        <input type="text" name="company_name" maxlength="120" placeholder="ej. ACME S.A." />
+      </label>
+      <label>Contraseña temporal (déjala vacía para generar una)
+        <input type="text" name="password" maxlength="200" placeholder="(opcional, mín. 10 caracteres)" />
+      </label>
+      <button class="btn btn-primary" type="submit">Crear cliente</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Clientes registrados</h2>
+    <% if (clients.length === 0) { %>
+      <p class="empty">Aún no hay clientes. Crea el primero a la izquierda.</p>
+    <% } else { %>
+      <table class="table">
+        <thead>
+          <tr><th>Cliente</th><th>Entrevista</th><th>Archivos</th><th>Compartidos</th><th>Acceso</th></tr>
+        </thead>
+        <tbody>
+          <% clients.forEach((c) => { %>
+            <tr>
+              <td>
+                <a href="/admin/clients/<%= c.id %>"><strong><%= c.display_name || c.username %></strong></a>
+                <div class="meta"><%= c.username %><% if (c.company_name) { %> · <%= c.company_name %><% } %></div>
+              </td>
+              <td>
+                <% if (c.links > 0) { %><span class="pill ok">✓ <%= c.links %></span><% } else { %><span class="pill pend">Pendiente</span><% } %>
+              </td>
+              <td>
+                <% if (c.files_in > 0) { %><span class="pill ok">✓ <%= c.files_in %></span><% } else { %><span class="pill pend">Pendiente</span><% } %>
+              </td>
+              <td><%= c.files_out %></td>
+              <td><span class="pill <%= c.active ? 'ok' : 'off' %>"><%= c.active ? 'Activo' : 'Inactivo' %></span></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+  </section>
+</div>
+
+<%- include('../partials/footer') %>

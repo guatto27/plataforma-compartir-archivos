@@ -1,0 +1,69 @@
+<%- include('partials/header') %>
+<% var isAdmin = currentUser.role === 'admin'; var base = isAdmin ? '/admin' : '/app'; %>
+
+<div class="page-head">
+  <div class="head-row">
+    <div>
+      <h1>Archivos</h1>
+      <% if (interview) { %>
+        <p class="muted">
+          Archivos de la entrevista: <strong><%= interview.nombre %></strong><% if (interview.cargo) { %> · <%= interview.cargo %><% } %>
+          — <a href="<%= base %>/archivos">ver todos</a>
+        </p>
+      <% } else { %>
+        <p class="muted">Plantillas, formatos, bases de datos y documentos.<%= isAdmin ? ' Compartidos y recibidos.' : '' %></p>
+      <% } %>
+    </div>
+    <button class="btn btn-primary" type="button" data-dialog="dlg-add-file">+ Agregar</button>
+  </div>
+</div>
+
+<dialog id="dlg-add-file" class="modal" data-strict <%= interview ? 'data-autoopen' : '' %>>
+  <h2>Agregar archivos<% if (interview) { %> · <%= interview.nombre %><% } %></h2>
+  <% if (isAdmin && !interview && !clients.length) { %>
+    <p class="muted">Primero crea un cliente en <a href="/admin/gestion">Clientes</a>.</p>
+    <div class="modal-actions"><button class="btn btn-ghost" type="button" data-close>Cerrar</button></div>
+  <% } else { %>
+    <form method="post" action="<%= base %>/upload" enctype="multipart/form-data">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <% if (interview) { %>
+        <input type="hidden" name="interview_id" value="<%= interview.id %>" />
+        <p class="meta">Se asociarán a la entrevista de <strong><%= interview.nombre %></strong>.</p>
+      <% } else { %>
+        <% if (isAdmin) { %>
+          <label>Cliente destino
+            <select name="client_id" required>
+              <option value="">— Selecciona un cliente —</option>
+              <% clients.forEach((c) => { %>
+                <option value="<%= c.id %>"><%= c.display_name || c.username %><% if (c.company_name) { %> · <%= c.company_name %><% } %></option>
+              <% }) %>
+            </select>
+          </label>
+        <% } %>
+        <label>Entrevista relacionada (opcional)
+          <select name="interview_id">
+            <option value="">— Ninguna —</option>
+            <% interviews.forEach((iv) => { %>
+              <option value="<%= iv.id %>"><%= iv.nombre %><% if (iv.cargo) { %> · <%= iv.cargo %><% } %><% if (isAdmin && (iv.client_name || iv.client_username)) { %> (<%= iv.client_name || iv.client_username %>)<% } %></option>
+            <% }) %>
+          </select>
+        </label>
+      <% } %>
+      <label>Archivos
+        <input type="file" name="files" multiple required />
+      </label>
+      <p class="meta">Imagen, Word, Excel, PowerPoint, PDF, audio, video… Máx. <%= maxFileMb %> MB por archivo (hasta 10).</p>
+      <label>Descripción (opcional)
+        <input type="text" name="description" maxlength="500" />
+      </label>
+      <div class="modal-actions">
+        <button class="btn btn-primary" type="submit"><%= interview ? 'Subir a esta entrevista' : 'Subir archivos' %></button>
+        <button class="btn btn-ghost" type="button" data-close>Cancelar</button>
+      </div>
+    </form>
+  <% } %>
+</dialog>
+
+<%- include('partials/filetable') %>
+
+<%- include('partials/footer') %>

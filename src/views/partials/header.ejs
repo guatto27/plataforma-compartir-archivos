@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title><%= title %> · <%= brand.name %></title>
+  <link rel="icon" type="image/svg+xml" href="/static/img/logo.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="/">
+        <img class="brand-mark" src="/static/img/logo.svg" alt="<%= brand.name %>" width="40" height="40" />
+        <span class="brand-text">
+          <strong><%= brand.name %></strong>
+          <small><%= brand.tagline %></small>
+        </span>
+      </a>
+      <% if (currentUser) { %>
+        <% var navBase = currentUser.role === 'admin' ? '/admin' : '/app'; %>
+        <nav class="nav">
+          <a href="<%= navBase %>">Entrevistas</a>
+          <a href="<%= navBase %>/archivos">Archivos</a>
+          <% if (currentUser.role === 'admin') { %>
+            <a href="/admin/gestion">Clientes</a>
+          <% } %>
+          <details class="usermenu">
+            <summary class="avatar" title="<%= currentUser.displayName %>"><%= (currentUser.displayName || '?').charAt(0).toUpperCase() %></summary>
+            <div class="usermenu-pop">
+              <div class="usermenu-name"><%= currentUser.displayName %></div>
+              <a href="/cambiar-password">Cambiar mi contraseña</a>
+              <form method="post" action="/logout">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                <button type="submit" class="usermenu-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                  Salir
+                </button>
+              </form>
+            </div>
+          </details>
+        </nav>
+      <% } %>
+    </div>
+  </header>
+  <main class="container">
+    <%- include('flash') %>

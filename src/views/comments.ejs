@@ -1,0 +1,36 @@
+<%- include('partials/header') %>
+
+<div class="page-head">
+  <a class="back" href="<%= backUrl %>">← Archivos</a>
+  <h1>Comentarios</h1>
+  <p class="muted">Archivo: <strong><%= file.original_name %></strong></p>
+</div>
+
+<section class="card">
+  <% if (!comments.length) { %>
+    <p class="empty">Aún no hay comentarios. Sé el primero en escribir.</p>
+  <% } else { %>
+    <ul class="comments">
+      <% comments.forEach((c) => { %>
+        <li class="comment">
+          <div class="comment-head">
+            <strong><%= c.display_name || c.username || 'Usuario' %></strong>
+            <% if (c.role === 'admin') { %><span class="tag">consultor</span><% } %>
+            <span class="meta"><%= fmtDate(c.created_at) %></span>
+          </div>
+          <div class="comment-body"><%= c.body %></div>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+
+  <form method="post" action="<%= backUrl %>/file/<%= file.id %>/comments" class="comment-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <label>Escribe un comentario
+      <textarea name="body" rows="3" maxlength="2000" required placeholder="Tu comentario…"></textarea>
+    </label>
+    <button class="btn btn-primary" type="submit">Comentar</button>
+  </form>
+</section>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,28 @@
+<%- include('../partials/header') %>
+
+<div class="page-head">
+  <a class="back" href="/admin">← Clientes</a>
+  <h1>Auditoría</h1>
+  <p class="muted">Últimos 300 eventos de seguridad y actividad.</p>
+</div>
+
+<section class="card">
+  <table class="table">
+    <thead>
+      <tr><th>Fecha (UTC)</th><th>Usuario</th><th>Acción</th><th>Detalle</th><th>IP</th></tr>
+    </thead>
+    <tbody>
+      <% rows.forEach((r) => { %>
+        <tr>
+          <td><%= r.created_at %></td>
+          <td><%= r.username || '—' %></td>
+          <td><code><%= r.action %></code></td>
+          <td><%= r.detail || '' %></td>
+          <td class="meta"><%= r.ip || '' %></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</section>
+
+<%- include('../partials/footer') %>

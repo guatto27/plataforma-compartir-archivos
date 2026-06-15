@@ -1,0 +1,112 @@
+<%- include('../partials/header') %>
+
+<div class="page-head">
+  <a class="back" href="/admin">← Clientes</a>
+  <h1><%= cliente.display_name || cliente.username %></h1>
+  <p class="muted">
+    Usuario: <code><%= cliente.username %></code>
+    <% if (cliente.company_name) { %> · <%= cliente.company_name %><% } %>
+    · <%= cliente.active ? 'Activo' : 'Inactivo' %>
+  </p>
+
+  <div class="actions">
+    <button class="btn btn-primary" type="button" data-dialog="dlg-edit-client">Editar información</button>
+    <form method="post" action="/admin/clients/<%= cliente.id %>/reset-password" class="inline">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <button class="btn btn-ghost" type="submit">Restablecer contraseña</button>
+    </form>
+    <form method="post" action="/admin/clients/<%= cliente.id %>/toggle-active" class="inline">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <button class="btn btn-ghost" type="submit"><%= cliente.active ? 'Desactivar' : 'Activar' %> acceso</button>
+    </form>
+  </div>
+</div>
+
+<dialog id="dlg-edit-client" class="modal" data-strict>
+  <h2>Editar información</h2>
+  <form method="post" action="/admin/clients/<%= cliente.id %>/edit" autocomplete="off">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <label>Usuario (para iniciar sesión)
+      <input type="text" name="username" value="<%= cliente.username %>" required pattern="[a-z0-9._\-]{3,40}" title="Solo minúsculas, números y los signos . _ - (sin espacios, mayúsculas ni acentos). 3 a 40 caracteres." maxlength="40" />
+    </label>
+    <label>Nombre de contacto
+      <input type="text" name="display_name" value="<%= cliente.display_name || '' %>" maxlength="120" />
+    </label>
+    <label>Empresa
+      <input type="text" name="company_name" value="<%= cliente.company_name || '' %>" maxlength="120" />
+    </label>
+    <div class="modal-actions">
+      <button class="btn btn-primary" type="submit">Guardar cambios</button>
+      <button class="btn btn-ghost" type="button" data-close>Cancelar</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="grid grid-2">
+
+  <section class="card">
+    <h2>Compartir plantilla / formato</h2>
+    <p class="muted">Documentos, hojas de cálculo, presentaciones, imágenes, audio y video. Máx. <%= maxFileMb %> MB por archivo (hasta 10 a la vez).</p>
+    <form method="post" action="/admin/clients/<%= cliente.id %>/upload" enctype="multipart/form-data">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <label>Archivos
+        <input type="file" name="files" multiple required />
+      </label>
+      <label>Descripción (opcional)
+        <input type="text" name="description" maxlength="500" />
+      </label>
+      <button class="btn btn-primary" type="submit">Compartir</button>
+    </form>
+
+    <% if (filesToClient.length) { %>
+      <h3>Compartidos con el cliente</h3>
+      <ul class="list">
+        <% filesToClient.forEach((f) => { %>
+          <li>
+            <a href="/admin/file/<%= f.id %>/download"><%= f.original_name %></a>
+            <span class="meta"><%= Math.max(1, Math.round(f.size/1024)) %> KB · <%= f.created_at %> UTC</span>
+            <% if (f.description) { %><div class="meta"><%= f.description %></div><% } %>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+
+  <section class="card">
+    <h2>Recibido del cliente</h2>
+    <% if (filesFromClient.length === 0) { %>
+      <p class="empty">El cliente aún no ha enviado archivos.</p>
+    <% } else { %>
+      <ul class="list">
+        <% filesFromClient.forEach((f) => { %>
+          <li>
+            <a href="/admin/file/<%= f.id %>/download"><%= f.original_name %></a>
+            <span class="meta"><%= Math.max(1, Math.round(f.size/1024)) %> KB · <%= f.created_at %> UTC</span>
+            <% if (f.description) { %><div class="meta"><%= f.description %></div><% } %>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+
+    <h3>Entrevistas de diagnóstico</h3>
+    <% if (interviews.length === 0) { %>
+      <p class="empty">Sin entrevistas registradas todavía.</p>
+    <% } else { %>
+      <ul class="list">
+        <% interviews.forEach((iv) => { %>
+          <li>
+            <strong><%= iv.nombre %></strong><% if (iv.cargo) { %> · <%= iv.cargo %><% } %><% if (iv.area) { %> · <%= iv.area %><% } %>
+            <% if (iv.interview_url) { %>
+              <div class="meta"><a href="<%= iv.interview_url %>" target="_blank" rel="noopener noreferrer">Ver entrevista ↗</a></div>
+            <% } else { %>
+              <div class="meta">Sin link aún</div>
+            <% } %>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+
+</div>
+
+<%- include('../partials/footer') %>

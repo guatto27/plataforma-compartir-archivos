@@ -1,0 +1,42 @@
+<%- include('../partials/header') %>
+
+<div class="page-head">
+  <div class="head-row">
+    <div>
+      <h1>Archivos</h1>
+      <p class="muted">Todos los archivos compartidos con tus clientes y recibidos de ellos.</p>
+    </div>
+    <details class="add">
+      <summary class="btn btn-primary">+ Agregar</summary>
+      <div class="add-pop">
+        <% if (!clients.length) { %>
+          <p class="muted">Primero crea un cliente en <a href="/admin/gestion">Gestión ⚙</a> para poder compartirle archivos.</p>
+        <% } else { %>
+          <form method="post" action="/admin/upload" enctype="multipart/form-data">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <label>Cliente destino
+              <select name="client_id" required>
+                <option value="">— Selecciona un cliente —</option>
+                <% clients.forEach((c) => { %>
+                  <option value="<%= c.id %>"><%= c.display_name || c.username %><% if (c.company_name) { %> · <%= c.company_name %><% } %></option>
+                <% }) %>
+              </select>
+            </label>
+            <label>Archivos
+              <input type="file" name="files" multiple required />
+            </label>
+            <p class="meta">Imagen, Word, Excel, PowerPoint, PDF, audio, video… Máx. <%= maxFileMb %> MB por archivo (hasta 10).</p>
+            <label>Descripción (opcional)
+              <input type="text" name="description" maxlength="500" />
+            </label>
+            <button class="btn btn-primary" type="submit">Compartir archivos</button>
+          </form>
+        <% } %>
+      </div>
+    </details>
+  </div>
+</div>
+
+<%- include('../partials/filetable') %>
+
+<%- include('../partials/footer') %>

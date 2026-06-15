@@ -1,0 +1,59 @@
+<%
+  var base = currentUser.role === 'admin' ? '/admin' : '/app';
+  var isAdmin = currentUser.role === 'admin';
+  var cols = isAdmin ? 6 : 5;
+%>
+<div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Cargo</th>
+        <th>Área</th>
+        <% if (isAdmin) { %><th>Cliente</th><% } %>
+        <th>Link de entrevista</th>
+        <th>Archivos</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (!interviews.length) { %>
+        <tr><td colspan="<%= cols %>" class="empty">Aún no hay entrevistas. Usa “Agregar entrevista”.</td></tr>
+      <% } %>
+      <% interviews.forEach(function (iv) { %>
+        <tr>
+          <td class="fname"><%= iv.nombre %></td>
+          <td><%= iv.cargo || '—' %></td>
+          <td><%= iv.area || '—' %></td>
+          <% if (isAdmin) { %><td><%= iv.client_name || iv.client_username || '—' %></td><% } %>
+          <td>
+            <% if (iv.interview_url) { %>
+              <a href="<%= iv.interview_url %>" target="_blank" rel="noopener noreferrer">Ver entrevista ↗</a>
+            <% } %>
+            <details class="rowadd">
+              <summary class="btn btn-ghost btn-sm"><%= iv.interview_url ? 'Editar' : 'Pegar link' %></summary>
+              <div class="add-pop">
+                <form method="post" action="<%= base %>/interviews/<%= iv.id %>/link">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                  <label>Link de la entrevista (el que da Gemini al terminar)
+                    <input type="url" name="url" value="<%= iv.interview_url || '' %>" placeholder="https://..." required maxlength="2000" />
+                  </label>
+                  <button class="btn btn-primary" type="submit">Guardar link</button>
+                </form>
+              </div>
+            </details>
+          </td>
+          <td>
+            <a class="btn btn-ghost btn-sm" href="<%= base %>/archivos?entrevista=<%= iv.id %>">+ Agregar</a>
+            <span class="meta"><%= iv.file_count %> archivo(s)</span>
+            <form method="post" action="<%= base %>/interviews/<%= iv.id %>/delete" class="inline" data-confirm="¿Eliminar la entrevista de “<%= iv.nombre %>”? Los archivos se conservan, pero quedan sin asociar.">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <button class="iconbtn danger" type="submit" title="Eliminar entrevista" aria-label="Eliminar entrevista">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            </form>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
