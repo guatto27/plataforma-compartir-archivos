@@ -6,6 +6,11 @@ const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
 
+// Carpeta de datos persistentes. En un VPS conviene apuntarla a una ruta
+// FUERA del directorio de despliegue (p. ej. DATA_DIR=/var/businesscool-data)
+// para que la base de datos y los archivos NO se borren en cada actualización.
+const DATA_DIR = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : ROOT;
+
 const config = {
   root: ROOT,
   port: parseInt(process.env.PORT || '3000', 10),
@@ -17,8 +22,8 @@ const config = {
     .split(',')
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean),
-  dbPath: path.join(ROOT, 'data', 'portal.db'),
-  uploadsDir: path.join(ROOT, 'storage', 'uploads'),
+  dbPath: process.env.DB_PATH ? path.resolve(process.env.DB_PATH) : path.join(DATA_DIR, 'data', 'portal.db'),
+  uploadsDir: process.env.UPLOADS_DIR ? path.resolve(process.env.UPLOADS_DIR) : path.join(DATA_DIR, 'storage', 'uploads'),
   // Branding — ajusta con los colores reales de BusinessCool IA
   brand: {
     name: 'BusinessCool AI',
