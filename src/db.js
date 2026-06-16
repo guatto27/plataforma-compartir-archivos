@@ -105,6 +105,10 @@ if (!userCols.some((c) => c.name === 'company_id')) {
   db.exec('ALTER TABLE users ADD COLUMN company_id INTEGER');
   db.exec('CREATE INDEX IF NOT EXISTS idx_users_company ON users(company_id)');
 }
+// Migración: correo electrónico del usuario (para el correo de bienvenida)
+if (!userCols.some((c) => c.name === 'email')) {
+  db.exec('ALTER TABLE users ADD COLUMN email TEXT');
+}
 
 // Bootstrap: crea un administrador inicial desde variables de entorno si aún
 // no existe. Útil en despliegues (Hostinger, etc.) donde la BD arranca vacía.

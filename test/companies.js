@@ -46,12 +46,14 @@ const ck = (n, v) => { v ? ok++ : fail++; console.log((v ? '  ✓ ' : '  ✗ ') 
 
   // Crear usuario con empresa
   r = await get('/admin/usuarios'); h = await r.text();
-  r = await post('/admin/usuarios', { _csrf: csrf(h), company_id: cid, username: uname, display_name: 'Juan Perez', password: '' });
+  const uemail = uname + '@test.com';
+  r = await post('/admin/usuarios', { _csrf: csrf(h), company_id: cid, username: uname, display_name: 'Juan Perez', email: uemail, password: '' });
   ck('crear usuario => 302', r.status === 302);
   r = await get('/admin/usuarios'); h = await r.text();
   ck('credenciales mostradas una vez', h.includes('Contraseña temporal'));
   ck('usuario en la tabla', h.includes(uname));
   ck('empresa del usuario en la tabla', h.includes(cname));
+  ck('correo del usuario en la tabla', h.includes(uemail));
 
   // Ficha del usuario
   const uid = (h.match(/\/admin\/usuarios\/(\d+)"/) || [])[1];

@@ -11,6 +11,9 @@ const { db, logAction } = require('../db');
 const { upload } = require('../lib/upload');
 const { makeFileRouter } = require('./files');
 const { makeInterviewActionsRouter, getAccessibleInterview } = require('./interviews');
+const { sendWelcomeEmail } = require('../lib/mailer');
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const {
   requireLogin,
   requireRole,
@@ -280,7 +283,7 @@ router.get('/usuarios', (req, res) => {
 });
 
 // Crear un usuario (ligado a una empresa)
-router.post('/usuarios', (req, res) => {
+router.post('/usuarios', async (req, res) => {
   const company = db.prepare(`SELECT * FROM companies WHERE id = ? AND active = 1`).get(req.body.company_id);
   if (!company) {
     req.session.flash = { type: 'error', text: 'Selecciona una empresa válida. Si no hay, créala en Empresas primero.' };
@@ -289,6 +292,7 @@ router.post('/usuarios', (req, res) => {
 
   const username = String(req.body.username || '').trim().toLowerCase();
   const displayName = String(req.body.display_name || '').trim().slice(0, 120);
+  const email = String(req.body.email || '').trim().slice(0, 160);
   let password = String(req.body.password || '').trim();
 
   if (!USERNAME_RE.test(username)) {
@@ -296,6 +300,10 @@ router.post('/usuarios', (req, res) => {
       type: 'error',
       text: 'Usuario inválido. Usa 3-40 caracteres: minúsculas, números, punto, guion o guion bajo.',
     };
+    return res.redirect('/admin/usuarios');
+  }
+  if (email && !EMAIL_RE.test(email)) {
+    req.session.flash = { type: 'error', text: 'El correo electrónico no es válido.' };
     return res.redirect('/admin/usuarios');
   }
   if (db.prepare('SELECT id FROM users WHERE username = ?').get(username)) {
@@ -310,13 +318,19 @@ router.post('/usuarios', (req, res) => {
 
   const hash = bcrypt.hashSync(password, 12);
   db.prepare(
-    `INSERT INTO users (username, password_hash, role, display_name, company_name, company_id, must_change_password)
-     VALUES (?, ?, 'client', ?, ?, ?, 1)`
-  ).run(username, hash, displayName || username, company.name, company.id);
+    `INSERT INTO users (username, password_hash, role, display_name, company_name, company_id, email, must_change_password)
+     VALUES (?, ?, 'client', ?, ?, ?, ?, 1)`
+  ).run(username, hash, displayName || username, company.name, company.id, email || null);
   logAction(req.session.userId, 'create_user', `${username} (${company.name})`, req.ip);
 
+  let mailMsg = '';
+  if (email) {
+    const result = await sendWelcomeEmail({ to: email, displayName: displayName || username, username, password, companyName: company.name });
+    mailMsg = result.sent ? ` Correo de bienvenida enviado a ${email}.` : ` (No se pudo enviar el correo: ${result.error}.)`;
+  }
+
   req.session.newCredentials = { username, password };
-  req.session.flash = { type: 'success', text: 'Usuario creado. Copia y comparte las credenciales de forma segura.' };
+  req.session.flash = { type: 'success', text: `Usuario creado.${mailMsg} Copia y comparte las credenciales por un canal seguro.` };
   res.redirect('/admin/usuarios');
 });
 
@@ -392,11 +406,16 @@ router.post('/usuarios/:id/edit', (req, res) => {
   }
   const username = String(req.body.username || '').trim().toLowerCase();
   const displayName = String(req.body.display_name || '').trim().slice(0, 120);
+  const email = String(req.body.email || '').trim().slice(0, 160);
   const company = db.prepare('SELECT * FROM companies WHERE id = ?').get(req.body.company_id);
   const back = `/admin/usuarios/${client.id}`;
 
   if (!USERNAME_RE.test(username)) {
     req.session.flash = { type: 'error', text: 'Usuario inválido (3-40: minúsculas, números, . _ -).' };
+    return res.redirect(back);
+  }
+  if (email && !EMAIL_RE.test(email)) {
+    req.session.flash = { type: 'error', text: 'El correo electrónico no es válido.' };
     return res.redirect(back);
   }
   if (db.prepare('SELECT id FROM users WHERE username = ? AND id <> ?').get(username, client.id)) {
@@ -408,11 +427,12 @@ router.post('/usuarios/:id/edit', (req, res) => {
     return res.redirect(back);
   }
 
-  db.prepare('UPDATE users SET username = ?, display_name = ?, company_id = ?, company_name = ? WHERE id = ?').run(
+  db.prepare('UPDATE users SET username = ?, display_name = ?, company_id = ?, company_name = ?, email = ? WHERE id = ?').run(
     username,
     displayName || username,
     company.id,
     company.name,
+    email || null,
     client.id
   );
   logAction(req.session.userId, 'edit_user', `${client.username} -> ${username}`, req.ip);
@@ -421,7 +441,7 @@ router.post('/usuarios/:id/edit', (req, res) => {
 });
 
 // Restablecer contraseña de un usuario
-router.post('/usuarios/:id/reset-password', (req, res) => {
+router.post('/usuarios/:id/reset-password', async (req, res) => {
   const client = db.prepare(`SELECT * FROM users WHERE id = ? AND role = 'client'`).get(req.params.id);
   if (!client) {
     return res.status(404).render('error', { title: 'No encontrado', message: 'Usuario no encontrado.' });
@@ -431,8 +451,17 @@ router.post('/usuarios/:id/reset-password', (req, res) => {
   db.prepare('UPDATE users SET password_hash = ?, must_change_password = 1 WHERE id = ?').run(hash, client.id);
   logAction(req.session.userId, 'reset_password', client.username, req.ip);
 
+  let mailMsg = '';
+  if (client.email) {
+    const result = await sendWelcomeEmail({
+      to: client.email, displayName: client.display_name || client.username,
+      username: client.username, password, companyName: client.company_name,
+    });
+    mailMsg = result.sent ? ` Nueva contraseña enviada a ${client.email}.` : ` (No se pudo enviar el correo: ${result.error}.)`;
+  }
+
   req.session.newCredentials = { username: client.username, password };
-  req.session.flash = { type: 'success', text: 'Contraseña restablecida. Comparte la nueva de forma segura.' };
+  req.session.flash = { type: 'success', text: `Contraseña restablecida.${mailMsg} Comparte la nueva por un canal seguro.` };
   res.redirect('/admin/usuarios');
 });
 

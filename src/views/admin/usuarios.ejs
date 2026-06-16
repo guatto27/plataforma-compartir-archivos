@@ -36,7 +36,7 @@
     <div class="table-wrap">
       <table class="table">
         <thead>
-          <tr><th>Usuario</th><th>Empresa</th><th>Entrevistas</th><th>Archivos</th><th>Acceso</th><th class="ta-actions">Acciones</th></tr>
+          <tr><th>Usuario</th><th>Empresa</th><th>Correo</th><th>Entrevistas</th><th>Archivos</th><th>Acceso</th><th class="ta-actions">Acciones</th></tr>
         </thead>
         <tbody>
           <% users.forEach((u) => { %>
@@ -46,6 +46,7 @@
                 <div class="meta"><%= u.username %></div>
               </td>
               <td><%= u.company_name_real || u.company_name || '—' %></td>
+              <td class="meta"><%= u.email || '—' %></td>
               <td><% if (u.links > 0) { %><span class="pill ok">✓ <%= u.links %></span><% } else { %><span class="pill pend">Pendiente</span><% } %></td>
               <td><% if (u.files_in > 0) { %><span class="pill ok">✓ <%= u.files_in %></span><% } else { %><span class="pill pend">Pendiente</span><% } %></td>
               <td><span class="pill <%= u.active ? 'ok' : 'off' %>"><%= u.active ? 'Activo' : 'Inactivo' %></span></td>
@@ -89,6 +90,9 @@
       <label>Nombre de contacto (nombre real)
         <input type="text" name="display_name" value="<%= u.display_name || '' %>" maxlength="120" />
       </label>
+      <label>Correo electrónico
+        <input type="email" name="email" value="<%= u.email || '' %>" maxlength="160" />
+      </label>
       <div class="modal-actions">
         <button class="btn btn-primary" type="submit">Guardar cambios</button>
         <button class="btn btn-ghost" type="button" data-close>Cancelar</button>
@@ -119,6 +123,9 @@
       <p class="meta">Solo minúsculas, números y <code>. _ -</code> (sin espacios). Es el identificador de acceso.</p>
       <label>Nombre de contacto (nombre real)
         <input type="text" name="display_name" maxlength="120" placeholder="ej. Juan Pérez" />
+      </label>
+      <label>Correo electrónico (se le enviarán sus credenciales)
+        <input type="email" name="email" maxlength="160" placeholder="ej. juan@empresa.com" />
       </label>
       <label>Contraseña temporal (déjala vacía para generar una)
         <input type="text" name="password" maxlength="200" placeholder="(opcional, mín. 10 caracteres)" />

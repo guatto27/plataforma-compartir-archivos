@@ -24,6 +24,19 @@ const config = {
     .filter(Boolean),
   dbPath: process.env.DB_PATH ? path.resolve(process.env.DB_PATH) : path.join(DATA_DIR, 'data', 'portal.db'),
   uploadsDir: process.env.UPLOADS_DIR ? path.resolve(process.env.UPLOADS_DIR) : path.join(DATA_DIR, 'storage', 'uploads'),
+  // URL pública de la plataforma (para los enlaces en los correos)
+  appUrl: (process.env.APP_URL || 'https://proyectos.businesscool.ai').replace(/\/$/, ''),
+  // Correo saliente (SMTP). Si falta algún dato, el envío queda desactivado
+  // y las credenciales se siguen mostrando en pantalla.
+  smtp: {
+    host: process.env.SMTP_HOST || '',
+    port: parseInt(process.env.SMTP_PORT || '465', 10),
+    secure: (process.env.SMTP_SECURE || 'true') === 'true',
+    user: process.env.SMTP_USER || '',
+    pass: process.env.SMTP_PASS || '',
+    from: process.env.SMTP_FROM || process.env.SMTP_USER || '',
+    enabled: !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS),
+  },
   // Branding — ajusta con los colores reales de BusinessCool IA
   brand: {
     name: 'BusinessCool AI',

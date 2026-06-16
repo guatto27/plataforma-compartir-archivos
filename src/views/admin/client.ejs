@@ -39,6 +39,9 @@
     <label>Nombre de contacto (nombre real)
       <input type="text" name="display_name" value="<%= cliente.display_name || '' %>" maxlength="120" />
     </label>
+    <label>Correo electrónico
+      <input type="email" name="email" value="<%= cliente.email || '' %>" maxlength="160" />
+    </label>
     <div class="modal-actions">
       <button class="btn btn-primary" type="submit">Guardar cambios</button>
       <button class="btn btn-ghost" type="button" data-close>Cancelar</button>
