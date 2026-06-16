@@ -13,16 +13,16 @@
 <dialog id="dlg-add-interview" class="modal" data-strict>
   <h2>Nueva entrevista</h2>
   <% if (!clients.length) { %>
-    <p class="muted">Primero crea un cliente en <a href="/admin/gestion">Clientes</a>.</p>
+    <p class="muted">Primero crea una empresa y un usuario en <a href="/admin/usuarios">Usuarios</a>.</p>
     <div class="modal-actions">
       <button class="btn btn-ghost" type="button" data-close>Cerrar</button>
     </div>
   <% } else { %>
     <form method="post" action="/admin/interviews">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-      <label>Cliente
+      <label>Usuario
         <select name="client_id" required>
-          <option value="">— Selecciona un cliente —</option>
+          <option value="">— Selecciona un usuario —</option>
           <% clients.forEach((c) => { %>
             <option value="<%= c.id %>"><%= c.display_name || c.username %><% if (c.company_name) { %> · <%= c.company_name %><% } %></option>
           <% }) %>

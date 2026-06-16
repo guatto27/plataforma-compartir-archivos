@@ -74,21 +74,34 @@ function check(name, cond) {
   check('página muestra "Archivos"', html.includes('Archivos'));
   csrf = csrfFrom(html); // viene del formulario de logout en la cabecera
 
-  // 6. Crear un cliente (desde Gestión)
-  const uname = 'acme' + Date.now().toString().slice(-5);
-  res = await post('/admin/clients', {
+  // 6. Crear una empresa y luego un usuario ligado a ella
+  const ts = Date.now().toString().slice(-5);
+  const cname = 'ACME' + ts;
+  res = await get('/admin/empresas');
+  csrf = csrfFrom(await res.text());
+  res = await post('/admin/empresas', { _csrf: csrf, name: cname, contact: '', notes: '' });
+  check('crear empresa => redirect 302', res.status === 302);
+
+  res = await get('/admin/usuarios');
+  html = await res.text();
+  csrf = csrfFrom(html);
+  const cid = (html.match(new RegExp('value="(\\d+)">' + cname)) || [])[1];
+  check('empresa disponible para asignar', !!cid);
+
+  const uname = 'acme' + ts;
+  res = await post('/admin/usuarios', {
     _csrf: csrf,
+    company_id: cid,
     username: uname,
-    display_name: 'Cliente Prueba',
-    company_name: 'ACME',
+    display_name: 'Usuario Prueba',
     password: '',
   });
-  check('crear cliente => redirect 302', res.status === 302);
+  check('crear usuario => redirect 302', res.status === 302);
 
-  res = await get('/admin/gestion');
+  res = await get('/admin/usuarios');
   html = await res.text();
   check('credenciales generadas se muestran', html.includes('Contraseña temporal'));
-  check('cliente aparece en la tabla', html.includes(uname));
+  check('usuario aparece en la tabla', html.includes(uname));
 
   // 7. Cliente no autenticado no puede ver /app
   const savedCookie = cookie;

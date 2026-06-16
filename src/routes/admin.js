@@ -32,13 +32,25 @@ function tempPassword() {
   return crypto.randomBytes(9).toString('base64').replace(/[^a-zA-Z0-9]/g, '').slice(0, 12) + '7x';
 }
 
+const USERNAME_RE = /^[a-z0-9._-]{3,40}$/;
+
+// Usuarios (rol "usuario") activos, con el nombre de su empresa — para los desplegables
 function activeClients() {
   return db
-    .prepare(`SELECT id, username, display_name, company_name FROM users WHERE role = 'client' AND active = 1 ORDER BY display_name`)
+    .prepare(
+      `SELECT u.id, u.username, u.display_name, u.company_id, c.name AS company_name
+       FROM users u LEFT JOIN companies c ON c.id = u.company_id
+       WHERE u.role = 'client' AND u.active = 1
+       ORDER BY c.name, u.display_name`
+    )
     .all();
 }
 
-// Página principal: Entrevistas (todos los clientes)
+function activeCompanies() {
+  return db.prepare(`SELECT id, name FROM companies WHERE active = 1 ORDER BY name`).all();
+}
+
+// Página principal: Entrevistas (de todos los usuarios)
 router.get('/', (req, res) => {
   const interviews = db
     .prepare(
@@ -54,13 +66,13 @@ router.get('/', (req, res) => {
   res.render('admin/interviews', { title: 'Entrevistas', interviews, clients: activeClients() });
 });
 
-// Crear una entrevista (admin elige el cliente)
+// Crear una entrevista (admin elige el usuario)
 router.post('/interviews', (req, res) => {
   const client = db
     .prepare(`SELECT * FROM users WHERE id = ? AND role = 'client' AND active = 1`)
     .get(req.body.client_id);
   if (!client) {
-    req.session.flash = { type: 'error', text: 'Selecciona un cliente válido para la entrevista.' };
+    req.session.flash = { type: 'error', text: 'Selecciona un usuario válido para la entrevista.' };
     return res.redirect('/admin');
   }
   const nombre = String(req.body.nombre || '').trim().slice(0, 160);
@@ -109,7 +121,6 @@ router.get('/archivos', (req, res) => {
     )
     .all(...params);
 
-  // Entrevistas para el desplegable (etiquetadas con su cliente)
   const interviews = db
     .prepare(
       `SELECT iv.id, iv.nombre, iv.cargo, iv.client_id, cl.display_name AS client_name, cl.username AS client_username
@@ -128,7 +139,7 @@ router.get('/archivos', (req, res) => {
   });
 });
 
-// Subir archivo(s): si se elige entrevista, el cliente se deriva de ella
+// Subir archivo(s): si se elige entrevista, el usuario se deriva de ella
 router.post('/upload', upload.array('files', 10), (req, res) => {
   if (!verifyCsrf(req)) return denyCsrf(res);
 
@@ -149,7 +160,7 @@ router.post('/upload', upload.array('files', 10), (req, res) => {
   const redirectTo = interviewId ? `/admin/archivos?entrevista=${interviewId}` : '/admin/archivos';
 
   if (!client) {
-    req.session.flash = { type: 'error', text: 'Selecciona un cliente válido para los archivos.' };
+    req.session.flash = { type: 'error', text: 'Selecciona un usuario válido para los archivos.' };
     return res.redirect(redirectTo);
   }
 
@@ -173,99 +184,169 @@ router.post('/upload', upload.array('files', 10), (req, res) => {
   res.redirect(redirectTo);
 });
 
-// ---------- Gestión (oculta del menú principal): clientes + auditoría ----------
-router.get('/gestion', (req, res) => {
-  const clients = db
+// ============================ EMPRESAS ============================
+router.get('/empresas', (req, res) => {
+  const companies = db
     .prepare(
-      `SELECT u.*,
+      `SELECT c.*,
+              (SELECT COUNT(*) FROM users u WHERE u.company_id = c.id AND u.role = 'client') AS user_count
+       FROM companies c ORDER BY c.created_at DESC`
+    )
+    .all();
+  res.render('admin/empresas', { title: 'Empresas', companies });
+});
+
+router.post('/empresas', (req, res) => {
+  const name = String(req.body.name || '').trim().slice(0, 160);
+  const contact = String(req.body.contact || '').trim().slice(0, 160);
+  const notes = String(req.body.notes || '').trim().slice(0, 500);
+  if (!name) {
+    req.session.flash = { type: 'error', text: 'El nombre de la empresa es obligatorio.' };
+    return res.redirect('/admin/empresas');
+  }
+  db.prepare(`INSERT INTO companies (name, contact, notes) VALUES (?, ?, ?)`).run(name, contact, notes);
+  logAction(req.session.userId, 'company_create', name, req.ip);
+  req.session.flash = { type: 'success', text: 'Empresa registrada.' };
+  res.redirect('/admin/empresas');
+});
+
+router.post('/empresas/:id/edit', (req, res) => {
+  const company = db.prepare('SELECT * FROM companies WHERE id = ?').get(req.params.id);
+  if (!company) {
+    return res.status(404).render('error', { title: 'No encontrado', message: 'Empresa no encontrada.' });
+  }
+  const name = String(req.body.name || '').trim().slice(0, 160);
+  const contact = String(req.body.contact || '').trim().slice(0, 160);
+  const notes = String(req.body.notes || '').trim().slice(0, 500);
+  if (!name) {
+    req.session.flash = { type: 'error', text: 'El nombre de la empresa es obligatorio.' };
+    return res.redirect('/admin/empresas');
+  }
+  db.prepare('UPDATE companies SET name = ?, contact = ?, notes = ? WHERE id = ?').run(name, contact, notes, company.id);
+  logAction(req.session.userId, 'company_edit', name, req.ip);
+  req.session.flash = { type: 'success', text: 'Empresa actualizada.' };
+  res.redirect('/admin/empresas');
+});
+
+router.post('/empresas/:id/delete', (req, res) => {
+  const company = db.prepare('SELECT * FROM companies WHERE id = ?').get(req.params.id);
+  if (!company) {
+    return res.status(404).render('error', { title: 'No encontrado', message: 'Empresa no encontrada.' });
+  }
+  const count = db.prepare(`SELECT COUNT(*) AS n FROM users WHERE company_id = ?`).get(company.id).n;
+  if (count > 0) {
+    req.session.flash = {
+      type: 'error',
+      text: `No puedes eliminar "${company.name}": tiene ${count} usuario(s). Elimina o reasigna sus usuarios primero.`,
+    };
+    return res.redirect('/admin/empresas');
+  }
+  db.prepare('DELETE FROM companies WHERE id = ?').run(company.id);
+  logAction(req.session.userId, 'company_delete', company.name, req.ip);
+  req.session.flash = { type: 'success', text: `Empresa "${company.name}" eliminada.` };
+  res.redirect('/admin/empresas');
+});
+
+// ============================ USUARIOS ============================
+router.get('/usuarios', (req, res) => {
+  const users = db
+    .prepare(
+      `SELECT u.*, co.name AS company_name_real,
               (SELECT COUNT(*) FROM files f WHERE f.client_id = u.id AND f.direction = 'to_admin') AS files_in,
-              (SELECT COUNT(*) FROM files f WHERE f.client_id = u.id AND f.direction = 'to_client') AS files_out,
               (SELECT COUNT(*) FROM interviews iv WHERE iv.client_id = u.id) AS links
-       FROM users u WHERE u.role = 'client' ORDER BY u.created_at DESC`
+       FROM users u LEFT JOIN companies co ON co.id = u.company_id
+       WHERE u.role = 'client' ORDER BY u.created_at DESC`
     )
     .all();
 
   const summary = {
-    total: clients.length,
-    withInterview: clients.filter((c) => c.links > 0).length,
-    withUploads: clients.filter((c) => c.files_in > 0).length,
+    total: users.length,
+    withInterview: users.filter((u) => u.links > 0).length,
+    withUploads: users.filter((u) => u.files_in > 0).length,
   };
-  summary.pending = clients.filter((c) => c.active && (c.links === 0 || c.files_in === 0)).length;
+  summary.pending = users.filter((u) => u.active && (u.links === 0 || u.files_in === 0)).length;
 
-  // Capturamos y BORRAMOS antes de render: así la sesión se guarda sin las
-  // credenciales y solo se muestran una vez (mostrarlas siempre sería un riesgo).
+  // Capturamos y borramos antes del render: las credenciales se muestran una sola vez.
   const newCredentials = req.session.newCredentials || null;
   delete req.session.newCredentials;
 
-  res.render('admin/gestion', {
-    title: 'Clientes',
-    clients,
+  res.render('admin/usuarios', {
+    title: 'Usuarios',
+    users,
+    companies: activeCompanies(),
     summary,
     newCredentials,
   });
 });
 
-// Crear un nuevo cliente con credenciales
-router.post('/clients', (req, res) => {
+// Crear un usuario (ligado a una empresa)
+router.post('/usuarios', (req, res) => {
+  const company = db.prepare(`SELECT * FROM companies WHERE id = ? AND active = 1`).get(req.body.company_id);
+  if (!company) {
+    req.session.flash = { type: 'error', text: 'Selecciona una empresa válida. Si no hay, créala en Empresas primero.' };
+    return res.redirect('/admin/usuarios');
+  }
+
   const username = String(req.body.username || '').trim().toLowerCase();
   const displayName = String(req.body.display_name || '').trim().slice(0, 120);
-  const company = String(req.body.company_name || '').trim().slice(0, 120);
   let password = String(req.body.password || '').trim();
 
-  if (!/^[a-z0-9._-]{3,40}$/.test(username)) {
+  if (!USERNAME_RE.test(username)) {
     req.session.flash = {
       type: 'error',
-      text: 'Usuario inválido. Usa 3-40 caracteres: letras, números, punto, guion o guion bajo.',
+      text: 'Usuario inválido. Usa 3-40 caracteres: minúsculas, números, punto, guion o guion bajo.',
     };
-    return res.redirect('/admin/gestion');
+    return res.redirect('/admin/usuarios');
   }
-
-  const exists = db.prepare('SELECT id FROM users WHERE username = ?').get(username);
-  if (exists) {
+  if (db.prepare('SELECT id FROM users WHERE username = ?').get(username)) {
     req.session.flash = { type: 'error', text: 'Ese usuario ya existe.' };
-    return res.redirect('/admin/gestion');
+    return res.redirect('/admin/usuarios');
   }
-
   if (!password) password = tempPassword();
   if (password.length < 10) {
     req.session.flash = { type: 'error', text: 'La contraseña temporal debe tener al menos 10 caracteres.' };
-    return res.redirect('/admin/gestion');
+    return res.redirect('/admin/usuarios');
   }
 
   const hash = bcrypt.hashSync(password, 12);
   db.prepare(
-    `INSERT INTO users (username, password_hash, role, display_name, company_name, must_change_password)
-     VALUES (?, ?, 'client', ?, ?, 1)`
-  ).run(username, hash, displayName || username, company);
-  logAction(req.session.userId, 'create_client', username, req.ip);
+    `INSERT INTO users (username, password_hash, role, display_name, company_name, company_id, must_change_password)
+     VALUES (?, ?, 'client', ?, ?, ?, 1)`
+  ).run(username, hash, displayName || username, company.name, company.id);
+  logAction(req.session.userId, 'create_user', `${username} (${company.name})`, req.ip);
 
   req.session.newCredentials = { username, password };
-  req.session.flash = { type: 'success', text: 'Cliente creado. Copia y comparte las credenciales de forma segura.' };
-  res.redirect('/admin/gestion');
+  req.session.flash = { type: 'success', text: 'Usuario creado. Copia y comparte las credenciales de forma segura.' };
+  res.redirect('/admin/usuarios');
 });
 
-// Detalle de un cliente
-router.get('/clients/:id', (req, res) => {
-  const client = db
-    .prepare(`SELECT * FROM users WHERE id = ? AND role = 'client'`)
+// Detalle de un usuario
+router.get('/usuarios/:id', (req, res) => {
+  const cliente = db
+    .prepare(
+      `SELECT u.*, co.name AS company_name_real
+       FROM users u LEFT JOIN companies co ON co.id = u.company_id
+       WHERE u.id = ? AND u.role = 'client'`
+    )
     .get(req.params.id);
-  if (!client) {
-    return res.status(404).render('error', { title: 'No encontrado', message: 'Cliente no encontrado.' });
+  if (!cliente) {
+    return res.status(404).render('error', { title: 'No encontrado', message: 'Usuario no encontrado.' });
   }
 
   const filesFromClient = db
     .prepare(`SELECT * FROM files WHERE client_id = ? AND direction = 'to_admin' ORDER BY created_at DESC`)
-    .all(client.id);
+    .all(cliente.id);
   const filesToClient = db
     .prepare(`SELECT * FROM files WHERE client_id = ? AND direction = 'to_client' ORDER BY created_at DESC`)
-    .all(client.id);
+    .all(cliente.id);
   const interviews = db
     .prepare(`SELECT * FROM interviews WHERE client_id = ? ORDER BY created_at DESC`)
-    .all(client.id);
+    .all(cliente.id);
 
   res.render('admin/client', {
-    title: client.display_name || client.username,
-    cliente: client, // "client" es una opción reservada de EJS; no usar como local
+    title: cliente.display_name || cliente.username,
+    cliente,
+    companies: activeCompanies(),
     filesFromClient,
     filesToClient,
     interviews,
@@ -274,19 +355,19 @@ router.get('/clients/:id', (req, res) => {
   });
 });
 
-// Compartir archivo(s) con el cliente desde su ficha
-router.post('/clients/:id/upload', upload.array('files', 10), (req, res) => {
+// Compartir archivo(s) con el usuario desde su ficha
+router.post('/usuarios/:id/upload', upload.array('files', 10), (req, res) => {
   if (!verifyCsrf(req)) return denyCsrf(res);
 
   const client = db.prepare(`SELECT * FROM users WHERE id = ? AND role = 'client'`).get(req.params.id);
   if (!client) {
-    return res.status(404).render('error', { title: 'No encontrado', message: 'Cliente no encontrado.' });
+    return res.status(404).render('error', { title: 'No encontrado', message: 'Usuario no encontrado.' });
   }
 
   const files = req.files || [];
   if (files.length === 0) {
     req.session.flash = { type: 'error', text: 'No seleccionaste ningún archivo.' };
-    return res.redirect(`/admin/clients/${client.id}`);
+    return res.redirect(`/admin/usuarios/${client.id}`);
   }
 
   const description = String(req.body.description || '').slice(0, 500);
@@ -299,51 +380,51 @@ router.post('/clients/:id/upload', upload.array('files', 10), (req, res) => {
   }
   logAction(req.session.userId, 'admin_share', `${files.length} archivo(s) -> ${client.username}`, req.ip);
 
-  req.session.flash = { type: 'success', text: 'Archivo(s) compartido(s) con el cliente.' };
-  res.redirect(`/admin/clients/${client.id}`);
+  req.session.flash = { type: 'success', text: 'Archivo(s) compartido(s) con el usuario.' };
+  res.redirect(`/admin/usuarios/${client.id}`);
 });
 
-// Editar la información de un cliente (nombre de contacto, empresa, usuario)
-router.post('/clients/:id/edit', (req, res) => {
+// Editar un usuario (usuario de acceso, nombre, empresa)
+router.post('/usuarios/:id/edit', (req, res) => {
   const client = db.prepare(`SELECT * FROM users WHERE id = ? AND role = 'client'`).get(req.params.id);
   if (!client) {
-    return res.status(404).render('error', { title: 'No encontrado', message: 'Cliente no encontrado.' });
+    return res.status(404).render('error', { title: 'No encontrado', message: 'Usuario no encontrado.' });
   }
-
   const username = String(req.body.username || '').trim().toLowerCase();
   const displayName = String(req.body.display_name || '').trim().slice(0, 120);
-  const company = String(req.body.company_name || '').trim().slice(0, 120);
-  const back = `/admin/clients/${client.id}`;
+  const company = db.prepare('SELECT * FROM companies WHERE id = ?').get(req.body.company_id);
+  const back = `/admin/usuarios/${client.id}`;
 
-  if (!/^[a-z0-9._-]{3,40}$/.test(username)) {
-    req.session.flash = {
-      type: 'error',
-      text: 'Usuario inválido. Usa 3-40 caracteres: letras, números, punto, guion o guion bajo.',
-    };
+  if (!USERNAME_RE.test(username)) {
+    req.session.flash = { type: 'error', text: 'Usuario inválido (3-40: minúsculas, números, . _ -).' };
     return res.redirect(back);
   }
-  const taken = db.prepare('SELECT id FROM users WHERE username = ? AND id <> ?').get(username, client.id);
-  if (taken) {
+  if (db.prepare('SELECT id FROM users WHERE username = ? AND id <> ?').get(username, client.id)) {
     req.session.flash = { type: 'error', text: 'Ese usuario ya está en uso por otra cuenta.' };
     return res.redirect(back);
   }
+  if (!company) {
+    req.session.flash = { type: 'error', text: 'Selecciona una empresa válida.' };
+    return res.redirect(back);
+  }
 
-  db.prepare('UPDATE users SET username = ?, display_name = ?, company_name = ? WHERE id = ?').run(
+  db.prepare('UPDATE users SET username = ?, display_name = ?, company_id = ?, company_name = ? WHERE id = ?').run(
     username,
     displayName || username,
-    company,
+    company.id,
+    company.name,
     client.id
   );
-  logAction(req.session.userId, 'edit_client', `${client.username} -> ${username}`, req.ip);
-  req.session.flash = { type: 'success', text: 'Información del cliente actualizada.' };
+  logAction(req.session.userId, 'edit_user', `${client.username} -> ${username}`, req.ip);
+  req.session.flash = { type: 'success', text: 'Información del usuario actualizada.' };
   res.redirect(back);
 });
 
-// Restablecer contraseña de un cliente
-router.post('/clients/:id/reset-password', (req, res) => {
+// Restablecer contraseña de un usuario
+router.post('/usuarios/:id/reset-password', (req, res) => {
   const client = db.prepare(`SELECT * FROM users WHERE id = ? AND role = 'client'`).get(req.params.id);
   if (!client) {
-    return res.status(404).render('error', { title: 'No encontrado', message: 'Cliente no encontrado.' });
+    return res.status(404).render('error', { title: 'No encontrado', message: 'Usuario no encontrado.' });
   }
   const password = tempPassword();
   const hash = bcrypt.hashSync(password, 12);
@@ -352,40 +433,41 @@ router.post('/clients/:id/reset-password', (req, res) => {
 
   req.session.newCredentials = { username: client.username, password };
   req.session.flash = { type: 'success', text: 'Contraseña restablecida. Comparte la nueva de forma segura.' };
-  res.redirect('/admin/gestion');
+  res.redirect('/admin/usuarios');
 });
 
-// Activar / desactivar acceso de un cliente
-router.post('/clients/:id/toggle-active', (req, res) => {
+// Activar / desactivar acceso de un usuario
+router.post('/usuarios/:id/toggle-active', (req, res) => {
   const client = db.prepare(`SELECT * FROM users WHERE id = ? AND role = 'client'`).get(req.params.id);
   if (!client) {
-    return res.status(404).render('error', { title: 'No encontrado', message: 'Cliente no encontrado.' });
+    return res.status(404).render('error', { title: 'No encontrado', message: 'Usuario no encontrado.' });
   }
   const next = client.active ? 0 : 1;
   db.prepare('UPDATE users SET active = ? WHERE id = ?').run(next, client.id);
-  logAction(req.session.userId, next ? 'enable_client' : 'disable_client', client.username, req.ip);
-  req.session.flash = { type: 'success', text: next ? 'Cliente activado.' : 'Cliente desactivado.' };
-  res.redirect('/admin/gestion');
+  logAction(req.session.userId, next ? 'enable_user' : 'disable_user', client.username, req.ip);
+  req.session.flash = { type: 'success', text: next ? 'Usuario activado.' : 'Usuario desactivado.' };
+  res.redirect('/admin/usuarios');
 });
 
-// Eliminar un cliente por completo (sus entrevistas, archivos y comentarios)
-router.post('/clients/:id/delete', (req, res) => {
+// Eliminar un usuario por completo (sus entrevistas, archivos y comentarios)
+router.post('/usuarios/:id/delete', (req, res) => {
   const client = db.prepare(`SELECT * FROM users WHERE id = ? AND role = 'client'`).get(req.params.id);
   if (!client) {
-    return res.status(404).render('error', { title: 'No encontrado', message: 'Cliente no encontrado.' });
+    return res.status(404).render('error', { title: 'No encontrado', message: 'Usuario no encontrado.' });
   }
-
-  // Borra primero los archivos físicos (la BD elimina las filas en cascada)
   const files = db.prepare('SELECT stored_name FROM files WHERE client_id = ?').all(client.id);
   for (const f of files) {
     const abs = path.join(config.uploadsDir, f.stored_name);
     if (abs.startsWith(config.uploadsDir)) fs.unlink(abs, () => {});
   }
   db.prepare('DELETE FROM users WHERE id = ?').run(client.id);
-  logAction(req.session.userId, 'delete_client', client.username, req.ip);
+  logAction(req.session.userId, 'delete_user', client.username, req.ip);
 
-  req.session.flash = { type: 'success', text: `Cliente "${client.display_name || client.username}" eliminado.` };
-  res.redirect('/admin/gestion');
+  req.session.flash = { type: 'success', text: `Usuario "${client.display_name || client.username}" eliminado.` };
+  res.redirect('/admin/usuarios');
 });
+
+// Compatibilidad: la antigua "Clientes" ahora son Usuarios
+router.get('/gestion', (req, res) => res.redirect('/admin/usuarios'));
 
 module.exports = router;

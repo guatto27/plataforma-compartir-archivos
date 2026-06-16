@@ -27,7 +27,8 @@
           <a href="<%= navBase %>">Entrevistas</a>
           <a href="<%= navBase %>/archivos">Archivos</a>
           <% if (currentUser.role === 'admin') { %>
-            <a href="/admin/gestion">Clientes</a>
+            <a href="/admin/empresas">Empresas</a>
+            <a href="/admin/usuarios">Usuarios</a>
           <% } %>
           <details class="usermenu">
             <summary class="avatar" title="<%= currentUser.displayName %>"><%= (currentUser.displayName || '?').charAt(0).toUpperCase() %></summary>

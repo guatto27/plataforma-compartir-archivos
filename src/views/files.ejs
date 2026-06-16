@@ -21,7 +21,7 @@
 <dialog id="dlg-add-file" class="modal" data-strict <%= interview ? 'data-autoopen' : '' %>>
   <h2>Agregar archivos<% if (interview) { %> · <%= interview.nombre %><% } %></h2>
   <% if (isAdmin && !interview && !clients.length) { %>
-    <p class="muted">Primero crea un cliente en <a href="/admin/gestion">Clientes</a>.</p>
+    <p class="muted">Primero crea una empresa y un usuario en <a href="/admin/usuarios">Usuarios</a>.</p>
     <div class="modal-actions"><button class="btn btn-ghost" type="button" data-close>Cerrar</button></div>
   <% } else { %>
     <form method="post" action="<%= base %>/upload" enctype="multipart/form-data">
@@ -31,9 +31,9 @@
         <p class="meta">Se asociarán a la entrevista de <strong><%= interview.nombre %></strong>.</p>
       <% } else { %>
         <% if (isAdmin) { %>
-          <label>Cliente destino
+          <label>Usuario destino
             <select name="client_id" required>
-              <option value="">— Selecciona un cliente —</option>
+              <option value="">— Selecciona un usuario —</option>
               <% clients.forEach((c) => { %>
                 <option value="<%= c.id %>"><%= c.display_name || c.username %><% if (c.company_name) { %> · <%= c.company_name %><% } %></option>
               <% }) %>

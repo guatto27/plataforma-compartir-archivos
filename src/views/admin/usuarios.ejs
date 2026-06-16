@@ -1,0 +1,134 @@
+<%- include('../partials/header') %>
+
+<div class="page-head">
+  <div class="head-row">
+    <div>
+      <h1>Usuarios</h1>
+      <p class="muted">Accesos (login) ligados a una empresa. Cada usuario sube sus propios archivos y entrevistas. Solo tú (administrador) ves esta página.</p>
+    </div>
+    <button class="btn btn-primary" type="button" data-dialog="dlg-new-user">+ Nuevo usuario</button>
+  </div>
+</div>
+
+<section class="stats">
+  <div class="stat"><span class="stat-num"><%= summary.total %></span><span class="stat-lbl">Usuarios</span></div>
+  <div class="stat"><span class="stat-num"><%= summary.withInterview %></span><span class="stat-lbl">Con entrevista</span></div>
+  <div class="stat"><span class="stat-num"><%= summary.withUploads %></span><span class="stat-lbl">Con archivos</span></div>
+  <div class="stat <%= summary.pending ? 'warn' : '' %>"><span class="stat-num"><%= summary.pending %></span><span class="stat-lbl">Pendientes</span></div>
+</section>
+
+<% if (newCredentials) { %>
+  <div class="card credentials">
+    <h2>Credenciales generadas</h2>
+    <p class="muted">Cópialas y compártelas con el usuario por un canal seguro. <strong>No se volverán a mostrar.</strong></p>
+    <div class="cred-row"><span>Usuario:</span> <code id="cred-user"><%= newCredentials.username %></code></div>
+    <div class="cred-row"><span>Contraseña temporal:</span> <code id="cred-pass"><%= newCredentials.password %></code></div>
+    <button class="btn btn-ghost" type="button" data-copy="cred-user|cred-pass">Copiar credenciales</button>
+    <p class="meta">El usuario deberá cambiar la contraseña en su primer acceso.</p>
+  </div>
+<% } %>
+
+<section class="card">
+  <h2>Usuarios registrados</h2>
+  <% if (users.length === 0) { %>
+    <p class="empty">Aún no hay usuarios. Usa “+ Nuevo usuario” para crear el primero.</p>
+  <% } else { %>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr><th>Usuario</th><th>Empresa</th><th>Entrevistas</th><th>Archivos</th><th>Acceso</th><th class="ta-actions">Acciones</th></tr>
+        </thead>
+        <tbody>
+          <% users.forEach((u) => { %>
+            <tr>
+              <td>
+                <a href="/admin/usuarios/<%= u.id %>"><strong><%= u.display_name || u.username %></strong></a>
+                <div class="meta"><%= u.username %></div>
+              </td>
+              <td><%= u.company_name_real || u.company_name || '—' %></td>
+              <td><% if (u.links > 0) { %><span class="pill ok">✓ <%= u.links %></span><% } else { %><span class="pill pend">Pendiente</span><% } %></td>
+              <td><% if (u.files_in > 0) { %><span class="pill ok">✓ <%= u.files_in %></span><% } else { %><span class="pill pend">Pendiente</span><% } %></td>
+              <td><span class="pill <%= u.active ? 'ok' : 'off' %>"><%= u.active ? 'Activo' : 'Inactivo' %></span></td>
+              <td class="ta-actions">
+                <a class="iconbtn" href="/admin/usuarios/<%= u.id %>" title="Ver ficha" aria-label="Ver ficha">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </a>
+                <button class="iconbtn" type="button" data-dialog="dlg-edit-user-<%= u.id %>" title="Editar" aria-label="Editar">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+                </button>
+                <form method="post" action="/admin/usuarios/<%= u.id %>/delete" class="inline" data-confirm="¿Eliminar al usuario “<%= u.display_name || u.username %>”? Se borrarán también sus entrevistas y archivos. No se puede deshacer.">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                  <button class="iconbtn danger" type="submit" title="Eliminar" aria-label="Eliminar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  </button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</section>
+
+<% users.forEach((u) => { %>
+  <dialog id="dlg-edit-user-<%= u.id %>" class="modal" data-strict>
+    <h2>Editar usuario</h2>
+    <form method="post" action="/admin/usuarios/<%= u.id %>/edit" autocomplete="off">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <label>Empresa
+        <select name="company_id" required>
+          <% companies.forEach((co) => { %>
+            <option value="<%= co.id %>" <%= u.company_id === co.id ? 'selected' : '' %>><%= co.name %></option>
+          <% }) %>
+        </select>
+      </label>
+      <label>Usuario (para iniciar sesión)
+        <input type="text" name="username" value="<%= u.username %>" required pattern="[a-z0-9._\-]{3,40}" title="Solo minúsculas, números y . _ - (sin espacios ni mayúsculas). 3 a 40 caracteres." maxlength="40" />
+      </label>
+      <label>Nombre de contacto (nombre real)
+        <input type="text" name="display_name" value="<%= u.display_name || '' %>" maxlength="120" />
+      </label>
+      <div class="modal-actions">
+        <button class="btn btn-primary" type="submit">Guardar cambios</button>
+        <button class="btn btn-ghost" type="button" data-close>Cancelar</button>
+      </div>
+    </form>
+  </dialog>
+<% }) %>
+
+<dialog id="dlg-new-user" class="modal" data-strict>
+  <h2>Nuevo usuario</h2>
+  <% if (companies.length === 0) { %>
+    <p class="muted">Primero registra una empresa en <a href="/admin/empresas">Empresas</a>. Los usuarios deben estar ligados a una empresa.</p>
+    <div class="modal-actions"><button class="btn btn-ghost" type="button" data-close>Cerrar</button></div>
+  <% } else { %>
+    <form method="post" action="/admin/usuarios" autocomplete="off">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <label>Empresa
+        <select name="company_id" required>
+          <option value="">— Selecciona una empresa —</option>
+          <% companies.forEach((co) => { %>
+            <option value="<%= co.id %>"><%= co.name %></option>
+          <% }) %>
+        </select>
+      </label>
+      <label>Usuario (para iniciar sesión)
+        <input type="text" name="username" required pattern="[a-z0-9._\-]{3,40}" title="Solo minúsculas, números y . _ - (sin espacios ni mayúsculas). 3 a 40 caracteres." placeholder="ej. juan.perez" maxlength="40" />
+      </label>
+      <p class="meta">Solo minúsculas, números y <code>. _ -</code> (sin espacios). Es el identificador de acceso.</p>
+      <label>Nombre de contacto (nombre real)
+        <input type="text" name="display_name" maxlength="120" placeholder="ej. Juan Pérez" />
+      </label>
+      <label>Contraseña temporal (déjala vacía para generar una)
+        <input type="text" name="password" maxlength="200" placeholder="(opcional, mín. 10 caracteres)" />
+      </label>
+      <div class="modal-actions">
+        <button class="btn btn-primary" type="submit">Crear usuario</button>
+        <button class="btn btn-ghost" type="button" data-close>Cancelar</button>
+      </div>
+    </form>
+  <% } %>
+</dialog>
+
+<%- include('../partials/footer') %>

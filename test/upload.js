@@ -52,45 +52,50 @@ const check = (n, c) => { if (c) { pass++; console.log('  ✓ ' + n); } else { f
   let csrf = csrfFrom(await res.text());
   await postForm('/login', { _csrf: csrf, username: 'marco', password: 'AdminBusinessCool2026' });
 
-  // crear cliente con contraseña conocida
-  res = await get('/admin/gestion');
+  // crear empresa y usuario con contraseña conocida
+  const ts = Date.now().toString().slice(-5);
+  const cname = 'VID' + ts;
+  res = await get('/admin/empresas');
+  csrf = csrfFrom(await res.text());
+  await postForm('/admin/empresas', { _csrf: csrf, name: cname, contact: '', notes: '' });
+
+  res = await get('/admin/usuarios');
   let html = await res.text();
   csrf = csrfFrom(html);
-  const uname = 'vid' + Date.now().toString().slice(-5);
-  await postForm('/admin/clients', {
-    _csrf: csrf, username: uname, display_name: 'Test Video', company_name: 'X', password: 'ClienteTemporal123',
+  const cid = (html.match(new RegExp('value="(\\d+)">' + cname)) || [])[1];
+  const uname = 'vid' + ts;
+  await postForm('/admin/usuarios', {
+    _csrf: csrf, company_id: cid, username: uname, display_name: 'Test Video', password: 'ClienteTemporal123',
   });
 
-  // localizar id del cliente recién creado
-  res = await get('/admin/gestion');
+  // localizar id del usuario recién creado
+  res = await get('/admin/usuarios');
   html = await res.text();
-  const re = new RegExp('/admin/clients/(\\d+)"[^>]*>\\s*<strong>Test Video');
-  const m = html.match(/\/admin\/clients\/(\d+)/g);
-  // tomamos el primero (más reciente, orden DESC)
+  const m = html.match(/\/admin\/usuarios\/(\d+)/g);
   const clientId = m ? m[0].split('/').pop() : null;
-  check('cliente creado y con id', !!clientId);
+  check('usuario creado y con id', !!clientId);
 
   // subir un .mp4 (debe aceptarse)
-  res = await get('/admin/clients/' + clientId);
+  res = await get('/admin/usuarios/' + clientId);
   csrf = csrfFrom(await res.text());
-  res = await postUpload('/admin/clients/' + clientId + '/upload', csrf, 'demo.mp4', 'video/mp4', Buffer.from('fake-video-bytes'));
+  res = await postUpload('/admin/usuarios/' + clientId + '/upload', csrf, 'demo.mp4', 'video/mp4', Buffer.from('fake-video-bytes'));
   check('subida de .mp4 aceptada (302)', res.status === 302);
 
   // subir un .mp3 (debe aceptarse)
-  res = await get('/admin/clients/' + clientId);
+  res = await get('/admin/usuarios/' + clientId);
   csrf = csrfFrom(await res.text());
-  res = await postUpload('/admin/clients/' + clientId + '/upload', csrf, 'audio.mp3', 'audio/mpeg', Buffer.from('fake-audio'));
+  res = await postUpload('/admin/usuarios/' + clientId + '/upload', csrf, 'audio.mp3', 'audio/mpeg', Buffer.from('fake-audio'));
   check('subida de .mp3 aceptada (302)', res.status === 302);
 
   // subir un .exe (debe rechazarse)
-  res = await get('/admin/clients/' + clientId);
+  res = await get('/admin/usuarios/' + clientId);
   csrf = csrfFrom(await res.text());
-  res = await postUpload('/admin/clients/' + clientId + '/upload', csrf, 'malo.exe', 'application/octet-stream', Buffer.from('MZ'));
+  res = await postUpload('/admin/usuarios/' + clientId + '/upload', csrf, 'malo.exe', 'application/octet-stream', Buffer.from('MZ'));
   const body = await res.text();
   check('subida de .exe rechazada (400)', res.status === 400 && body.includes('Tipo de archivo'));
 
   // confirmar que los archivos válidos aparecen en la ficha
-  res = await get('/admin/clients/' + clientId);
+  res = await get('/admin/usuarios/' + clientId);
   html = await res.text();
   check('demo.mp4 listado', html.includes('demo.mp4'));
   check('audio.mp3 listado', html.includes('audio.mp3'));

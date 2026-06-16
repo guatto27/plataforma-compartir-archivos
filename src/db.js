@@ -27,6 +27,15 @@ db.exec(`
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
+  CREATE TABLE IF NOT EXISTS companies (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    contact TEXT,
+    notes TEXT,
+    active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
   CREATE TABLE IF NOT EXISTS files (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     client_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -88,6 +97,13 @@ const fileCols = db.prepare('PRAGMA table_info(files)').all();
 if (!fileCols.some((c) => c.name === 'interview_id')) {
   db.exec('ALTER TABLE files ADD COLUMN interview_id INTEGER');
   db.exec('CREATE INDEX IF NOT EXISTS idx_files_interview ON files(interview_id)');
+}
+
+// Migración: vincular cada usuario a una empresa (columna añadida si no existe)
+const userCols = db.prepare('PRAGMA table_info(users)').all();
+if (!userCols.some((c) => c.name === 'company_id')) {
+  db.exec('ALTER TABLE users ADD COLUMN company_id INTEGER');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_users_company ON users(company_id)');
 }
 
 // Bootstrap: crea un administrador inicial desde variables de entorno si aún

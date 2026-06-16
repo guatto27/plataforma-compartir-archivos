@@ -1,21 +1,21 @@
 <%- include('../partials/header') %>
 
 <div class="page-head">
-  <a class="back" href="/admin">← Clientes</a>
+  <a class="back" href="/admin/usuarios">← Usuarios</a>
   <h1><%= cliente.display_name || cliente.username %></h1>
   <p class="muted">
     Usuario: <code><%= cliente.username %></code>
-    <% if (cliente.company_name) { %> · <%= cliente.company_name %><% } %>
+    · Empresa: <%= cliente.company_name_real || cliente.company_name || '—' %>
     · <%= cliente.active ? 'Activo' : 'Inactivo' %>
   </p>
 
   <div class="actions">
     <button class="btn btn-primary" type="button" data-dialog="dlg-edit-client">Editar información</button>
-    <form method="post" action="/admin/clients/<%= cliente.id %>/reset-password" class="inline">
+    <form method="post" action="/admin/usuarios/<%= cliente.id %>/reset-password" class="inline">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <button class="btn btn-ghost" type="submit">Restablecer contraseña</button>
     </form>
-    <form method="post" action="/admin/clients/<%= cliente.id %>/toggle-active" class="inline">
+    <form method="post" action="/admin/usuarios/<%= cliente.id %>/toggle-active" class="inline">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <button class="btn btn-ghost" type="submit"><%= cliente.active ? 'Desactivar' : 'Activar' %> acceso</button>
     </form>
@@ -24,16 +24,20 @@
 
 <dialog id="dlg-edit-client" class="modal" data-strict>
   <h2>Editar información</h2>
-  <form method="post" action="/admin/clients/<%= cliente.id %>/edit" autocomplete="off">
+  <form method="post" action="/admin/usuarios/<%= cliente.id %>/edit" autocomplete="off">
     <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <label>Empresa
+      <select name="company_id" required>
+        <% companies.forEach((co) => { %>
+          <option value="<%= co.id %>" <%= cliente.company_id === co.id ? 'selected' : '' %>><%= co.name %></option>
+        <% }) %>
+      </select>
+    </label>
     <label>Usuario (para iniciar sesión)
       <input type="text" name="username" value="<%= cliente.username %>" required pattern="[a-z0-9._\-]{3,40}" title="Solo minúsculas, números y los signos . _ - (sin espacios, mayúsculas ni acentos). 3 a 40 caracteres." maxlength="40" />
     </label>
-    <label>Nombre de contacto
+    <label>Nombre de contacto (nombre real)
       <input type="text" name="display_name" value="<%= cliente.display_name || '' %>" maxlength="120" />
-    </label>
-    <label>Empresa
-      <input type="text" name="company_name" value="<%= cliente.company_name || '' %>" maxlength="120" />
     </label>
     <div class="modal-actions">
       <button class="btn btn-primary" type="submit">Guardar cambios</button>
@@ -47,7 +51,7 @@
   <section class="card">
     <h2>Compartir plantilla / formato</h2>
     <p class="muted">Documentos, hojas de cálculo, presentaciones, imágenes, audio y video. Máx. <%= maxFileMb %> MB por archivo (hasta 10 a la vez).</p>
-    <form method="post" action="/admin/clients/<%= cliente.id %>/upload" enctype="multipart/form-data">
+    <form method="post" action="/admin/usuarios/<%= cliente.id %>/upload" enctype="multipart/form-data">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <label>Archivos
         <input type="file" name="files" multiple required />

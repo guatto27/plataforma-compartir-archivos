@@ -33,10 +33,16 @@ const ck = (n, c) => { c ? ok++ : fail++; console.log((c ? '  ✓ ' : '  ✗ ') 
   const A = jar();
   let r = await get(A, '/login');
   await post(A, '/login', { _csrf: csrf(await r.text()), username: 'marco', password: 'AdminBusinessCool2026' });
-  r = await get(A, '/admin/gestion'); let h = await r.text();
   const persona = 'Ana Zuniga ' + Date.now().toString().slice(-4);
   const u = 'fui' + Date.now().toString().slice(-5);
-  await post(A, '/admin/clients', { _csrf: csrf(h), username: u, display_name: 'FilesUI', company_name: 'X', password: 'ClienteTemporal123' });
+  const cname = 'EMP' + Date.now().toString().slice(-5);
+  // crear empresa
+  r = await get(A, '/admin/empresas'); let h = await r.text();
+  await post(A, '/admin/empresas', { _csrf: csrf(h), name: cname, contact: '', notes: '' });
+  // crear usuario ligado a la empresa
+  r = await get(A, '/admin/usuarios'); h = await r.text();
+  const cidEmp = (h.match(new RegExp('value="(\\d+)">' + cname)) || [])[1];
+  await post(A, '/admin/usuarios', { _csrf: csrf(h), company_id: cidEmp, username: u, display_name: 'FilesUI', password: 'ClienteTemporal123' });
 
   // Cliente login + cambio de contraseña forzado
   const C = jar();
@@ -93,15 +99,15 @@ const ck = (n, c) => { c ? ok++ : fail++; console.log((c ? '  ✓ ' : '  ✗ ') 
   r = await get(A, '/admin/archivos'); h = await r.text();
   ck('admin: no borra archivo ajeno (persiste)', h.includes('plantilla.xlsx'));
 
-  // Admin edita la información del cliente (localiza su id por el usuario único)
-  await get(A, '/admin/gestion'); // primer GET consume la tarjeta de credenciales
-  r = await get(A, '/admin/gestion'); h = await r.text();
+  // Admin edita la información del usuario (localiza su id por el usuario único)
+  await get(A, '/admin/usuarios'); // primer GET consume la tarjeta de credenciales
+  r = await get(A, '/admin/usuarios'); h = await r.text();
   const before = h.slice(0, h.indexOf(u));
-  const idMatches = [...before.matchAll(/\/admin\/clients\/(\d+)/g)];
+  const idMatches = [...before.matchAll(/\/admin\/usuarios\/(\d+)/g)];
   const cid = idMatches.length ? idMatches[idMatches.length - 1][1] : null;
-  await post(A, '/admin/clients/' + cid + '/edit', { _csrf: csrf(h), username: u, display_name: 'FilesUI Editado', company_name: 'Empresa Z' });
-  r = await get(A, '/admin/clients/' + cid); h = await r.text();
-  ck('admin: edita información del cliente', h.includes('FilesUI Editado') && h.includes('Empresa Z'));
+  await post(A, '/admin/usuarios/' + cid + '/edit', { _csrf: csrf(h), company_id: cidEmp, username: u, display_name: 'FilesUI Editado' });
+  r = await get(A, '/admin/usuarios/' + cid); h = await r.text();
+  ck('admin: edita información del usuario', h.includes('FilesUI Editado'));
 
   // Eliminar la entrevista: el archivo se conserva pero queda sin asociar
   r = await get(C, '/app'); h = await r.text();
