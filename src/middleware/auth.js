@@ -19,6 +19,17 @@ function requireRole(role) {
   };
 }
 
+// Requiere personal interno: administrador o colaborador (acceso al área /admin)
+function requireStaff(req, res, next) {
+  if (req.session && req.session.userId && (req.session.role === 'admin' || req.session.role === 'colaborador')) {
+    return next();
+  }
+  return res.status(403).render('error', {
+    title: 'Acceso denegado',
+    message: 'No tienes permiso para ver esta página.',
+  });
+}
+
 // Si el usuario debe cambiar su contraseña, lo forzamos antes de seguir
 function requirePasswordChanged(req, res, next) {
   if (req.session && req.session.mustChangePassword) {
@@ -75,6 +86,7 @@ function csrfProtection(req, res, next) {
 module.exports = {
   requireLogin,
   requireRole,
+  requireStaff,
   requirePasswordChanged,
   csrfProtection,
   verifyCsrf,

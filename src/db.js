@@ -19,7 +19,7 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
-    role TEXT NOT NULL CHECK (role IN ('admin', 'client')),
+    role TEXT NOT NULL CHECK (role IN ('admin', 'client', 'colaborador')),
     display_name TEXT,
     company_name TEXT,
     must_change_password INTEGER NOT NULL DEFAULT 1,
@@ -108,6 +108,35 @@ if (!userCols.some((c) => c.name === 'company_id')) {
 // Migración: correo electrónico del usuario (para el correo de bienvenida)
 if (!userCols.some((c) => c.name === 'email')) {
   db.exec('ALTER TABLE users ADD COLUMN email TEXT');
+}
+
+// Migración: permitir el rol 'colaborador'. En bases creadas con el CHECK
+// antiguo (solo admin/client) se reconstruye la tabla users preservando datos.
+const usersSql = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='users'").get();
+if (usersSql && usersSql.sql && !usersSql.sql.includes("'colaborador'")) {
+  db.exec('PRAGMA foreign_keys = OFF');
+  db.exec(`CREATE TABLE users_new (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    role TEXT NOT NULL CHECK (role IN ('admin', 'client', 'colaborador')),
+    display_name TEXT,
+    company_name TEXT,
+    must_change_password INTEGER NOT NULL DEFAULT 1,
+    active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    company_id INTEGER,
+    email TEXT
+  )`);
+  db.exec(
+    `INSERT INTO users_new (id, username, password_hash, role, display_name, company_name, must_change_password, active, created_at, company_id, email)
+     SELECT id, username, password_hash, role, display_name, company_name, must_change_password, active, created_at, company_id, email FROM users`
+  );
+  db.exec('DROP TABLE users');
+  db.exec('ALTER TABLE users_new RENAME TO users');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_users_company ON users(company_id)');
+  db.exec('PRAGMA foreign_keys = ON');
+  console.log('[migración] tabla users actualizada para admitir el rol "colaborador".');
 }
 
 // Bootstrap: crea un administrador inicial desde variables de entorno si aún

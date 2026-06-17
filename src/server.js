@@ -103,7 +103,8 @@ app.use('/admin', require('./routes/admin'));
 // Raíz
 app.get('/', (req, res) => {
   if (!req.session.userId) return res.redirect('/login');
-  return res.redirect(req.session.role === 'admin' ? '/admin' : '/app');
+  const isStaff = req.session.role === 'admin' || req.session.role === 'colaborador';
+  return res.redirect(isStaff ? '/admin' : '/app');
 });
 
 // 404

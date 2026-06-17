@@ -22,11 +22,12 @@
         </span>
       </a>
       <% if (currentUser) { %>
-        <% var navBase = currentUser.role === 'admin' ? '/admin' : '/app'; %>
+        <% var isStaff = currentUser.role === 'admin' || currentUser.role === 'colaborador'; %>
+        <% var navBase = isStaff ? '/admin' : '/app'; %>
         <nav class="nav">
           <a href="<%= navBase %>">Entrevistas</a>
           <a href="<%= navBase %>/archivos">Archivos</a>
-          <% if (currentUser.role === 'admin') { %>
+          <% if (isStaff) { %>
             <a href="/admin/empresas">Empresas</a>
             <a href="/admin/usuarios">Usuarios</a>
           <% } %>

@@ -6,7 +6,9 @@
       <h1>Empresas</h1>
       <p class="muted">Registra las empresas (clientes). Después, en <a href="/admin/usuarios">Usuarios</a>, creas los accesos ligados a cada empresa.</p>
     </div>
-    <button class="btn btn-primary" type="button" data-dialog="dlg-new-company">+ Nueva empresa</button>
+    <% if (canManage) { %>
+      <button class="btn btn-primary" type="button" data-dialog="dlg-new-company">+ Nueva empresa</button>
+    <% } %>
   </div>
 </div>
 
@@ -18,7 +20,7 @@
     <div class="table-wrap">
       <table class="table">
         <thead>
-          <tr><th>Empresa</th><th>Contacto</th><th>Usuarios</th><th class="ta-actions">Acciones</th></tr>
+          <tr><th>Empresa</th><th>Contacto</th><th>Usuarios</th><% if (canManage) { %><th class="ta-actions">Acciones</th><% } %></tr>
         </thead>
         <tbody>
           <% companies.forEach((c) => { %>
@@ -26,6 +28,7 @@
               <td class="fname"><%= c.name %><% if (c.notes) { %><div class="meta"><%= c.notes %></div><% } %></td>
               <td><%= c.contact || '—' %></td>
               <td><%= c.user_count %></td>
+              <% if (canManage) { %>
               <td class="ta-actions">
                 <button class="iconbtn" type="button" data-dialog="dlg-edit-company-<%= c.id %>" title="Editar" aria-label="Editar">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
@@ -37,6 +40,7 @@
                   </button>
                 </form>
               </td>
+              <% } %>
             </tr>
           <% }) %>
         </tbody>
@@ -45,6 +49,7 @@
   <% } %>
 </section>
 
+<% if (canManage) { %>
 <% companies.forEach((c) => { %>
   <dialog id="dlg-edit-company-<%= c.id %>" class="modal" data-strict>
     <h2>Editar empresa</h2>
@@ -86,5 +91,6 @@
     </div>
   </form>
 </dialog>
+<% } %>
 
 <%- include('../partials/footer') %>

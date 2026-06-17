@@ -5,10 +5,12 @@
   <h1><%= cliente.display_name || cliente.username %></h1>
   <p class="muted">
     Usuario: <code><%= cliente.username %></code>
-    · Empresa: <%= cliente.company_name_real || cliente.company_name || '—' %>
+    · Tipo: <%= cliente.role === 'colaborador' ? 'Colaborador' : 'Usuario' %>
+    · Empresa: <%= cliente.role === 'colaborador' ? '—' : (cliente.company_name_real || cliente.company_name || '—') %>
     · <%= cliente.active ? 'Activo' : 'Inactivo' %>
   </p>
 
+  <% if (canManage) { %>
   <div class="actions">
     <button class="btn btn-primary" type="button" data-dialog="dlg-edit-client">Editar información</button>
     <form method="post" action="/admin/usuarios/<%= cliente.id %>/reset-password" class="inline">
@@ -20,14 +22,23 @@
       <button class="btn btn-ghost" type="submit"><%= cliente.active ? 'Desactivar' : 'Activar' %> acceso</button>
     </form>
   </div>
+  <% } %>
 </div>
 
+<% if (canManage) { %>
 <dialog id="dlg-edit-client" class="modal" data-strict>
   <h2>Editar información</h2>
   <form method="post" action="/admin/usuarios/<%= cliente.id %>/edit" autocomplete="off">
     <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-    <label>Empresa
-      <select name="company_id" required>
+    <label>Tipo de usuario
+      <select name="role">
+        <option value="client" <%= cliente.role !== 'colaborador' ? 'selected' : '' %>>Usuario (cliente de una empresa)</option>
+        <option value="colaborador" <%= cliente.role === 'colaborador' ? 'selected' : '' %>>Colaborador (equipo <%= brand.name %>)</option>
+      </select>
+    </label>
+    <label>Empresa (solo si es Usuario cliente)
+      <select name="company_id">
+        <option value="">— Sin empresa (colaborador) —</option>
         <% companies.forEach((co) => { %>
           <option value="<%= co.id %>" <%= cliente.company_id === co.id ? 'selected' : '' %>><%= co.name %></option>
         <% }) %>
@@ -48,6 +59,7 @@
     </div>
   </form>
 </dialog>
+<% } %>
 
 <div class="grid grid-2">
 

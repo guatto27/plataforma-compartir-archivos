@@ -17,6 +17,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const {
   requireLogin,
   requireRole,
+  requireStaff,
   requirePasswordChanged,
   verifyCsrf,
   denyCsrf,
@@ -24,7 +25,11 @@ const {
 
 const router = express.Router();
 
-router.use(requireLogin, requireRole('admin'), requirePasswordChanged);
+// Acceso al área de equipo: administrador o colaborador.
+router.use(requireLogin, requireStaff, requirePasswordChanged);
+
+// Gestión de cuentas (crear/editar/eliminar empresas y usuarios): SOLO admin.
+const requireAdmin = requireRole('admin');
 
 // Acciones por archivo y por entrevista
 router.use(makeFileRouter());
@@ -196,10 +201,10 @@ router.get('/empresas', (req, res) => {
        FROM companies c ORDER BY c.created_at DESC`
     )
     .all();
-  res.render('admin/empresas', { title: 'Empresas', companies });
+  res.render('admin/empresas', { title: 'Empresas', companies, canManage: req.session.role === 'admin' });
 });
 
-router.post('/empresas', (req, res) => {
+router.post('/empresas', requireAdmin, (req, res) => {
   const name = String(req.body.name || '').trim().slice(0, 160);
   const contact = String(req.body.contact || '').trim().slice(0, 160);
   const notes = String(req.body.notes || '').trim().slice(0, 500);
@@ -213,7 +218,7 @@ router.post('/empresas', (req, res) => {
   res.redirect('/admin/empresas');
 });
 
-router.post('/empresas/:id/edit', (req, res) => {
+router.post('/empresas/:id/edit', requireAdmin, (req, res) => {
   const company = db.prepare('SELECT * FROM companies WHERE id = ?').get(req.params.id);
   if (!company) {
     return res.status(404).render('error', { title: 'No encontrado', message: 'Empresa no encontrada.' });
@@ -231,7 +236,7 @@ router.post('/empresas/:id/edit', (req, res) => {
   res.redirect('/admin/empresas');
 });
 
-router.post('/empresas/:id/delete', (req, res) => {
+router.post('/empresas/:id/delete', requireAdmin, (req, res) => {
   const company = db.prepare('SELECT * FROM companies WHERE id = ?').get(req.params.id);
   if (!company) {
     return res.status(404).render('error', { title: 'No encontrado', message: 'Empresa no encontrada.' });
@@ -258,16 +263,17 @@ router.get('/usuarios', (req, res) => {
               (SELECT COUNT(*) FROM files f WHERE f.client_id = u.id AND f.direction = 'to_admin') AS files_in,
               (SELECT COUNT(*) FROM interviews iv WHERE iv.client_id = u.id) AS links
        FROM users u LEFT JOIN companies co ON co.id = u.company_id
-       WHERE u.role = 'client' ORDER BY u.created_at DESC`
+       WHERE u.role IN ('client', 'colaborador') ORDER BY u.created_at DESC`
     )
     .all();
 
+  const clients = users.filter((u) => u.role === 'client');
   const summary = {
     total: users.length,
-    withInterview: users.filter((u) => u.links > 0).length,
-    withUploads: users.filter((u) => u.files_in > 0).length,
+    collaborators: users.filter((u) => u.role === 'colaborador').length,
+    withInterview: clients.filter((u) => u.links > 0).length,
+    pending: clients.filter((u) => u.active && (u.links === 0 || u.files_in === 0)).length,
   };
-  summary.pending = users.filter((u) => u.active && (u.links === 0 || u.files_in === 0)).length;
 
   // Capturamos y borramos antes del render: las credenciales se muestran una sola vez.
   const newCredentials = req.session.newCredentials || null;
@@ -279,15 +285,22 @@ router.get('/usuarios', (req, res) => {
     companies: activeCompanies(),
     summary,
     newCredentials,
+    canManage: req.session.role === 'admin',
   });
 });
 
-// Crear un usuario (ligado a una empresa)
-router.post('/usuarios', async (req, res) => {
-  const company = db.prepare(`SELECT * FROM companies WHERE id = ? AND active = 1`).get(req.body.company_id);
-  if (!company) {
-    req.session.flash = { type: 'error', text: 'Selecciona una empresa válida. Si no hay, créala en Empresas primero.' };
-    return res.redirect('/admin/usuarios');
+// Crear un usuario. role = 'client' (cliente de una empresa) o 'colaborador'
+// (equipo BusinessCool, sin empresa).
+router.post('/usuarios', requireAdmin, async (req, res) => {
+  const role = req.body.role === 'colaborador' ? 'colaborador' : 'client';
+
+  let company = null;
+  if (role === 'client') {
+    company = db.prepare(`SELECT * FROM companies WHERE id = ? AND active = 1`).get(req.body.company_id);
+    if (!company) {
+      req.session.flash = { type: 'error', text: 'Selecciona una empresa válida para el usuario cliente. Si no hay, créala en Empresas primero.' };
+      return res.redirect('/admin/usuarios');
+    }
   }
 
   const username = String(req.body.username || '').trim().toLowerCase();
@@ -316,21 +329,25 @@ router.post('/usuarios', async (req, res) => {
     return res.redirect('/admin/usuarios');
   }
 
+  const companyName = company ? company.name : config.brand.name;
+  const companyId = company ? company.id : null;
+
   const hash = bcrypt.hashSync(password, 12);
   db.prepare(
     `INSERT INTO users (username, password_hash, role, display_name, company_name, company_id, email, must_change_password)
-     VALUES (?, ?, 'client', ?, ?, ?, ?, 1)`
-  ).run(username, hash, displayName || username, company.name, company.id, email || null);
-  logAction(req.session.userId, 'create_user', `${username} (${company.name})`, req.ip);
+     VALUES (?, ?, ?, ?, ?, ?, ?, 1)`
+  ).run(username, hash, role, displayName || username, companyName, companyId, email || null);
+  logAction(req.session.userId, 'create_user', `${username} (${role}: ${companyName})`, req.ip);
 
   let mailMsg = '';
   if (email) {
-    const result = await sendWelcomeEmail({ to: email, displayName: displayName || username, username, password, companyName: company.name });
+    const result = await sendWelcomeEmail({ to: email, displayName: displayName || username, username, password, companyName });
     mailMsg = result.sent ? ` Correo de bienvenida enviado a ${email}.` : ` (No se pudo enviar el correo: ${result.error}.)`;
   }
 
+  const label = role === 'colaborador' ? 'Colaborador' : 'Usuario';
   req.session.newCredentials = { username, password };
-  req.session.flash = { type: 'success', text: `Usuario creado.${mailMsg} Copia y comparte las credenciales por un canal seguro.` };
+  req.session.flash = { type: 'success', text: `${label} creado.${mailMsg} Copia y comparte las credenciales por un canal seguro.` };
   res.redirect('/admin/usuarios');
 });
 
@@ -340,7 +357,7 @@ router.get('/usuarios/:id', (req, res) => {
     .prepare(
       `SELECT u.*, co.name AS company_name_real
        FROM users u LEFT JOIN companies co ON co.id = u.company_id
-       WHERE u.id = ? AND u.role = 'client'`
+       WHERE u.id = ? AND u.role IN ('client', 'colaborador')`
     )
     .get(req.params.id);
   if (!cliente) {
@@ -366,6 +383,7 @@ router.get('/usuarios/:id', (req, res) => {
     interviews,
     allowedExt: config.allowedExt,
     maxFileMb: Math.round(config.maxFileBytes / (1024 * 1024)),
+    canManage: req.session.role === 'admin',
   });
 });
 
@@ -398,16 +416,16 @@ router.post('/usuarios/:id/upload', upload.array('files', 10), (req, res) => {
   res.redirect(`/admin/usuarios/${client.id}`);
 });
 
-// Editar un usuario (usuario de acceso, nombre, empresa)
-router.post('/usuarios/:id/edit', (req, res) => {
-  const client = db.prepare(`SELECT * FROM users WHERE id = ? AND role = 'client'`).get(req.params.id);
+// Editar un usuario (acceso, nombre, empresa, rol, correo)
+router.post('/usuarios/:id/edit', requireAdmin, (req, res) => {
+  const client = db.prepare(`SELECT * FROM users WHERE id = ? AND role IN ('client', 'colaborador')`).get(req.params.id);
   if (!client) {
     return res.status(404).render('error', { title: 'No encontrado', message: 'Usuario no encontrado.' });
   }
   const username = String(req.body.username || '').trim().toLowerCase();
   const displayName = String(req.body.display_name || '').trim().slice(0, 120);
   const email = String(req.body.email || '').trim().slice(0, 160);
-  const company = db.prepare('SELECT * FROM companies WHERE id = ?').get(req.body.company_id);
+  const role = req.body.role === 'colaborador' ? 'colaborador' : 'client';
   const back = `/admin/usuarios/${client.id}`;
 
   if (!USERNAME_RE.test(username)) {
@@ -422,27 +440,33 @@ router.post('/usuarios/:id/edit', (req, res) => {
     req.session.flash = { type: 'error', text: 'Ese usuario ya está en uso por otra cuenta.' };
     return res.redirect(back);
   }
-  if (!company) {
-    req.session.flash = { type: 'error', text: 'Selecciona una empresa válida.' };
-    return res.redirect(back);
+
+  let company = null;
+  if (role === 'client') {
+    company = db.prepare('SELECT * FROM companies WHERE id = ?').get(req.body.company_id);
+    if (!company) {
+      req.session.flash = { type: 'error', text: 'Selecciona una empresa válida para el usuario cliente.' };
+      return res.redirect(back);
+    }
   }
 
-  db.prepare('UPDATE users SET username = ?, display_name = ?, company_id = ?, company_name = ?, email = ? WHERE id = ?').run(
+  db.prepare('UPDATE users SET username = ?, display_name = ?, role = ?, company_id = ?, company_name = ?, email = ? WHERE id = ?').run(
     username,
     displayName || username,
-    company.id,
-    company.name,
+    role,
+    company ? company.id : null,
+    company ? company.name : config.brand.name,
     email || null,
     client.id
   );
-  logAction(req.session.userId, 'edit_user', `${client.username} -> ${username}`, req.ip);
+  logAction(req.session.userId, 'edit_user', `${client.username} -> ${username} (${role})`, req.ip);
   req.session.flash = { type: 'success', text: 'Información del usuario actualizada.' };
   res.redirect(back);
 });
 
 // Restablecer contraseña de un usuario
-router.post('/usuarios/:id/reset-password', async (req, res) => {
-  const client = db.prepare(`SELECT * FROM users WHERE id = ? AND role = 'client'`).get(req.params.id);
+router.post('/usuarios/:id/reset-password', requireAdmin, async (req, res) => {
+  const client = db.prepare(`SELECT * FROM users WHERE id = ? AND role IN ('client', 'colaborador')`).get(req.params.id);
   if (!client) {
     return res.status(404).render('error', { title: 'No encontrado', message: 'Usuario no encontrado.' });
   }
@@ -466,8 +490,8 @@ router.post('/usuarios/:id/reset-password', async (req, res) => {
 });
 
 // Activar / desactivar acceso de un usuario
-router.post('/usuarios/:id/toggle-active', (req, res) => {
-  const client = db.prepare(`SELECT * FROM users WHERE id = ? AND role = 'client'`).get(req.params.id);
+router.post('/usuarios/:id/toggle-active', requireAdmin, (req, res) => {
+  const client = db.prepare(`SELECT * FROM users WHERE id = ? AND role IN ('client', 'colaborador')`).get(req.params.id);
   if (!client) {
     return res.status(404).render('error', { title: 'No encontrado', message: 'Usuario no encontrado.' });
   }
@@ -479,8 +503,8 @@ router.post('/usuarios/:id/toggle-active', (req, res) => {
 });
 
 // Eliminar un usuario por completo (sus entrevistas, archivos y comentarios)
-router.post('/usuarios/:id/delete', (req, res) => {
-  const client = db.prepare(`SELECT * FROM users WHERE id = ? AND role = 'client'`).get(req.params.id);
+router.post('/usuarios/:id/delete', requireAdmin, (req, res) => {
+  const client = db.prepare(`SELECT * FROM users WHERE id = ? AND role IN ('client', 'colaborador')`).get(req.params.id);
   if (!client) {
     return res.status(404).render('error', { title: 'No encontrado', message: 'Usuario no encontrado.' });
   }
