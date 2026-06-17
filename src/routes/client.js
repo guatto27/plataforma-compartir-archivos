@@ -39,24 +39,8 @@ router.get('/', (req, res) => {
   res.render('client/interviews', { title: 'Entrevistas', interviews });
 });
 
-// Crear una entrevista
-router.post('/interviews', (req, res) => {
-  const nombre = String(req.body.nombre || '').trim().slice(0, 160);
-  const cargo = String(req.body.cargo || '').trim().slice(0, 160);
-  const area = String(req.body.area || '').trim().slice(0, 160);
-
-  if (!nombre) {
-    req.session.flash = { type: 'error', text: 'El nombre de la persona entrevistada es obligatorio.' };
-    return res.redirect('/app');
-  }
-  db.prepare(
-    `INSERT INTO interviews (client_id, created_by, nombre, cargo, area) VALUES (?, ?, ?, ?, ?)`
-  ).run(req.session.userId, req.session.userId, nombre, cargo, area);
-  logAction(req.session.userId, 'interview_create', nombre, req.ip);
-
-  req.session.flash = { type: 'success', text: 'Entrevista agregada.' };
-  res.redirect('/app');
-});
+// Nota: el usuario (cliente) NO crea entrevistas; las registra el equipo
+// (admin/colaborador). El usuario solo pega el link y asocia archivos.
 
 // Página de Archivos (opcionalmente filtrada por entrevista)
 router.get('/archivos', (req, res) => {

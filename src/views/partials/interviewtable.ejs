@@ -1,7 +1,7 @@
 <%
-  var base = currentUser.role === 'admin' ? '/admin' : '/app';
-  var isAdmin = currentUser.role === 'admin';
-  var cols = isAdmin ? 6 : 5;
+  var isStaff = currentUser.role === 'admin' || currentUser.role === 'colaborador';
+  var base = isStaff ? '/admin' : '/app';
+  var cols = isStaff ? 6 : 5;
 %>
 <div class="table-wrap">
   <table class="table">
@@ -10,21 +10,21 @@
         <th>Nombre</th>
         <th>Cargo</th>
         <th>Área</th>
-        <% if (isAdmin) { %><th>Cliente</th><% } %>
+        <% if (isStaff) { %><th>Cliente</th><% } %>
         <th>Link de entrevista</th>
         <th>Archivos</th>
       </tr>
     </thead>
     <tbody>
       <% if (!interviews.length) { %>
-        <tr><td colspan="<%= cols %>" class="empty">Aún no hay entrevistas. Usa “Agregar entrevista”.</td></tr>
+        <tr><td colspan="<%= cols %>" class="empty"><% if (isStaff) { %>Aún no hay entrevistas. Usa “Agregar entrevista”.<% } else { %>Aún no hay entrevistas registradas para ti. El equipo de <%= brand.name %> las registrará aquí.<% } %></td></tr>
       <% } %>
       <% interviews.forEach(function (iv) { %>
         <tr>
           <td class="fname"><%= iv.nombre %></td>
           <td><%= iv.cargo || '—' %></td>
           <td><%= iv.area || '—' %></td>
-          <% if (isAdmin) { %><td><%= iv.client_name || iv.client_username || '—' %></td><% } %>
+          <% if (isStaff) { %><td><%= iv.client_name || iv.client_username || '—' %></td><% } %>
           <td>
             <% if (iv.interview_url) { %>
               <a href="<%= iv.interview_url %>" target="_blank" rel="noopener noreferrer">Ver entrevista ↗</a>
@@ -45,12 +45,14 @@
           <td>
             <a class="btn btn-ghost btn-sm" href="<%= base %>/archivos?entrevista=<%= iv.id %>">+ Agregar</a>
             <span class="meta"><%= iv.file_count %> archivo(s)</span>
+            <% if (isStaff) { %>
             <form method="post" action="<%= base %>/interviews/<%= iv.id %>/delete" class="inline" data-confirm="¿Eliminar la entrevista de “<%= iv.nombre %>”? Los archivos se conservan, pero quedan sin asociar.">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
               <button class="iconbtn danger" type="submit" title="Eliminar entrevista" aria-label="Eliminar entrevista">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
               </button>
             </form>
+            <% } %>
           </td>
         </tr>
       <% }) %>

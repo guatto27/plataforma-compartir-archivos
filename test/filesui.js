@@ -44,6 +44,16 @@ const ck = (n, c) => { c ? ok++ : fail++; console.log((c ? '  ✓ ' : '  ✗ ') 
   const cidEmp = (h.match(new RegExp('value="(\\d+)">' + cname)) || [])[1];
   await post(A, '/admin/usuarios', { _csrf: csrf(h), company_id: cidEmp, username: u, display_name: 'FilesUI', password: 'ClienteTemporal123' });
 
+  // El ADMIN crea la entrevista para ese usuario (el usuario ya no las crea).
+  // Localizamos el id del usuario por su username único (en la lista de Usuarios).
+  await get(A, '/admin/usuarios'); // consume la tarjeta de credenciales
+  r = await get(A, '/admin/usuarios'); h = await r.text();
+  const uIds = [...h.slice(0, h.indexOf(u)).matchAll(/\/admin\/usuarios\/(\d+)/g)];
+  const destId = uIds.length ? uIds[uIds.length - 1][1] : null;
+  ck('admin localiza al usuario', !!destId);
+  r = await get(A, '/admin'); h = await r.text();
+  await post(A, '/admin/interviews', { _csrf: csrf(h), client_id: destId, nombre: persona, cargo: 'Gerente', area: 'Operaciones' });
+
   // Cliente login + cambio de contraseña forzado
   const C = jar();
   r = await get(C, '/login');
@@ -51,15 +61,11 @@ const ck = (n, c) => { c ? ok++ : fail++; console.log((c ? '  ✓ ' : '  ✗ ') 
   r = await get(C, '/cambiar-password');
   await post(C, '/cambiar-password', { _csrf: csrf(await r.text()), current: 'ClienteTemporal123', next: 'ClienteNuevo2026', confirm: 'ClienteNuevo2026' });
 
-  // Entrevistas es la página principal
+  // Entrevistas es la página principal; el usuario VE la entrevista creada por el admin
   r = await get(C, '/app'); h = await r.text();
   ck('cliente: /app es Entrevistas', h.includes('<h1>Entrevistas</h1>'));
-
-  // Crear una entrevista
-  await post(C, '/app/interviews', { _csrf: csrf(h), nombre: persona, cargo: 'Gerente', area: 'Operaciones' });
-  r = await get(C, '/app'); h = await r.text();
-  ck('cliente: entrevista aparece (nombre)', h.includes(persona));
-  ck('cliente: muestra cargo y área', h.includes('Gerente') && h.includes('Operaciones'));
+  ck('cliente: ve la entrevista creada por el admin', h.includes(persona));
+  ck('cliente: NO ve botón Agregar entrevista', !h.includes('dlg-add-interview'));
   const ivid = (h.match(/\/app\/interviews\/(\d+)\/link/) || [])[1];
   ck('cliente: id de entrevista localizado', !!ivid);
 
@@ -109,13 +115,14 @@ const ck = (n, c) => { c ? ok++ : fail++; console.log((c ? '  ✓ ' : '  ✗ ') 
   r = await get(A, '/admin/usuarios/' + cid); h = await r.text();
   ck('admin: edita información del usuario', h.includes('FilesUI Editado'));
 
-  // Eliminar la entrevista: el archivo se conserva pero queda sin asociar
+  // El usuario NO puede eliminar entrevistas (solo el equipo): debe dar 403
   r = await get(C, '/app'); h = await r.text();
-  await post(C, '/app/interviews/' + ivid + '/delete', { _csrf: csrf(h) });
+  const delTry = await post(C, '/app/interviews/' + ivid + '/delete', { _csrf: csrf(h) });
+  ck('cliente: NO puede eliminar entrevista (403)', delTry.status === 403);
   r = await get(C, '/app'); h = await r.text();
-  ck('cliente: entrevista eliminada', !h.includes(persona));
+  ck('cliente: la entrevista sigue registrada', h.includes(persona));
   r = await get(C, '/app/archivos'); h = await r.text();
-  ck('cliente: archivo se conserva tras borrar entrevista', h.includes('plantilla.xlsx'));
+  ck('cliente: su archivo sigue disponible', h.includes('plantilla.xlsx'));
 
   // El dueño elimina su archivo
   await post(C, '/app/file/' + fid + '/delete', { _csrf: csrf(h) });

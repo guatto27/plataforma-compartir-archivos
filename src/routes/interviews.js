@@ -41,8 +41,11 @@ function makeInterviewActionsRouter() {
     return res.redirect(req.baseUrl);
   });
 
-  // Eliminar una entrevista (los archivos quedan, pero se desvinculan)
+  // Eliminar una entrevista (solo personal: admin o colaborador; el usuario no)
   router.post('/interviews/:id/delete', (req, res) => {
+    if (req.session.role !== 'admin' && req.session.role !== 'colaborador') {
+      return res.status(403).render('error', { title: 'Acceso denegado', message: 'No tienes permiso para eliminar entrevistas.' });
+    }
     const iv = getAccessibleInterview(req, req.params.id);
     if (!iv) return res.status(404).render('error', { title: 'No encontrado', message: 'Entrevista no encontrada.' });
 
