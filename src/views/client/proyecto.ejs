@@ -6,7 +6,7 @@
   <p class="muted">El proyecto avanza por fases, cada una con un entregable formal obligatorio. La <strong>Fase 1 — Diagnóstico As-Is</strong> levanta los requerimientos, mapea los procesos actuales e integra los hallazgos: es la materia prima sobre la que se construye el rediseño To-Be con IA.</p>
 </div>
 
-<div class="pipeline">
+<div class="pipeline"<%= phases.length === 1 ? ' style="grid-template-columns: minmax(0, 440px)"' : '' %>>
   <% phases.forEach(function (p) { %>
     <div class="phase <%= p.state %>">
       <div class="ph-state"><%= p.label %></div>

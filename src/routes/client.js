@@ -100,7 +100,8 @@ const SAMPLE_MINUTA = {
 // Mi proyecto (pipeline)
 router.get('/', (req, res) => {
   res.render('client/proyecto', {
-    title: 'Mi proyecto', active: 'proyecto', companyName: companyOf(req), phases: PIPELINE,
+    title: 'Mi proyecto', active: 'proyecto', companyName: companyOf(req),
+    phases: PIPELINE.slice(0, 1), // por ahora solo la Fase 1; las demás se agregan después
   });
 });
 
