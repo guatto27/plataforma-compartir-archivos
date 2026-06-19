@@ -38,22 +38,22 @@ const PIPELINE = [
       {
         n: 1, state: 'current', stateLabel: 'En proceso',
         t: 'Levantamiento de Requerimientos', paso: 'Paso 1 · Captura de Información',
-        desc: 'Entrevistas y encuestas IMA con las partes interesadas para entender su proceso. Es la fuente de materia prima: se escucha activamente a usuarios, líderes de área y operadores para recolectar sus dolores, necesidades y expectativas sin filtros.',
+        desc: 'Conversamos contigo y tu equipo para entender cómo funciona tu operación hoy. Identificamos tus retos, necesidades y objetivos para que el proyecto esté alineado desde el inicio con lo que realmente importa para tu organización.',
       },
       {
         n: 2, state: 'pending', stateLabel: 'Pendiente',
         t: 'Mapeo de Procesos Actuales (As-Is)', paso: 'Paso 2 · Diagnóstico Fotográfico',
-        desc: 'Documentar cómo se hacen las cosas actualmente. Con la información recolectada se plasma de forma visual y documental la realidad de la organización hoy, identificando cuellos de botella, retrabajos y tareas manuales que absorben tiempo excesivo.',
+        desc: 'Documentamos de forma visual cómo opera tu organización hoy. Detectamos los cuellos de botella, tareas repetitivas y áreas de mejora en tus procesos actuales para tener un diagnóstico claro y objetivo.',
       },
       {
         n: 3, state: 'pending', stateLabel: 'Pendiente',
         t: 'Informe de Integración de Hallazgos', paso: 'Paso 3 · Análisis y Cruce de Datos',
-        desc: 'Transformar datos dispersos en una lectura unificada. Cruza las notas de las entrevistas y el mapa As-Is para unificar criterios, detectar contradicciones entre áreas, datos duplicados y las brechas (gaps) entre la realidad actual y el potencial tecnológico.',
+        desc: 'Consolidamos toda la información recopilada en un informe ejecutivo. Te presentamos los hallazgos clave, las brechas identificadas entre tu operación actual y tu potencial, y las oportunidades concretas de mejora con IA.',
       },
       {
         n: 4, state: 'pending', stateLabel: 'Pendiente',
         t: 'Mapeo de Procesos Deseados (To-Be)', paso: 'Paso 4 · Rediseño Optimizado',
-        desc: 'Modelar y documentar el proceso deseado. Una vez que sabes qué está mal y analizaste las causas raíz, diseñas el proceso ideal: cómo operará la organización con la nueva plataforma a la medida para automatizar y agilizar los flujos.',
+        desc: 'Diseñamos juntos cómo debería operar tu organización con IA integrada. Te mostramos el proceso ideal: optimizado, automatizado y listo para implementar, con una visión clara del cambio que verás en tu operación.',
       },
     ],
     entregable: 'Diagnóstico y Levantamiento',
