@@ -6,145 +6,233 @@
       <p class="muted" style="margin:0 0 2px"><%= m.company_name || 'Sin empresa' %> · <%= m.fecha %></p>
       <h1><%= m.titulo %></h1>
       <span class="meta"><%= fmtObj.label %></span>
-      <% if (m.firmada) { %><span class="st aprob" style="margin-left:8px">Firmada</span><% } %>
-      <% if (m.publicada) { %><span class="st rev" style="margin-left:8px">Publicada</span><% } %>
+      <% if (m.firmada)   { %><span class="st aprob" style="margin-left:8px">Firmada</span><% } %>
+      <% if (m.publicada) { %><span class="st rev"   style="margin-left:8px">Publicada</span><% } %>
     </div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
       <form method="post" action="/admin/minutas/<%= m.id %>/publicar">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
         <button class="btn <%= m.publicada ? 'btn-ghost' : 'btn-primary' %>" type="submit">
           <%= m.publicada ? 'Despublicar' : 'Publicar al cliente' %>
         </button>
       </form>
+      <% if (m.archivo_path) { %>
+        <a href="/admin/minutas/<%= m.id %>/descargar" class="btn btn-ghost" style="display:inline-flex;align-items:center;gap:6px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Descargar
+        </a>
+      <% } %>
       <a href="/admin/minutas" class="btn btn-ghost">← Volver</a>
     </div>
   </div>
 </div>
 
-<div class="minuta-grid">
+<% const isPdf = m.archivo_path && m.archivo_path.toLowerCase().match(/\.pdf$/); %>
 
-  <!-- ── Panel izquierdo: transcripción + generar ── -->
-  <div>
-    <section class="card" style="margin-bottom:20px">
-      <h2>Transcripción de la reunión</h2>
-      <p class="muted">Pega aquí el texto completo de la reunión o la transcripción de audio.</p>
-      <form method="post" action="/admin/minutas/<%= m.id %>/guardar">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <input type="hidden" name="campo" value="transcripcion" />
-        <textarea name="valor" rows="10" placeholder="Pega la transcripción aquí…" style="width:100%;resize:vertical"><%= m.transcripcion || '' %></textarea>
-        <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap">
-          <button class="btn btn-ghost" type="submit">Guardar transcripción</button>
-          <% if (!m.firmada) { %>
-            <form method="post" action="/admin/minutas/<%= m.id %>/generar" style="display:inline">
-              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-              <button class="btn btn-primary" type="submit">✨ Generar minuta con IA</button>
-            </form>
-          <% } %>
-        </div>
-      </form>
-    </section>
+<% if (isPdf) { %>
+  <!-- ═══ LAYOUT PDF: izquierda=firma, derecha=vista previa ═══ -->
+  <div style="display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start">
 
-    <!-- ── Formato ── -->
-    <% if (!m.firmada) { %>
-    <section class="card" style="margin-bottom:20px">
-      <h2>Formato de la minuta</h2>
-      <form method="post" action="/admin/minutas/<%= m.id %>/guardar">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <input type="hidden" name="campo" value="formato" />
-        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
-          <% FORMATOS.forEach(function(f) { %>
-            <label class="fmt-option <%= m.formato === f.id ? 'selected' : '' %>">
-              <input type="radio" name="valor" value="<%= f.id %>" <%= m.formato === f.id ? 'checked' : '' %> />
-              <div>
-                <strong><%= f.label %></strong>
-                <span class="muted"> — <%= f.desc %></span>
+    <!-- Panel izquierdo: firma -->
+    <div>
+      <section class="card">
+        <h2 style="margin-top:0">Firma electrónica (e.firma SAT)</h2>
+
+        <% if (m.firmada) { %>
+          <div class="flash flash-success" style="margin:0 0 16px">
+            <strong>Documento firmado</strong>
+          </div>
+          <dl style="font-size:13px;display:grid;grid-template-columns:auto 1fr;gap:4px 10px;margin:0 0 16px">
+            <dt class="muted">Nombre</dt><dd style="margin:0;word-break:break-all"><%= m.firma_nombre %></dd>
+            <dt class="muted">No. serie</dt><dd style="margin:0;word-break:break-all;font-size:11px"><%= m.firma_serial %></dd>
+            <dt class="muted">Fecha</dt><dd style="margin:0"><%= m.firma_fecha %></dd>
+          </dl>
+          <a href="/admin/minutas/<%= m.id %>/descargar" class="btn btn-primary" style="display:inline-flex;align-items:center;gap:8px;width:100%;justify-content:center">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Descargar PDF firmado
+          </a>
+
+        <% } else { %>
+          <p class="muted" style="font-size:13px;margin-bottom:16px">
+            Carga tu <strong>.key</strong> y <strong>.cer</strong> del SAT. Se generará una página de firma estilo SAT y se añadirá al PDF. Los archivos <strong>nunca se guardan</strong> en el servidor.
+          </p>
+
+          <form method="post" action="/admin/minutas/<%= m.id %>/firmar" enctype="multipart/form-data">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+            <label style="margin-bottom:12px">
+              <span style="font-size:12px;font-weight:600;color:var(--bc-muted);display:block;margin-bottom:4px">Archivo .key — Llave privada</span>
+              <input type="file" name="key_file" accept=".key" required />
+            </label>
+
+            <label style="margin-bottom:12px">
+              <span style="font-size:12px;font-weight:600;color:var(--bc-muted);display:block;margin-bottom:4px">Archivo .cer — Certificado</span>
+              <input type="file" name="cer_file" accept=".cer" required />
+            </label>
+
+            <label style="margin-bottom:16px">
+              <span style="font-size:12px;font-weight:600;color:var(--bc-muted);display:block;margin-bottom:4px">Contraseña de e.firma</span>
+              <div class="pw-wrap">
+                <input type="password" id="efirma-pw" name="passphrase" required maxlength="100" placeholder="Contraseña del SAT" />
+                <button type="button" class="pw-eye" aria-label="Mostrar" data-pw-toggle="efirma-pw">
+                  <svg class="eye-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <svg class="eye-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                </button>
               </div>
             </label>
-          <% }) %>
-        </div>
-        <button class="btn btn-ghost" type="submit">Guardar formato</button>
-      </form>
-    </section>
-    <% } %>
+
+            <button class="btn btn-primary" type="submit" style="width:100%;justify-content:center">
+              Firmar PDF con e.firma
+            </button>
+          </form>
+        <% } %>
+      </section>
+
+      <!-- Eliminar -->
+      <section class="card" style="margin-top:16px">
+        <form method="post" action="/admin/minutas/<%= m.id %>/eliminar"
+              data-confirm="¿Eliminar esta minuta? Esta acción no se puede deshacer.">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <button class="btn btn-ghost" type="submit" style="width:100%;color:var(--bc-error)">Eliminar minuta</button>
+        </form>
+      </section>
+    </div>
+
+    <!-- Panel derecho: vista previa del PDF -->
+    <div>
+      <section class="card" style="padding:0;overflow:hidden;border-radius:14px">
+        <iframe
+          src="/admin/minutas/<%= m.id %>/ver-pdf"
+          style="width:100%;height:820px;border:none;display:block"
+          title="Vista previa — <%= m.titulo %>">
+        </iframe>
+      </section>
+    </div>
+
   </div>
 
-  <!-- ── Panel derecho: archivo adjunto + contenido + firma ── -->
-  <div>
-    <% if (m.archivo_path) { %>
-    <section class="card" style="margin-bottom:20px">
-      <h2>Archivo adjunto</h2>
-      <div style="display:flex;align-items:center;gap:14px">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:36px;height:36px;color:var(--bc-gold);flex-shrink:0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        <div>
-          <p style="margin:0;font-weight:600"><%= m.archivo_nombre || m.archivo_path %></p>
-          <a href="/admin/minutas/<%= m.id %>/descargar" class="btn btn-ghost" style="margin-top:8px;display:inline-flex;align-items:center;gap:6px">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Descargar archivo
-          </a>
-        </div>
-      </div>
-    </section>
-    <% } %>
+<% } else { %>
+  <!-- ═══ LAYOUT ESTÁNDAR: sin PDF (transcripción + contenido IA) ═══ -->
 
-    <section class="card" style="margin-bottom:20px">
-      <h2>Contenido de la minuta</h2>
-      <% if (!m.contenido && !m.archivo_path) { %>
-        <p class="muted">Agrega la transcripción y presiona «Generar minuta con IA», o escribe el contenido directamente.</p>
-      <% } else if (!m.contenido && m.archivo_path) { %>
-        <p class="muted">El contenido está en el archivo adjunto. Puedes añadir notas adicionales aquí.</p>
-      <% } %>
-      <% if (!m.firmada) { %>
+  <% if (m.archivo_path) { %>
+  <section class="card" style="margin-bottom:20px;max-width:640px">
+    <h2>Archivo adjunto (no PDF)</h2>
+    <div style="display:flex;align-items:center;gap:14px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:36px;height:36px;color:var(--bc-gold);flex-shrink:0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <div>
+        <p style="margin:0;font-weight:600"><%= m.archivo_nombre || m.archivo_path %></p>
+        <a href="/admin/minutas/<%= m.id %>/descargar" class="btn btn-ghost" style="margin-top:8px;display:inline-flex;align-items:center;gap:6px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Descargar archivo
+        </a>
+      </div>
+    </div>
+  </section>
+  <% } %>
+
+  <div class="minuta-grid">
+
+    <!-- ── Panel izquierdo: transcripción + formato ── -->
+    <div>
+      <section class="card" style="margin-bottom:20px">
+        <h2>Transcripción de la reunión</h2>
+        <p class="muted">Pega aquí el texto de la reunión y presiona Generar.</p>
         <form method="post" action="/admin/minutas/<%= m.id %>/guardar">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-          <input type="hidden" name="campo" value="contenido" />
-          <textarea name="valor" rows="16" placeholder="Contenido de la minuta (Markdown)…" style="width:100%;resize:vertical;font-family:monospace;font-size:13px"><%= m.contenido || '' %></textarea>
-          <div style="margin-top:10px">
-            <button class="btn btn-ghost" type="submit">Guardar contenido</button>
+          <input type="hidden" name="campo" value="transcripcion" />
+          <textarea name="valor" rows="10" placeholder="Pega la transcripción aquí…" style="width:100%;resize:vertical"><%= m.transcripcion || '' %></textarea>
+          <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-ghost" type="submit">Guardar</button>
           </div>
         </form>
-      <% } else { %>
-        <div class="minuta-preview"><%= m.contenido %></div>
-      <% } %>
-    </section>
+        <% if (!m.firmada) { %>
+          <form method="post" action="/admin/minutas/<%= m.id %>/generar" style="margin-top:10px">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <button class="btn btn-primary" type="submit">✨ Generar minuta con IA</button>
+          </form>
+        <% } %>
+      </section>
 
-    <!-- ── Firma electrónica ── -->
-    <section class="card">
-      <h2>Firma electrónica (e.firma SAT)</h2>
-      <% if (m.firmada) { %>
-        <div class="flash flash-success" style="margin:0">
-          Minuta firmada electrónicamente.<br>
-          <span class="meta">Nombre: <%= m.firma_nombre %></span><br>
-          <span class="meta">No. serie: <%= m.firma_serial %></span><br>
-          <span class="meta">Fecha: <%= m.firma_fecha %></span>
-        </div>
-      <% } else if (!m.contenido) { %>
-        <p class="muted">Genera o escribe el contenido antes de firmar.</p>
-      <% } else { %>
-        <p class="muted">Carga tu archivo <strong>.key</strong> y <strong>.cer</strong> del SAT y la contraseña de tu e.firma para firmar digitalmente esta minuta.</p>
-        <form method="post" action="/admin/minutas/<%= m.id %>/firmar" enctype="multipart/form-data">
+      <% if (!m.firmada) { %>
+      <section class="card" style="margin-bottom:20px">
+        <h2>Formato de la minuta</h2>
+        <form method="post" action="/admin/minutas/<%= m.id %>/guardar">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-          <label>Archivo .key (llave privada)
-            <input type="file" name="key_file" accept=".key" required />
-          </label>
-          <label>Archivo .cer (certificado)
-            <input type="file" name="cer_file" accept=".cer" required />
-          </label>
-          <label>Contraseña de e.firma
-            <div class="pw-wrap">
-              <input type="password" id="efirma-pw" name="passphrase" required maxlength="100" placeholder="Contraseña del SAT" />
-              <button type="button" class="pw-eye" aria-label="Mostrar" data-pw-toggle="efirma-pw">
-                <svg class="eye-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                <svg class="eye-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-              </button>
-            </div>
-          </label>
-          <p class="muted" style="font-size:12px">Los archivos <strong>nunca se almacenan</strong> en el servidor; solo se usan en memoria para firmar.</p>
-          <button class="btn btn-primary" type="submit">Firmar minuta</button>
+          <input type="hidden" name="campo" value="formato" />
+          <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
+            <% FORMATOS.forEach(function(f) { %>
+              <label class="fmt-option <%= m.formato === f.id ? 'selected' : '' %>">
+                <input type="radio" name="valor" value="<%= f.id %>" <%= m.formato === f.id ? 'checked' : '' %> />
+                <div><strong><%= f.label %></strong><span class="muted"> — <%= f.desc %></span></div>
+              </label>
+            <% }) %>
+          </div>
+          <button class="btn btn-ghost" type="submit">Guardar formato</button>
         </form>
+      </section>
       <% } %>
-    </section>
-  </div>
+    </div>
 
-</div>
+    <!-- ── Panel derecho: contenido + firma ── -->
+    <div>
+      <section class="card" style="margin-bottom:20px">
+        <h2>Contenido de la minuta</h2>
+        <% if (!m.contenido) { %>
+          <p class="muted">Agrega la transcripción y presiona «Generar minuta con IA», o escribe el contenido directamente.</p>
+        <% } %>
+        <% if (!m.firmada) { %>
+          <form method="post" action="/admin/minutas/<%= m.id %>/guardar">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <input type="hidden" name="campo" value="contenido" />
+            <textarea name="valor" rows="16" placeholder="Contenido de la minuta (Markdown)…" style="width:100%;resize:vertical;font-family:monospace;font-size:13px"><%= m.contenido || '' %></textarea>
+            <div style="margin-top:10px">
+              <button class="btn btn-ghost" type="submit">Guardar contenido</button>
+            </div>
+          </form>
+        <% } else { %>
+          <div class="minuta-preview"><%= m.contenido %></div>
+        <% } %>
+      </section>
+
+      <!-- Firma electrónica para minutas de texto -->
+      <section class="card">
+        <h2>Firma electrónica (e.firma SAT)</h2>
+        <% if (m.firmada) { %>
+          <div class="flash flash-success" style="margin:0">
+            Minuta firmada electrónicamente.<br>
+            <span class="meta">Nombre: <%= m.firma_nombre %></span><br>
+            <span class="meta">No. serie: <%= m.firma_serial %></span><br>
+            <span class="meta">Fecha: <%= m.firma_fecha %></span>
+          </div>
+        <% } else if (!m.contenido) { %>
+          <p class="muted">Genera o escribe el contenido antes de firmar.</p>
+        <% } else { %>
+          <p class="muted">Carga tu <strong>.key</strong> y <strong>.cer</strong> del SAT y la contraseña para firmar esta minuta digitalmente.</p>
+          <form method="post" action="/admin/minutas/<%= m.id %>/firmar" enctype="multipart/form-data">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <label>Archivo .key (llave privada)
+              <input type="file" name="key_file" accept=".key" required />
+            </label>
+            <label>Archivo .cer (certificado)
+              <input type="file" name="cer_file" accept=".cer" required />
+            </label>
+            <label>Contraseña de e.firma
+              <div class="pw-wrap">
+                <input type="password" id="efirma-pw2" name="passphrase" required maxlength="100" placeholder="Contraseña del SAT" />
+                <button type="button" class="pw-eye" aria-label="Mostrar" data-pw-toggle="efirma-pw2">
+                  <svg class="eye-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <svg class="eye-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                </button>
+              </div>
+            </label>
+            <p class="muted" style="font-size:12px">Los archivos <strong>nunca se almacenan</strong> en el servidor.</p>
+            <button class="btn btn-primary" type="submit">Firmar minuta</button>
+          </form>
+        <% } %>
+      </section>
+    </div>
+
+  </div>
+<% } %>
 
 <%- include('../partials/shell-footer') %>
