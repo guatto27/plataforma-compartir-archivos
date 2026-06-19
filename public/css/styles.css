@@ -368,7 +368,7 @@ body.has-sidebar { display: flex; min-height: 100vh; }
   border-right: 1px solid var(--bc-border); display: flex; flex-direction: column;
   position: sticky; top: 0; height: 100vh;
 }
-.sidebar-brand { display: flex; align-items: center; gap: 10px; padding: 18px 18px; border-bottom: 1px solid var(--bc-border); }
+.sidebar-brand { display: flex; align-items: center; gap: 10px; padding: 18px 18px; border-bottom: 1px solid var(--bc-border); height: 70px; box-sizing: border-box; }
 .sidebar-brand .brand-mark, .sidebar-brand img { width: 34px; height: 34px; border-radius: 9px; }
 .sidebar-brand strong {
   display: block; font-size: 14px;
@@ -402,6 +402,7 @@ body.has-sidebar { display: flex; min-height: 100vh; }
 .topbar-2 {
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
   padding: 14px 28px; border-bottom: 1px solid var(--bc-border); background: var(--bc-bg-2);
+  height: 70px; box-sizing: border-box;
 }
 .cuenta-chip {
   display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px;
