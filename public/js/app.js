@@ -60,6 +60,20 @@ document.addEventListener('submit', function (e) {
   }
 });
 
+// Ojo para mostrar/ocultar contraseña (botón con data-pw-toggle="input-id")
+document.addEventListener('click', function (e) {
+  var btn = e.target.closest('[data-pw-toggle]');
+  if (!btn) return;
+  var inp = document.getElementById(btn.getAttribute('data-pw-toggle'));
+  if (!inp) return;
+  var isHidden = inp.type === 'password';
+  inp.type = isHidden ? 'text' : 'password';
+  var showSvg = btn.querySelector('.eye-show');
+  var hideSvg = btn.querySelector('.eye-hide');
+  if (showSvg) showSvg.style.display = isHidden ? 'none' : '';
+  if (hideSvg) hideSvg.style.display = isHidden ? '' : 'none';
+});
+
 // Copiar credenciales al portapapeles (botón con data-copy="id1|id2")
 document.addEventListener('click', function (e) {
   var btn = e.target.closest('[data-copy]');
