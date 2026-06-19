@@ -12,6 +12,11 @@ if (!fs.existsSync(MINUTAS_DIR)) fs.mkdirSync(MINUTAS_DIR, { recursive: true });
 
 const VERIFY_BASE = 'https://proyectos.businesscool.ai/verificar';
 
+// Dimensiones del bloque de firma en puntos PDF (deben coincidir con
+// BLOCK_W / BLOCK_H de public/js/firma-placer.js para que el recuadro del
+// colocador tenga el mismo tamaño que el bloque final).
+const BLOCK_W = 290, BLOCK_H = 96;
+
 exports.MINUTAS_DIR = MINUTAS_DIR;
 
 // ── Parsear certificado SAT (.cer DER → datos del firmante) ──────────────────
@@ -94,29 +99,34 @@ async function detectSigners(pdfBytes) {
 
 // ── Dibujar bloque de firma compacto (QR + datos) ────────────────────────────
 function drawCompactBlock(page, font, fontB, rgb, { x, bottomY, w, data, qrImg }) {
-  const H = 60;
+  const H = BLOCK_H;
   page.drawRectangle({
     x, y: bottomY, width: w, height: H,
     color: rgb(0.980, 0.980, 0.995), borderColor: rgb(0.74, 0.74, 0.84), borderWidth: 0.5,
   });
 
-  const qr = 46;
-  if (qrImg) page.drawImage(qrImg, { x: x + 5, y: bottomY + (H - qr) / 2, width: qr, height: qr });
+  const qr = 80;
+  if (qrImg) page.drawImage(qrImg, { x: x + 8, y: bottomY + (H - qr) / 2, width: qr, height: qr });
 
-  const tx = x + qr + 12;
-  const tw = w - qr - 18;
-  const maxChar = Math.max(12, Math.floor(tw / 3.0));
-  const trunc = (v, n) => { v = String(v == null || v === '' ? '—' : v); return v.length > n ? v.slice(0, n) + '…' : v; };
+  const tx = x + qr + 16;
+  const tw = w - qr - 24;
 
-  let ty = bottomY + H - 9;
-  page.drawText('Firmado electronicamente por:', { x: tx, y: ty, size: 5.2, font: fontB, color: rgb(0.30, 0.30, 0.42) });
-  ty -= 8.5;
-  page.drawText(trunc(data.nombre, maxChar), { x: tx, y: ty, size: 6.6, font: fontB, color: rgb(0.12, 0.34, 0.72) });
-  ty -= 9;
+  // Dibuja una línea ajustando el tamaño de fuente para que nunca se desborde
+  const drawFit = (text, y, size, fnt, color, min) => {
+    let s = size;
+    while (s > (min || 5) && fnt.widthOfTextAtSize(text, s) > tw) s -= 0.25;
+    page.drawText(text, { x: tx, y, size: s, font: fnt, color });
+  };
+
+  let ty = bottomY + H - 15;
+  page.drawText('Firmado electronicamente por:', { x: tx, y: ty, size: 7, font: fontB, color: rgb(0.30, 0.30, 0.42) });
+  ty -= 13;
+  drawFit(String(data.nombre || '—'), ty, 9.5, fontB, rgb(0.12, 0.34, 0.72), 7);
+  ty -= 14;
   const rows = [['No. Cert:', data.serial], ['RFC:', data.rfc], ['Fecha:', data.fecha], ['Folio:', data.folio]];
   for (const [lbl, val] of rows) {
-    page.drawText(`${lbl} ${trunc(val, maxChar - lbl.length)}`, { x: tx, y: ty, size: 5.3, font, color: rgb(0.20, 0.20, 0.30) });
-    ty -= 7.6;
+    drawFit(`${lbl} ${val == null || val === '' ? '—' : val}`, ty, 7, font, rgb(0.20, 0.20, 0.30), 5.5);
+    ty -= 10.5;
   }
   return H;
 }
@@ -125,21 +135,19 @@ function drawCompactBlock(page, font, fontB, rgb, { x, bottomY, w, data, qrImg }
 // de la esquina superior-izquierda, Y medida desde ARRIBA) a un objetivo de dibujo.
 function placementToTarget(pdfDoc, placement) {
   if (!placement || placement.x == null || placement.y == null) return null;
-  const H = 60;
   const idx = Math.max(0, Math.min(pdfDoc.getPageCount() - 1, (parseInt(placement.page, 10) || 1) - 1));
   const page = pdfDoc.getPages()[idx];
   const { width, height } = page.getSize();
-  const w = Math.min(255, width - 12);
+  const w = Math.min(BLOCK_W, width - 12);
   const x = Math.max(6, Math.min(Number(placement.x) * width, width - w - 6));
   const topY = height * (1 - Number(placement.y));      // borde superior del recuadro
-  const bottomY = Math.max(6, topY - H);
+  const bottomY = Math.max(6, topY - BLOCK_H);
   return { pageIndex: idx, x, bottomY, w };
 }
 
 // Coloca el bloque: 1) en coordenadas manuales, 2) sobre la línea detectada,
 // o 3) al pie de la última página (fallback).
 function placeBlock(pdfDoc, font, fontB, rgb, target, anchor, fallbackSide, data, qrImg) {
-  const H = 60;
   let page, x, bottomY, w;
   if (target) {
     page = pdfDoc.getPages()[target.pageIndex];
@@ -148,14 +156,14 @@ function placeBlock(pdfDoc, font, fontB, rgb, target, anchor, fallbackSide, data
     page = pdfDoc.getPages()[anchor.pageIndex];
     const { width, height } = page.getSize();
     x = Math.max(24, anchor.x - 2);
-    w = Math.min(255, width - x - 24);
+    w = Math.min(BLOCK_W, width - x - 24);
     bottomY = anchor.y + 16; // justo arriba de la línea (que está sobre el texto "Por …")
-    if (bottomY + H > height - 24) bottomY = height - 24 - H;
+    if (bottomY + BLOCK_H > height - 24) bottomY = height - 24 - BLOCK_H;
   } else {
     // Fallback: parte inferior de la última página
     page = pdfDoc.getPages()[pdfDoc.getPageCount() - 1];
     const { width } = page.getSize();
-    w = Math.min(255, width / 2 - 36);
+    w = Math.min(BLOCK_W, width / 2 - 36);
     x = fallbackSide === 'right' ? width - w - 30 : 30;
     bottomY = 48;
   }

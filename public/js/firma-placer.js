@@ -13,7 +13,9 @@
   if (typeof pdfjsLib === 'undefined') return;
   pdfjsLib.GlobalWorkerOptions.workerSrc = '/static/js/pdf.worker.min.js';
 
-  var SIG_W = 255, SIG_H = 60; // relación de aspecto del recuadro (pt en el PDF)
+  // Tamaño del bloque en puntos PDF (debe coincidir con BLOCK_W/BLOCK_H de
+  // src/lib/minuta-firma.js). El recuadro se dibuja a ese tamaño real × escala.
+  var BLOCK_W = 290, BLOCK_H = 96;
   var drag = null;
 
   document.addEventListener('mousedown', function (e) {
@@ -69,8 +71,9 @@
 
     function placeAt(wrap, px, py) {
       var w = wrap.clientWidth, h = wrap.clientHeight;
-      var boxW = w * 0.42;
-      var boxH = boxW * (SIG_H / SIG_W);
+      var scale = wrap._scale || (w / 595);
+      var boxW = Math.min(BLOCK_W * scale, w);   // tamaño real del bloque (pt × escala)
+      var boxH = BLOCK_H * scale;
       var left = Math.max(0, Math.min(px - boxW / 2, w - boxW));
       var top = Math.max(0, Math.min(py - boxH / 2, h - boxH));
       var m = ensureMarker();
@@ -97,6 +100,7 @@
               wrap.style.height = viewport.height + 'px';
               wrap._pageNum = pageNum;
               wrap._instance = instance;
+              wrap._scale = scale;
               var canvas = document.createElement('canvas');
               canvas.width = viewport.width;
               canvas.height = viewport.height;
