@@ -343,6 +343,14 @@ dialog.modal h2 { margin-top: 0; }
   padding: 32px;
 }
 .auth-card h1 { margin-top: 0; font-size: 22px; }
+.auth-forgot { margin-top: 16px; text-align: center; font-size: 13px; color: var(--bc-muted); }
+.auth-forgot a { color: var(--bc-muted); text-decoration: underline; }
+.auth-forgot a:hover { color: var(--bc-gold); }
+.pw-wrap { position: relative; display: flex; align-items: center; }
+.pw-wrap input { flex: 1; padding-right: 42px; }
+.pw-eye { position: absolute; right: 10px; background: none; border: none; cursor: pointer; padding: 4px; color: var(--bc-muted); display: flex; align-items: center; }
+.pw-eye:hover { color: var(--bc-text); }
+.pw-eye svg { width: 18px; height: 18px; }
 
 /* ---------- Credenciales ---------- */
 .credentials { border: 1px solid var(--bc-gold); margin-bottom: 20px; }

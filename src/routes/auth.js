@@ -2,10 +2,13 @@
 
 const express = require('express');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const rateLimit = require('express-rate-limit');
 
 const { db, logAction } = require('../db');
 const { requireLogin } = require('../middleware/auth');
+const { sendPasswordResetEmail } = require('../lib/mailer');
+const config = require('../config');
 
 const router = express.Router();
 
@@ -123,6 +126,78 @@ router.post('/cambiar-password', requireLogin, (req, res) => {
 
   req.session.flash = { type: 'success', text: 'Contraseña actualizada correctamente.' };
   res.redirect('/');
+});
+
+// --- Recuperación de contraseña ---
+const forgotLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, max: 5, standardHeaders: true, legacyHeaders: false,
+  handler: (req, res) => res.status(429).render('forgot-password', {
+    title: 'Recuperar contraseña', error: 'Demasiados intentos. Espera unos minutos.',
+  }),
+});
+
+router.get('/forgot-password', (req, res) => {
+  if (req.session.userId) return res.redirect('/');
+  res.render('forgot-password', { title: 'Recuperar contraseña', error: null });
+});
+
+router.post('/forgot-password', forgotLimiter, async (req, res) => {
+  const email = String(req.body.email || '').trim().toLowerCase();
+  const render = (error) => res.render('forgot-password', { title: 'Recuperar contraseña', error });
+
+  if (!email) return render('Ingresa tu correo electrónico.');
+
+  const user = db.prepare('SELECT * FROM users WHERE LOWER(email) = ? AND active = 1').get(email);
+
+  // Siempre mostramos éxito para no revelar si el correo existe
+  if (user) {
+    const token = crypto.randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hora
+    db.prepare('DELETE FROM password_reset_tokens WHERE user_id = ?').run(user.id);
+    db.prepare('INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)').run(user.id, token, expires);
+    const resetUrl = `${config.appUrl}/reset-password/${token}`;
+    await sendPasswordResetEmail({ to: user.email, displayName: user.display_name, resetUrl });
+    logAction(user.id, 'password_reset_requested', null, req.ip);
+  }
+
+  res.render('forgot-password', { title: 'Recuperar contraseña', success: true });
+});
+
+router.get('/reset-password/:token', (req, res) => {
+  if (req.session.userId) return res.redirect('/');
+  const row = db.prepare(
+    'SELECT * FROM password_reset_tokens WHERE token = ? AND used = 0'
+  ).get(req.params.token);
+  if (!row || new Date(row.expires_at) < new Date()) {
+    return res.render('reset-password', { title: 'Nueva contraseña', expired: true, token: null });
+  }
+  res.render('reset-password', { title: 'Nueva contraseña', token: req.params.token, error: null });
+});
+
+router.post('/reset-password/:token', async (req, res) => {
+  const row = db.prepare(
+    'SELECT * FROM password_reset_tokens WHERE token = ? AND used = 0'
+  ).get(req.params.token);
+
+  if (!row || new Date(row.expires_at) < new Date()) {
+    return res.render('reset-password', { title: 'Nueva contraseña', expired: true, token: null });
+  }
+
+  const password = String(req.body.password || '');
+  const confirm = String(req.body.confirm || '');
+  const render = (error) => res.render('reset-password', {
+    title: 'Nueva contraseña', token: req.params.token, error,
+  });
+
+  if (password.length < 10) return render('La contraseña debe tener al menos 10 caracteres.');
+  if (password !== confirm) return render('Las contraseñas no coinciden.');
+
+  const hash = bcrypt.hashSync(password, 12);
+  db.prepare('UPDATE users SET password_hash = ?, must_change_password = 0 WHERE id = ?').run(hash, row.user_id);
+  db.prepare('UPDATE password_reset_tokens SET used = 1 WHERE id = ?').run(row.id);
+  logAction(row.user_id, 'password_reset_completed', null, req.ip);
+
+  res.render('reset-password', { title: 'Nueva contraseña', success: true, token: null });
 });
 
 module.exports = router;

@@ -90,6 +90,15 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_links_client ON interview_links(client_id);
   CREATE INDEX IF NOT EXISTS idx_comments_file ON comments(file_id);
   CREATE INDEX IF NOT EXISTS idx_interviews_client ON interviews(client_id);
+
+  CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token TEXT NOT NULL UNIQUE,
+    expires_at TEXT NOT NULL,
+    used INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
 `);
 
 // Migración: relacionar archivos con una entrevista (columna añadida si no existe)

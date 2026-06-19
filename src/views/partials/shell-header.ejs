@@ -147,7 +147,6 @@
             <summary class="avatar" title="<%= currentUser.displayName %>"><%= (currentUser.displayName || '?').charAt(0).toUpperCase() %></summary>
             <div class="usermenu-pop">
               <div class="usermenu-name"><%= currentUser.displayName %></div>
-              <a href="/cambiar-password">Cambiar mi contraseña</a>
               <form method="post" action="/logout">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
                 <button type="submit" class="usermenu-item">
