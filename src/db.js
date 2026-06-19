@@ -91,6 +91,24 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_comments_file ON comments(file_id);
   CREATE INDEX IF NOT EXISTS idx_interviews_client ON interviews(client_id);
 
+  CREATE TABLE IF NOT EXISTS minutas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    company_id INTEGER REFERENCES companies(id) ON DELETE SET NULL,
+    company_name TEXT,
+    titulo TEXT NOT NULL,
+    fecha TEXT NOT NULL,
+    formato TEXT NOT NULL DEFAULT 'ejecutiva',
+    transcripcion TEXT,
+    contenido TEXT,
+    firmada INTEGER NOT NULL DEFAULT 0,
+    firma_serial TEXT,
+    firma_nombre TEXT,
+    firma_fecha TEXT,
+    publicada INTEGER NOT NULL DEFAULT 0,
+    created_by INTEGER REFERENCES users(id),
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
   CREATE TABLE IF NOT EXISTS password_reset_tokens (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,

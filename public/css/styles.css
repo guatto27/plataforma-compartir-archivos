@@ -493,6 +493,13 @@ body.has-sidebar { display: flex; min-height: 100vh; }
 /* ---------- Minutas ---------- */
 .ai-tag { font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 999px; background: rgba(251,191,36,.14); color: var(--bc-gold); }
 .minuta-summary { border-left: 3px solid var(--bc-gold); }
+.minuta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+@media (max-width: 900px) { .minuta-grid { grid-template-columns: 1fr; } }
+.fmt-option { display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--bc-border); cursor: pointer; transition: border-color .15s; }
+.fmt-option:hover { border-color: var(--bc-border-2); }
+.fmt-option.selected, .fmt-option:has(input:checked) { border-color: var(--bc-gold); background: rgba(251,191,36,.06); }
+.fmt-option input[type=radio] { margin-top: 3px; accent-color: var(--bc-gold); }
+.minuta-preview { white-space: pre-wrap; font-size: 13px; line-height: 1.7; color: var(--bc-text); }
 .empty-state { padding: 48px 28px; text-align: center; color: var(--bc-muted); font-size: 14px; background: var(--bc-surface); border: 1px solid var(--bc-border); border-radius: 14px; }
 
 /* ---------- Secuencia de actividades (pasos de una fase) ---------- */

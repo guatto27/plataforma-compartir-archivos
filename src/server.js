@@ -99,6 +99,7 @@ app.use(csrfProtection);
 app.use('/', require('./routes/auth'));
 app.use('/app', require('./routes/client'));
 app.use('/admin', require('./routes/admin'));
+app.use('/admin/minutas', require('./routes/admin-minutas'));
 
 // Raíz
 app.get('/', (req, res) => {

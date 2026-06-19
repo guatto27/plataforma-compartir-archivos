@@ -1,5 +1,7 @@
 node_modules/
 .env
+Descargar del VPS.bat
+Subir al VPS.bat
 *.log
 data/
 storage/uploads/

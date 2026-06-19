@@ -16,36 +16,10 @@
         <div>
           <h2 style="margin:0"><%= m.titulo %></h2>
           <span class="meta"><%= m.fecha %></span>
+          <% if (m.firmada) { %><span class="st aprob" style="margin-left:8px">Firmada electrónicamente</span><% } %>
         </div>
-        <span class="ai-tag">Generado por IA</span>
       </div>
-      <p class="muted" style="margin-top:12px"><%= m.resumen %></p>
-      <% if (m.compromisos && m.compromisos.length > 0) { %>
-        <div style="margin-top:16px">
-          <h3 style="font-size:14px;margin-bottom:10px">Compromisos y asignaciones</h3>
-          <div class="table-wrap">
-            <table class="table">
-              <thead>
-                <tr><th>Compromiso</th><th>Responsable</th><th>Vence</th><th>Estado</th></tr>
-              </thead>
-              <tbody>
-                <% m.compromisos.forEach(function (c) { %>
-                  <tr>
-                    <td><%= c.t %></td>
-                    <td><%= c.who %></td>
-                    <td class="meta"><%= c.due %></td>
-                    <td>
-                      <% if (c.status === 'aprob') { %><span class="st aprob">Aprobado</span>
-                      <% } else if (c.status === 'rev') { %><span class="st rev">En revisión</span>
-                      <% } else { %><span class="st pend">Pendiente</span><% } %>
-                    </td>
-                  </tr>
-                <% }) %>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      <% } %>
+      <div class="minuta-preview" style="margin-top:14px"><%= m.contenido %></div>
     </section>
   <% }) %>
 <% } else { %>

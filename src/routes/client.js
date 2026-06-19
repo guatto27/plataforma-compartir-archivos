@@ -157,11 +157,20 @@ router.get('/entregables', (req, res) => {
   });
 });
 
-// Minutas — solo cliente_responsable
+// Minutas — solo cliente_responsable (lee minutas publicadas de su empresa)
 router.get('/minutas', (req, res) => {
   if (req.session.role === 'client') return res.redirect('/app/agente');
+  const me = db.prepare('SELECT company_id, company_name FROM users WHERE id = ?').get(req.session.userId);
+  const minutas = me
+    ? db.prepare(
+        `SELECT * FROM minutas
+         WHERE publicada = 1
+           AND (company_id = ? OR (company_id IS NULL AND company_name = ?))
+         ORDER BY fecha DESC`
+      ).all(me.company_id || -1, me.company_name || '')
+    : [];
   res.render('client/minutas', {
-    title: 'Minutas', active: 'minutas', companyName: companyOf(req), minutas: [],
+    title: 'Minutas', active: 'minutas', companyName: companyOf(req), minutas,
   });
 });
 
