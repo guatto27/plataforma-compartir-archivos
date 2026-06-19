@@ -27,6 +27,7 @@
     "node-forge": "^1.4.0",
     "nodemailer": "^9.0.0",
     "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^3.11.174",
     "qrcode": "^1.5.4"
   }
 }

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title><%= title %> · <%= brand.name %></title>
+  <link rel="stylesheet" href="/static/css/styles.css" />
+  <style>
+    body{margin:0;background:#f3f4f7;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#1c1f26}
+    .vwrap{max-width:520px;margin:0 auto;padding:24px 16px 48px}
+    .vhead{background:#10141b;border-radius:14px 14px 0 0;padding:18px 20px;color:#fff}
+    .vhead .b{font-weight:800;letter-spacing:.5px}
+    .vhead .b span{color:#fbbf24}
+    .vhead .sub{font-size:12px;opacity:.7;margin-top:2px}
+    .vbody{background:#fff;border:1px solid #e3e5ea;border-top:none;border-radius:0 0 14px 14px;padding:20px}
+    .badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px}
+    .badge.ok{background:#e7f6e9;color:#1f7a32}
+    .badge.no{background:#fdecec;color:#b33}
+    .doc{margin:14px 0 6px;font-size:13px;color:#555}
+    .doc strong{color:#1c1f26}
+    .seclabel{font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin:22px 0 8px}
+    .fcard{border:1px solid #e3e5ea;border-radius:12px;padding:0;overflow:hidden;margin-bottom:14px}
+    .fcard.match{border-color:#bfe0c4;box-shadow:0 0 0 2px #e7f6e9}
+    .fcard .ftop{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:#f7f8fa;border-bottom:1px solid #eceef2}
+    .fcard .ftop .rol{font-weight:700;font-size:13px}
+    .fcard .ftop .role-tag{font-size:11px;color:#2563eb;font-weight:700}
+    dl.fields{margin:0;padding:14px}
+    dl.fields div{display:grid;grid-template-columns:120px 1fr;gap:4px 10px;padding:6px 0;border-bottom:1px solid #f1f2f5}
+    dl.fields div:last-child{border-bottom:none}
+    dl.fields dt{font-size:12px;color:#6b7280;margin:0}
+    dl.fields dd{margin:0;font-size:13px;font-weight:600;color:#1c1f26;word-break:break-all}
+    .priv{text-align:center;margin-top:22px;color:#6b7280;font-size:13px}
+    .foot{text-align:center;margin-top:18px;font-size:11px;color:#9aa0aa;line-height:1.5}
+  </style>
+</head>
+<body>
+  <div class="vwrap">
+    <div class="vhead">
+      <div class="b">BUSINESS<span>COOL</span> AI</div>
+      <div class="sub">Verificación de Firma Electrónica</div>
+    </div>
+    <div class="vbody">
+      <% if (found) { %>
+        <span class="badge ok">✓ Documento auténtico — firma válida</span>
+
+        <% if (documento) { %>
+          <p class="doc">
+            <strong><%= documento.titulo %></strong><br>
+            <% if (documento.empresa) { %><%= documento.empresa %> · <% } %><%= documento.fecha %>
+          </p>
+        <% } %>
+
+        <div class="seclabel">Cadena origen</div>
+        <div style="font-size:13px;font-weight:600">BUSINESSCOOL AI</div>
+
+        <% firmas.forEach(function (f, i) { %>
+          <div class="seclabel">Firma <%= i + 1 %></div>
+          <div class="fcard <%= f.match ? 'match' : '' %>">
+            <div class="ftop">
+              <span class="rol">Firmante</span>
+              <span class="role-tag"><%= f.rol %></span>
+            </div>
+            <dl class="fields">
+              <div><dt>Nombre</dt><dd><%= f.nombre || '—' %></dd></div>
+              <% if (f.rfc) { %><div><dt>RFC</dt><dd><%= f.rfc %></dd></div><% } %>
+              <div><dt>Fecha</dt><dd><%= f.fecha || '—' %></dd></div>
+              <div><dt>Certificado</dt><dd><%= f.serial || '—' %></dd></div>
+              <div><dt>Folio</dt><dd><%= f.folio %></dd></div>
+              <% if (f.email) { %><div><dt>Correo</dt><dd><%= f.email %></dd></div><% } %>
+            </dl>
+          </div>
+        <% }) %>
+
+        <p class="priv">El documento es privado.</p>
+      <% } else { %>
+        <span class="badge no">✕ Folio no encontrado</span>
+        <p class="doc">No se encontró ninguna firma con el folio <strong><%= folio %></strong>.
+        Verifica que el código sea correcto o que el documento haya sido firmado en esta plataforma.</p>
+      <% } %>
+
+      <div class="foot">
+        <%= brand.name %> — Dirección de Proyectos<br>
+        proyectos.businesscool.ai/verificar
+      </div>
+    </div>
+  </div>
+</body>
+</html>

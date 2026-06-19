@@ -31,6 +31,9 @@ app.use(
         styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
         fontSrc: ["'self'", 'https://fonts.gstatic.com'],
         imgSrc: ["'self'", 'data:'],
+        // Necesario para previsualizar PDFs con <object>/<embed>/<iframe> del mismo origen
+        objectSrc: ["'self'"],
+        frameSrc: ["'self'"],
         formAction: ["'self'"],
         frameAncestors: ["'none'"],
       },
@@ -96,6 +99,7 @@ app.use((req, res, next) => {
 app.use(csrfProtection);
 
 // Rutas
+app.use('/verificar', require('./routes/verificar')); // pública (la abre el QR)
 app.use('/', require('./routes/auth'));
 app.use('/app', require('./routes/client'));
 app.use('/admin', require('./routes/admin'));
