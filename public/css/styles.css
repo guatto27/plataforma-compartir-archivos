@@ -524,3 +524,13 @@ body.has-sidebar { display: flex; min-height: 100vh; }
 .carousel-row .carousel-nav:hover { border-color: var(--bc-gold); color: var(--bc-gold); }
 .carousel-row .steps::-webkit-scrollbar { height: 8px; }
 .carousel-row .steps::-webkit-scrollbar-thumb { background: var(--bc-border-2); border-radius: 4px; }
+
+/* Tarjeta resumen Fase siguiente (To-Be) */
+.next-phase-card { opacity: .75; border-style: dashed !important; }
+.next-phase-card:hover { opacity: 1; }
+.next-phase-num { color: var(--bc-border-2); }
+.next-phase-items { list-style: none; padding: 0; margin: 10px 0 14px; display: flex; flex-direction: column; gap: 6px; }
+.next-phase-items li { font-size: 13px; color: var(--bc-text-2); padding-left: 14px; position: relative; }
+.next-phase-items li::before { content: '·'; position: absolute; left: 0; color: var(--bc-border-2); }
+.next-phase-entregable { border-top: 1px solid var(--bc-border); padding-top: 10px; margin-top: 4px; font-size: 12px; display: flex; flex-direction: column; gap: 2px; }
+.lbl-small { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: #71717a; }

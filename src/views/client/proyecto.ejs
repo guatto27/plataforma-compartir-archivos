@@ -26,6 +26,26 @@
         <p class="step-desc"><%= it.desc %></p>
       </div>
     <% }) %>
+
+    <% if (typeof nextPhase !== 'undefined' && nextPhase) { %>
+      <div class="step-card next-phase-card">
+        <div class="step-top">
+          <span class="step-num next-phase-num">Fase 2</span>
+          <span class="step-state pending"><%= nextPhase.label %></span>
+        </div>
+        <h3><%= nextPhase.name %></h3>
+        <p class="step-desc muted"><%= nextPhase.sub %></p>
+        <ul class="next-phase-items">
+          <% nextPhase.items.forEach(function(it){ %>
+            <li><%= it.t %></li>
+          <% }) %>
+        </ul>
+        <div class="next-phase-entregable">
+          <span class="lbl-small">Entregable</span>
+          <span><%= nextPhase.entregable %></span>
+        </div>
+      </div>
+    <% } %>
   </div>
   <button class="carousel-nav" type="button" data-carousel="next" aria-label="Siguiente">›</button>
 </div>
