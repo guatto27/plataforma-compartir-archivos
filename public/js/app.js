@@ -4,9 +4,9 @@
 document.addEventListener('click', function (e) {
   var nav = e.target.closest('[data-carousel]');
   if (!nav) return;
-  var track = nav.parentElement.querySelector('.pipeline');
+  var track = nav.parentElement.querySelector('.pipeline, .steps');
   if (!track) return;
-  var amount = 346; // ancho de tarjeta + separación
+  var amount = 338; // ancho de tarjeta + separación
   track.scrollBy({ left: nav.getAttribute('data-carousel') === 'next' ? amount : -amount, behavior: 'smooth' });
 });
 

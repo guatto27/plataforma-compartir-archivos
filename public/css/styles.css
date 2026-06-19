@@ -506,3 +506,21 @@ body.has-sidebar { display: flex; min-height: 100vh; }
 .step-desc { font-size: 13px; color: var(--bc-muted); line-height: 1.5; margin: 0; }
 .step-card:not(:last-child)::after { content: '\203A'; position: absolute; right: -22px; top: 36px; color: var(--bc-border-2); font-size: 30px; line-height: 1; }
 @media (max-width: 900px) { .step-card:not(:last-child)::after { display: none; } }
+
+/* Carrusel de actividades con botones AL LADO (no encima) */
+.carousel-row { display: flex; align-items: center; gap: 12px; margin-top: 18px; }
+.carousel-row .steps {
+  flex: 1 1 auto; min-width: 0; display: flex; flex-wrap: nowrap; gap: 18px;
+  overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; padding: 6px 2px 14px;
+}
+.carousel-row .steps .step-card { flex: 0 0 320px; scroll-snap-align: start; }
+.carousel-row .steps .step-card::after { display: none; } /* sin conector dentro del carrusel */
+.carousel-row .carousel-nav {
+  position: static; transform: none; flex: 0 0 42px; align-self: center;
+  width: 42px; height: 42px; border-radius: 50%;
+  background: var(--bc-surface); border: 1px solid var(--bc-border-2); color: var(--bc-text);
+  font-size: 24px; line-height: 1; cursor: pointer; display: grid; place-items: center;
+}
+.carousel-row .carousel-nav:hover { border-color: var(--bc-gold); color: var(--bc-gold); }
+.carousel-row .steps::-webkit-scrollbar { height: 8px; }
+.carousel-row .steps::-webkit-scrollbar-thumb { background: var(--bc-border-2); border-radius: 4px; }
