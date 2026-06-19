@@ -15,7 +15,7 @@
 
   // Tamaño del bloque en puntos PDF (debe coincidir con BLOCK_W/BLOCK_H de
   // src/lib/minuta-firma.js). El recuadro se dibuja a ese tamaño real × escala.
-  var BLOCK_W = 290, BLOCK_H = 96;
+  var BLOCK_W = 290, BLOCK_H = 112;
   var drag = null;
 
   document.addEventListener('mousedown', function (e) {

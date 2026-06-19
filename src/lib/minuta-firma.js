@@ -15,7 +15,7 @@ const VERIFY_BASE = 'https://proyectos.businesscool.ai/verificar';
 // Dimensiones del bloque de firma en puntos PDF (deben coincidir con
 // BLOCK_W / BLOCK_H de public/js/firma-placer.js para que el recuadro del
 // colocador tenga el mismo tamaño que el bloque final).
-const BLOCK_W = 290, BLOCK_H = 96;
+const BLOCK_W = 290, BLOCK_H = 112;
 
 exports.MINUTAS_DIR = MINUTAS_DIR;
 
@@ -25,17 +25,46 @@ function parseCert(cerBuf) {
   const pem = '-----BEGIN CERTIFICATE-----\n' + b64.match(/.{1,64}/g).join('\n') + '\n-----END CERTIFICATE-----';
   const cert = forge.pki.certificateFromPem(pem);
 
-  const serial = cert.serialNumber.replace(/^0+/, '');
-  const cn     = (cert.subject.getField('CN') || {}).value || '';
-  const emailF = cert.subject.getField('E') || cert.subject.getField('1.2.840.113549.1.9.1');
-  const email  = emailF ? emailF.value : '';
-  const rfcM   = cn.match(/([A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3})/i);
-  const rfc    = rfcM ? rfcM[1].toUpperCase() : '';
-  const nomM   = cn.match(/[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}\s*\/?\s*(.+)/i);
+  // El SAT codifica el número de serie como texto ASCII (20 dígitos). node-forge
+  // lo entrega en hexadecimal (el doble de largo); lo decodificamos al real.
+  let serial = (cert.serialNumber || '').replace(/^0+/, '');
+  try {
+    const dec = Buffer.from(cert.serialNumber, 'hex').toString('latin1');
+    if (/^[0-9]{12,}$/.test(dec)) serial = dec; // p. ej. 00001000000702466061
+  } catch (_) { /* deja el hex si no decodifica */ }
+
+  // getField acepta shortName (string) u {type:OID} / {name:'...'}; probamos varias formas.
+  const field = (sel) => { const f = cert.subject.getField(sel); return f ? f.value : ''; };
+  const cn = field('CN') || field({ name: 'commonName' }) || '';
+
+  // RFC: en e.firma SAT vive en x500UniqueIdentifier (2.5.4.45) o en el atributo
+  // serialNumber del subject (2.5.4.5), como "RFC / CURP".
+  const RFC_RE = /([A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3})/i;
+  let rfc = '';
+  for (const cand of [field({ type: '2.5.4.45' }), field({ type: '2.5.4.5' }), field({ name: 'serialNumber' }), cn, field('OU')]) {
+    const mm = String(cand || '').match(RFC_RE);
+    if (mm) { rfc = mm[1].toUpperCase(); break; }
+  }
+
+  // Correo: atributo emailAddress del subject o, si no, el subjectAltName.
+  let email = field({ name: 'emailAddress' }) || field('E') || field({ type: '1.2.840.113549.1.9.1' }) || '';
+  if (!email) {
+    try {
+      const ext = cert.getExtension('subjectAltName');
+      if (ext && ext.altNames) {
+        const e = ext.altNames.find((a) => a.type === 1 && a.value); // rfc822Name
+        if (e) email = e.value;
+      }
+    } catch (_) { /* sin SAN */ }
+  }
+
+  // Nombre legible
+  const nomM = cn.match(/[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}\s*\/?\s*(.+)/i);
   const nombre = nomM ? nomM[1].trim() : cn;
 
   return { serial, cn, email, rfc, nombre };
 }
+exports.parseCert = parseCert;
 
 // ── Descifrar llave privada SAT (.key DER → clave privada) ───────────────────
 function decryptKey(keyBuf, passphrase) {
@@ -105,7 +134,7 @@ function drawCompactBlock(page, font, fontB, rgb, { x, bottomY, w, data, qrImg }
     color: rgb(0.980, 0.980, 0.995), borderColor: rgb(0.74, 0.74, 0.84), borderWidth: 0.5,
   });
 
-  const qr = 80;
+  const qr = 84;
   if (qrImg) page.drawImage(qrImg, { x: x + 8, y: bottomY + (H - qr) / 2, width: qr, height: qr });
 
   const tx = x + qr + 16;
@@ -123,7 +152,13 @@ function drawCompactBlock(page, font, fontB, rgb, { x, bottomY, w, data, qrImg }
   ty -= 13;
   drawFit(String(data.nombre || '—'), ty, 9.5, fontB, rgb(0.12, 0.34, 0.72), 7);
   ty -= 14;
-  const rows = [['No. Cert:', data.serial], ['RFC:', data.rfc], ['Fecha:', data.fecha], ['Folio:', data.folio]];
+  const rows = [
+    ['No. Cert:', data.serial],
+    ['RFC:', data.rfc],
+    ['Correo:', data.email],
+    ['Fecha:', data.fecha],
+    ['Folio:', data.folio],
+  ];
   for (const [lbl, val] of rows) {
     drawFit(`${lbl} ${val == null || val === '' ? '—' : val}`, ty, 7, font, rgb(0.20, 0.20, 0.30), 5.5);
     ty -= 10.5;
