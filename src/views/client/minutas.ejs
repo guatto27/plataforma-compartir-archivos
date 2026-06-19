@@ -1,0 +1,46 @@
+<%- include('../partials/client-header') %>
+
+<div class="page-head">
+  <div class="head-row">
+    <div>
+      <h1>Minutas semanales</h1>
+      <p class="muted"><%= companyName || brand.name %></p>
+    </div>
+    <button class="btn btn-primary" type="button" disabled title="Disponible próximamente">Generar minuta con IA</button>
+  </div>
+</div>
+
+<section class="card minuta-summary">
+  <div class="head-row">
+    <h2 style="margin:0">Resumen de la sesión</h2>
+    <span class="ai-tag">Generado por IA</span>
+  </div>
+  <p class="muted"><%= minuta.summary %></p>
+</section>
+
+<section class="card" style="margin-top:20px">
+  <h2>Compromisos y asignaciones</h2>
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr><th>Compromiso</th><th>Responsable</th><th>Vence</th><th>Estado</th></tr>
+      </thead>
+      <tbody>
+        <% minuta.commitments.forEach(function (c) { %>
+          <tr>
+            <td><%= c.t %></td>
+            <td><%= c.who %></td>
+            <td class="meta"><%= c.due %></td>
+            <td>
+              <% if (c.status === 'aprob') { %><span class="st aprob">Aprobado</span>
+              <% } else if (c.status === 'rev') { %><span class="st rev">En revisión</span>
+              <% } else { %><span class="st pend">Pendiente</span><% } %>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<%- include('../partials/client-footer') %>

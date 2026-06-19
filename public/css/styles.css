@@ -358,3 +358,91 @@ dialog.modal h2 { margin-top: 0; }
   color: var(--bc-muted);
 }
 .footer .container { display: flex; justify-content: space-between; padding: 0 20px; }
+
+/* =====================================================================
+   Panel lateral del cliente (portal de proyectos)
+   ===================================================================== */
+body.has-sidebar { display: flex; min-height: 100vh; }
+.sidebar {
+  width: 250px; flex: 0 0 250px; background: var(--bc-bg-2);
+  border-right: 1px solid var(--bc-border); display: flex; flex-direction: column;
+  position: sticky; top: 0; height: 100vh;
+}
+.sidebar-brand { display: flex; align-items: center; gap: 10px; padding: 18px 18px; border-bottom: 1px solid var(--bc-border); }
+.sidebar-brand .brand-mark, .sidebar-brand img { width: 34px; height: 34px; border-radius: 9px; }
+.sidebar-brand strong {
+  display: block; font-size: 14px;
+  background: var(--bc-gradient); -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+}
+.sidebar-brand small { color: var(--bc-muted); font-size: 11px; }
+.sidebar-section { padding: 16px 18px 6px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #71717a; }
+.sidebar-nav { display: flex; flex-direction: column; gap: 2px; padding: 0 10px; }
+.sidebar-nav a {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 10px 12px; border-radius: 9px; color: var(--bc-muted); font-size: 14px; font-weight: 500;
+}
+.sidebar-nav a:hover { background: var(--bc-surface-2); color: var(--bc-text); text-decoration: none; }
+.sidebar-nav a.active { background: rgba(251,191,36,.12); color: var(--bc-gold); border: 1px solid rgba(251,191,36,.3); }
+.sidebar-nav .count-badge { background: var(--bc-gold); color: #1c1c1f; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 0 7px; min-width: 18px; text-align: center; }
+
+.shell-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+.topbar-2 {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 14px 28px; border-bottom: 1px solid var(--bc-border); background: var(--bc-bg-2);
+}
+.cuenta-chip {
+  display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px;
+  background: var(--bc-surface-2); border: 1px solid var(--bc-border-2); border-radius: 999px; font-size: 13px;
+}
+.cuenta-chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--bc-gold); }
+.cuenta-chip .lbl { color: #71717a; font-size: 10px; text-transform: uppercase; letter-spacing: .06em; }
+.shell-content { padding: 28px; max-width: 1280px; width: 100%; }
+
+@media (max-width: 820px) {
+  body.has-sidebar { flex-direction: column; }
+  .sidebar { width: 100%; flex-basis: auto; height: auto; position: static; flex-direction: row; flex-wrap: wrap; align-items: center; }
+  .sidebar-nav { flex-direction: row; flex-wrap: wrap; }
+  .sidebar-section { display: none; }
+}
+
+/* ---------- Pipeline (línea de tiempo) ---------- */
+.pipeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 20px; }
+@media (max-width: 980px) { .pipeline { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .pipeline { grid-template-columns: 1fr; } }
+.phase {
+  background: var(--bc-surface); border: 1px solid var(--bc-border); border-radius: 12px; padding: 18px;
+  border-top: 3px solid var(--bc-border-2);
+}
+.phase.done { border-top-color: var(--bc-green); }
+.phase.current { border-top-color: var(--bc-gold); box-shadow: 0 0 0 1px rgba(251,191,36,.25); }
+.phase .ph-state { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; font-weight: 700; }
+.phase.done .ph-state { color: var(--bc-green); }
+.phase.current .ph-state { color: var(--bc-gold); }
+.phase.pending .ph-state { color: #71717a; }
+.phase h3 { margin: 6px 0 2px; font-size: 17px; }
+.phase .ph-sub { color: var(--bc-muted); font-size: 13px; margin-bottom: 12px; }
+.phase ul { list-style: none; padding: 0; margin: 0 0 14px; }
+.phase ul li { font-size: 13px; padding: 4px 0 4px 16px; position: relative; }
+.phase ul li::before { content: ''; position: absolute; left: 0; top: 11px; width: 7px; height: 7px; border-radius: 50%; background: var(--bc-border-2); }
+.phase ul li.ok::before { background: var(--bc-green); }
+.phase ul li.cur::before { background: var(--bc-gold); }
+.entregable-box { background: var(--bc-surface-2); border: 1px solid var(--bc-border); border-radius: 9px; padding: 10px 12px; }
+.entregable-box .lbl { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: #71717a; }
+.entregable-box .val { font-size: 13px; font-weight: 600; margin-top: 2px; }
+
+/* ---------- Entregables (aprobación) ---------- */
+.deliv { display: flex; align-items: center; gap: 14px; background: var(--bc-surface); border: 1px solid var(--bc-border); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; }
+.deliv .fase { width: 38px; height: 38px; flex: 0 0 38px; border-radius: 9px; display: grid; place-items: center; font-weight: 800; background: var(--bc-surface-2); color: var(--bc-gold); border: 1px solid var(--bc-border-2); }
+.deliv .deliv-body { flex: 1 1 auto; min-width: 0; }
+.deliv .deliv-body strong { font-size: 14px; }
+.deliv .deliv-body .meta { display: block; }
+.deliv .deliv-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.st { font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 999px; text-transform: uppercase; letter-spacing: .03em; }
+.st.aprob { background: rgba(34,197,94,.14); color: #4ade80; }
+.st.rev { background: rgba(251,191,36,.14); color: var(--bc-gold); }
+.st.pend { background: var(--bc-surface-2); color: #a1a1aa; border: 1px solid var(--bc-border-2); }
+
+/* ---------- Minutas ---------- */
+.ai-tag { font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 999px; background: rgba(251,191,36,.14); color: var(--bc-gold); }
+.minuta-summary { border-left: 3px solid var(--bc-gold); }

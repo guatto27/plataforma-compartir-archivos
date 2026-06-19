@@ -1,0 +1,26 @@
+<%- include('../partials/client-header') %>
+
+<div class="page-head">
+  <p class="muted" style="margin:0 0 2px"><%= companyName || brand.name %> · Proyecto de diagnóstico con IA</p>
+  <h1>Pipeline del proyecto</h1>
+  <p class="muted">Cada fase tiene un hito de control y un entregable formal obligatorio para avanzar. Las soluciones de IA se integran en los puntos de fricción del rediseño To-Be.</p>
+</div>
+
+<div class="pipeline">
+  <% phases.forEach(function (p) { %>
+    <div class="phase <%= p.state %>">
+      <div class="ph-state"><%= p.label %></div>
+      <h3><%= p.name %></h3>
+      <div class="ph-sub"><%= p.sub %></div>
+      <ul>
+        <% p.items.forEach(function (it) { %><li class="<%= it.s %>"><%= it.t %></li><% }) %>
+      </ul>
+      <div class="entregable-box">
+        <div class="lbl">Entregable formal</div>
+        <div class="val"><%= p.entregable %></div>
+      </div>
+    </div>
+  <% }) %>
+</div>
+
+<%- include('../partials/client-footer') %>

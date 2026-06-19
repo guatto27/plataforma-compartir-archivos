@@ -61,9 +61,12 @@ const ck = (n, c) => { c ? ok++ : fail++; console.log((c ? '  ✓ ' : '  ✗ ') 
   r = await get(C, '/cambiar-password');
   await post(C, '/cambiar-password', { _csrf: csrf(await r.text()), current: 'ClienteTemporal123', next: 'ClienteNuevo2026', confirm: 'ClienteNuevo2026' });
 
-  // Entrevistas es la página principal; el usuario VE la entrevista creada por el admin
+  // Panel lateral: /app es "Mi proyecto" (pipeline)
   r = await get(C, '/app'); h = await r.text();
-  ck('cliente: /app es Entrevistas', h.includes('<h1>Entrevistas</h1>'));
+  ck('cliente: /app es Mi proyecto (pipeline)', h.includes('Pipeline del proyecto'));
+
+  // Agente de levantamiento: el usuario VE la entrevista creada por el admin
+  r = await get(C, '/app/agente'); h = await r.text();
   ck('cliente: ve la entrevista creada por el admin', h.includes(persona));
   ck('cliente: NO ve botón Agregar entrevista', !h.includes('dlg-add-interview'));
   const ivid = (h.match(/\/app\/interviews\/(\d+)\/link/) || [])[1];
@@ -71,19 +74,19 @@ const ck = (n, c) => { c ? ok++ : fail++; console.log((c ? '  ✓ ' : '  ✗ ') 
 
   // Guardar link de la entrevista
   await post(C, '/app/interviews/' + ivid + '/link', { _csrf: csrf(h), url: 'https://gemini.google.com/share/demo123' });
-  r = await get(C, '/app'); h = await r.text();
+  r = await get(C, '/app/agente'); h = await r.text();
   ck('cliente: link guardado (Ver entrevista)', h.includes('Ver entrevista'));
 
-  // Subir un archivo asociado a la entrevista
-  r = await get(C, '/app/archivos?entrevista=' + ivid); h = await r.text();
-  ck('cliente: Archivos filtrado por entrevista', h.includes(persona));
+  // Subir un archivo asociado a la entrevista (Entregables)
+  r = await get(C, '/app/entregables?entrevista=' + ivid); h = await r.text();
+  ck('cliente: Entregables filtrado por entrevista', h.includes(persona));
   await upload(C, '/app/upload', csrf(h), 'plantilla.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', Buffer.from('xlsx'), { interview_id: ivid });
-  r = await get(C, '/app/archivos?entrevista=' + ivid); h = await r.text();
+  r = await get(C, '/app/entregables?entrevista=' + ivid); h = await r.text();
   ck('cliente: archivo aparece en la entrevista', h.includes('plantilla.xlsx'));
 
-  // En la vista general de Archivos el archivo muestra su entrevista
-  r = await get(C, '/app/archivos'); h = await r.text();
-  ck('cliente: archivo asociado a "Juan Pérez" en tabla', h.includes('plantilla.xlsx') && h.includes(persona));
+  // En Entregables (todos) el archivo muestra su entrevista
+  r = await get(C, '/app/entregables'); h = await r.text();
+  ck('cliente: archivo asociado a la entrevista en la tabla', h.includes('plantilla.xlsx') && h.includes(persona));
   const fid = (h.match(/\/app\/file\/(\d+)\/view/) || [])[1];
 
   // Visualizar y comentar
@@ -116,17 +119,17 @@ const ck = (n, c) => { c ? ok++ : fail++; console.log((c ? '  ✓ ' : '  ✗ ') 
   ck('admin: edita información del usuario', h.includes('FilesUI Editado'));
 
   // El usuario NO puede eliminar entrevistas (solo el equipo): debe dar 403
-  r = await get(C, '/app'); h = await r.text();
+  r = await get(C, '/app/agente'); h = await r.text();
   const delTry = await post(C, '/app/interviews/' + ivid + '/delete', { _csrf: csrf(h) });
   ck('cliente: NO puede eliminar entrevista (403)', delTry.status === 403);
-  r = await get(C, '/app'); h = await r.text();
+  r = await get(C, '/app/agente'); h = await r.text();
   ck('cliente: la entrevista sigue registrada', h.includes(persona));
-  r = await get(C, '/app/archivos'); h = await r.text();
+  r = await get(C, '/app/entregables'); h = await r.text();
   ck('cliente: su archivo sigue disponible', h.includes('plantilla.xlsx'));
 
   // El dueño elimina su archivo
   await post(C, '/app/file/' + fid + '/delete', { _csrf: csrf(h) });
-  r = await get(C, '/app/archivos'); h = await r.text();
+  r = await get(C, '/app/entregables'); h = await r.text();
   ck('cliente: dueño elimina su archivo', !h.includes('plantilla.xlsx'));
 
   console.log('\n  ' + ok + ' ok, ' + fail + ' fallos\n');

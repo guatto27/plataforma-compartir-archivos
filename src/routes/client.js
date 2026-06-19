@@ -17,47 +17,95 @@ const {
 
 const router = express.Router();
 
-// Todas las rutas requieren cliente autenticado con contraseña ya cambiada
+// Todas las rutas requieren cliente (usuario) autenticado con contraseña cambiada
 router.use(requireLogin, requireRole('client'), requirePasswordChanged);
 
 // Acciones por archivo y por entrevista (ver, descargar, eliminar, comentar, link)
 router.use(makeFileRouter());
 router.use(makeInterviewActionsRouter());
 
-// Página principal: Entrevistas
-router.get('/', (req, res) => {
-  const interviews = db
-    .prepare(
-      `SELECT iv.*,
-              (SELECT COUNT(*) FROM files f WHERE f.interview_id = iv.id) AS file_count
-       FROM interviews iv
-       WHERE iv.client_id = ?
-       ORDER BY iv.created_at DESC`
-    )
-    .all(req.session.userId);
+// Empresa del usuario (para la cabecera)
+function companyOf(req) {
+  const me = db.prepare('SELECT company_name FROM users WHERE id = ?').get(req.session.userId);
+  return me ? me.company_name : null;
+}
 
-  res.render('client/interviews', { title: 'Entrevistas', interviews });
+// --- Contenido de ejemplo (estructura fija; se hará editable más adelante) ---
+const PIPELINE = [
+  {
+    state: 'done', label: 'Completada', name: 'Diagnóstico As-Is', sub: 'Levantamiento del estado actual',
+    items: [
+      { t: 'Inventario de procesos actuales', s: 'ok' },
+      { t: 'Encuestas al personal (As-Is)', s: 'ok' },
+      { t: 'Mapa de procesos As-Is', s: 'ok' },
+    ],
+    entregable: 'Mapa de procesos As-Is validado',
+  },
+  {
+    state: 'current', label: 'En curso', name: 'Rediseño To-Be', sub: 'Arquitectura futura con IA',
+    items: [
+      { t: 'Arquitectura de procesos To-Be', s: 'cur' },
+      { t: 'Puntos de fricción + IA estratégica', s: '' },
+      { t: 'Business case de automatización', s: '' },
+    ],
+    entregable: 'Modelo To-Be aprobado por el cliente',
+  },
+  {
+    state: 'pending', label: 'Pendiente', name: 'Desarrollo a la medida', sub: 'Construcción y despliegue',
+    items: [
+      { t: 'MVP de la solución de IA', s: '' },
+      { t: 'Integración con sistemas core', s: '' },
+    ],
+    entregable: 'Solución en producción',
+  },
+  {
+    state: 'pending', label: 'Pendiente', name: 'Implementación y cierre', sub: 'Pruebas · capacitación · cierre',
+    items: [
+      { t: 'Pruebas y ajustes', s: '' },
+      { t: 'Capacitación y entrega', s: '' },
+    ],
+    entregable: 'Acta de cierre del proyecto',
+  },
+];
+
+const DELIVERABLES = [
+  { fase: 'F1', name: 'Inventario de procesos actuales', phase: 'Diagnóstico As-Is', status: 'aprob' },
+  { fase: 'F1', name: 'Encuestas al personal (As-Is)', phase: 'Diagnóstico As-Is', status: 'aprob' },
+  { fase: 'F1', name: 'Mapa de procesos As-Is', phase: 'Diagnóstico As-Is', status: 'aprob' },
+  { fase: 'F2', name: 'Arquitectura de procesos To-Be', phase: 'Rediseño To-Be', status: 'rev' },
+  { fase: 'F2', name: 'Puntos de fricción + IA estratégica', phase: 'Rediseño To-Be', status: 'pend' },
+  { fase: 'F2', name: 'Business case de automatización', phase: 'Rediseño To-Be', status: 'pend' },
+];
+
+const SAMPLE_MINUTA = {
+  summary:
+    'Resumen de ejemplo: se revisó el avance del rediseño To-Be y se acordaron los compromisos de la semana. ' +
+    'Esta minuta es una muestra; la generación automática con IA se conectará en una etapa posterior.',
+  commitments: [
+    { t: 'Ajustar el modelo To-Be según comentarios', who: 'Equipo ' + config.brand.name, due: '—', status: 'rev' },
+    { t: 'Validar requerimientos con el área', who: 'Cliente', due: '—', status: 'pend' },
+    { t: 'Consolidar respuestas de encuestas As-Is', who: 'Equipo ' + config.brand.name, due: '—', status: 'aprob' },
+  ],
+};
+
+// Mi proyecto (pipeline)
+router.get('/', (req, res) => {
+  res.render('client/proyecto', {
+    title: 'Mi proyecto', active: 'proyecto', companyName: companyOf(req), phases: PIPELINE,
+  });
 });
 
-// Nota: el usuario (cliente) NO crea entrevistas; las registra el equipo
-// (admin/colaborador). El usuario solo pega el link y asocia archivos.
-
-// Página de Archivos (opcionalmente filtrada por entrevista)
-router.get('/archivos', (req, res) => {
+// Entregables (archivos reales + aprobación de ejemplo)
+router.get('/entregables', (req, res) => {
   const clientId = req.session.userId;
-
   let interview = null;
   if (req.query.entrevista) {
     const iv = getAccessibleInterview(req, req.query.entrevista);
     if (iv && iv.client_id === clientId) interview = iv;
   }
-
   const params = [clientId];
   let where = 'f.client_id = ?';
-  if (interview) {
-    where += ' AND f.interview_id = ?';
-    params.push(interview.id);
-  }
+  if (interview) { where += ' AND f.interview_id = ?'; params.push(interview.id); }
 
   const files = db
     .prepare(
@@ -77,17 +125,40 @@ router.get('/archivos', (req, res) => {
     .prepare(`SELECT id, nombre, cargo FROM interviews WHERE client_id = ? ORDER BY nombre`)
     .all(clientId);
 
-  res.render('files', {
-    title: 'Archivos',
-    files,
-    interviews,
-    interview,
-    clients: null, // cliente no elige cliente destino
+  res.render('client/entregables', {
+    title: 'Entregables', active: 'entregables', companyName: companyOf(req),
+    files, interviews, interview, deliverables: DELIVERABLES,
     maxFileMb: Math.round(config.maxFileBytes / (1024 * 1024)),
   });
 });
 
-// Subida de archivos del cliente hacia el consultor
+// Minutas (ejemplo)
+router.get('/minutas', (req, res) => {
+  res.render('client/minutas', {
+    title: 'Minutas', active: 'minutas', companyName: companyOf(req), minuta: SAMPLE_MINUTA,
+  });
+});
+
+// Agente de levantamiento (entrevistas reales)
+router.get('/agente', (req, res) => {
+  const interviews = db
+    .prepare(
+      `SELECT iv.*, (SELECT COUNT(*) FROM files f WHERE f.interview_id = iv.id) AS file_count
+       FROM interviews iv WHERE iv.client_id = ? ORDER BY iv.created_at DESC`
+    )
+    .all(req.session.userId);
+  res.render('client/agente', {
+    title: 'Agente de levantamiento', active: 'agente', companyName: companyOf(req), interviews,
+  });
+});
+
+// Compatibilidad: /archivos ahora vive dentro de Entregables
+router.get('/archivos', (req, res) => {
+  const q = req.query.entrevista ? `?entrevista=${encodeURIComponent(req.query.entrevista)}` : '';
+  res.redirect('/app/entregables' + q);
+});
+
+// Subida de archivos del usuario
 router.post('/upload', upload.array('files', 10), (req, res) => {
   if (!verifyCsrf(req)) return denyCsrf(res);
 
@@ -97,10 +168,11 @@ router.post('/upload', upload.array('files', 10), (req, res) => {
     const iv = getAccessibleInterview(req, req.body.interview_id);
     if (iv && iv.client_id === req.session.userId) interviewId = iv.id;
   }
+  const back = interviewId ? `/app/entregables?entrevista=${interviewId}` : '/app/entregables';
 
   if (files.length === 0) {
     req.session.flash = { type: 'error', text: 'No seleccionaste ningún archivo.' };
-    return res.redirect(interviewId ? `/app/archivos?entrevista=${interviewId}` : '/app/archivos');
+    return res.redirect(back);
   }
 
   const description = String(req.body.description || '').slice(0, 500);
@@ -114,7 +186,7 @@ router.post('/upload', upload.array('files', 10), (req, res) => {
   logAction(req.session.userId, 'client_upload', `${files.length} archivo(s)`, req.ip);
 
   req.session.flash = { type: 'success', text: 'Archivo(s) subido(s) correctamente.' };
-  res.redirect(interviewId ? `/app/archivos?entrevista=${interviewId}` : '/app/archivos');
+  res.redirect(back);
 });
 
 module.exports = router;
