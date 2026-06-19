@@ -388,6 +388,14 @@ body.has-sidebar { display: flex; min-height: 100vh; }
 .sidebar-nav a .count-badge { margin-left: auto; }
 .sidebar-nav .count-badge { background: var(--bc-gold); color: #1c1c1f; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 0 7px; min-width: 18px; text-align: center; }
 
+/* Submenu anidado en sidebar */
+.sidebar-subnav { padding: 0 10px 0 22px; display: flex; flex-direction: column; gap: 2px; }
+.sidebar-subnav a { display: flex; align-items: center; gap: 8px; padding: 7px 10px 7px 12px; border-radius: 7px; color: var(--bc-muted); font-size: 13px; font-weight: 500; border-left: 2px solid var(--bc-border); transition: background .15s ease, color .15s ease, border-color .15s ease; }
+.sidebar-subnav a:hover { background: var(--bc-surface-2); color: var(--bc-text); text-decoration: none; border-color: var(--bc-border-2); }
+.sidebar-subnav a.active { background: rgba(251,191,36,.08); color: var(--bc-gold); border-color: var(--bc-gold); }
+.sidebar-subnav .nav-icon { width: 15px; height: 15px; }
+.sidebar-subnav .nav-icon svg { width: 15px; height: 15px; }
+
 /* Icono SVG en cada elemento del menú lateral */
 .nav-icon { flex: 0 0 auto; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; opacity: .7; }
 .nav-icon svg { width: 18px; height: 18px; }
