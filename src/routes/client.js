@@ -56,7 +56,7 @@ const PIPELINE = [
         desc: 'Modelar y documentar el proceso deseado. Una vez que sabes qué está mal y analizaste las causas raíz, diseñas el proceso ideal: cómo operará la organización con la nueva plataforma a la medida para automatizar y agilizar los flujos.',
       },
     ],
-    entregable: 'Mapa de procesos As-Is validado',
+    entregable: 'Diagnóstico y Levantamiento',
   },
   {
     state: 'pending', label: 'Pendiente', name: 'Rediseño To-Be', sub: 'Arquitectura futura con IA',
