@@ -105,53 +105,61 @@ const SAMPLE_MINUTA = {
   ],
 };
 
-// Mi proyecto (pipeline)
+// Mi proyecto (pipeline) — solo cliente_responsable; client va a entrevistas
 router.get('/', (req, res) => {
+  if (req.session.role === 'client') return res.redirect('/app/agente');
   res.render('client/proyecto', {
     title: 'Mi proyecto', active: 'proyecto', companyName: companyOf(req),
     phase: PIPELINE[0],
   });
 });
 
-// Entregables (archivos reales + aprobación de ejemplo)
+// Entregables — cliente_responsable ve lista formal; client ve sus archivos
 router.get('/entregables', (req, res) => {
-  const clientId = req.session.userId;
-  let interview = null;
-  if (req.query.entrevista) {
-    const iv = getAccessibleInterview(req, req.query.entrevista);
-    if (iv && iv.client_id === clientId) interview = iv;
+  if (req.session.role === 'client') {
+    const clientId = req.session.userId;
+    let interview = null;
+    if (req.query.entrevista) {
+      const iv = getAccessibleInterview(req, req.query.entrevista);
+      if (iv && iv.client_id === clientId) interview = iv;
+    }
+    const params = [clientId];
+    let where = 'f.client_id = ?';
+    if (interview) { where += ' AND f.interview_id = ?'; params.push(interview.id); }
+
+    const files = db
+      .prepare(
+        `SELECT f.*,
+                u.username AS owner_username, u.display_name AS owner_name, u.role AS owner_role,
+                iv.nombre AS interview_nombre,
+                (SELECT COUNT(*) FROM comments c WHERE c.file_id = f.id) AS comment_count
+         FROM files f
+         LEFT JOIN users u ON u.id = f.uploaded_by
+         LEFT JOIN interviews iv ON iv.id = f.interview_id
+         WHERE ${where}
+         ORDER BY f.created_at DESC`
+      )
+      .all(...params);
+
+    const interviews = db
+      .prepare(`SELECT id, nombre, cargo FROM interviews WHERE client_id = ? ORDER BY nombre`)
+      .all(clientId);
+
+    return res.render('client/archivos', {
+      title: 'Archivos', active: 'entregables', companyName: companyOf(req),
+      files, interviews, interview,
+      maxFileMb: Math.round(config.maxFileBytes / (1024 * 1024)),
+    });
   }
-  const params = [clientId];
-  let where = 'f.client_id = ?';
-  if (interview) { where += ' AND f.interview_id = ?'; params.push(interview.id); }
-
-  const files = db
-    .prepare(
-      `SELECT f.*,
-              u.username AS owner_username, u.display_name AS owner_name, u.role AS owner_role,
-              iv.nombre AS interview_nombre,
-              (SELECT COUNT(*) FROM comments c WHERE c.file_id = f.id) AS comment_count
-       FROM files f
-       LEFT JOIN users u ON u.id = f.uploaded_by
-       LEFT JOIN interviews iv ON iv.id = f.interview_id
-       WHERE ${where}
-       ORDER BY f.created_at DESC`
-    )
-    .all(...params);
-
-  const interviews = db
-    .prepare(`SELECT id, nombre, cargo FROM interviews WHERE client_id = ? ORDER BY nombre`)
-    .all(clientId);
 
   res.render('client/entregables', {
     title: 'Entregables', active: 'entregables', companyName: companyOf(req),
-    files, interviews, interview, deliverables: DELIVERABLES,
-    maxFileMb: Math.round(config.maxFileBytes / (1024 * 1024)),
   });
 });
 
-// Minutas
+// Minutas — solo cliente_responsable
 router.get('/minutas', (req, res) => {
+  if (req.session.role === 'client') return res.redirect('/app/agente');
   res.render('client/minutas', {
     title: 'Minutas', active: 'minutas', companyName: companyOf(req), minutas: [],
   });
