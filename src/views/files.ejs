@@ -1,4 +1,4 @@
-<%- include('partials/header') %>
+<%- include('partials/shell-header') %>
 <% var isAdmin = currentUser.role === 'admin'; var base = isAdmin ? '/admin' : '/app'; %>
 
 <div class="page-head">
@@ -66,4 +66,4 @@
 
 <%- include('partials/filetable') %>
 
-<%- include('partials/footer') %>
+<%- include('partials/shell-footer') %>

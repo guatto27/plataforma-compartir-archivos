@@ -71,7 +71,7 @@ router.get('/', (req, res) => {
     )
     .all();
 
-  res.render('admin/interviews', { title: 'Entrevistas', interviews, clients: activeClients() });
+  res.render('admin/interviews', { title: 'Entrevistas', active: 'entrevistas', interviews, clients: activeClients() });
 });
 
 // Crear una entrevista (admin elige el usuario)
@@ -139,6 +139,7 @@ router.get('/archivos', (req, res) => {
 
   res.render('files', {
     title: 'Archivos',
+    active: 'archivos',
     files,
     interviews,
     interview,
@@ -201,7 +202,7 @@ router.get('/empresas', (req, res) => {
        FROM companies c ORDER BY c.created_at DESC`
     )
     .all();
-  res.render('admin/empresas', { title: 'Empresas', companies, canManage: req.session.role === 'admin' });
+  res.render('admin/empresas', { title: 'Empresas', active: 'empresas', companies, canManage: req.session.role === 'admin' });
 });
 
 router.post('/empresas', requireAdmin, (req, res) => {
@@ -281,6 +282,7 @@ router.get('/usuarios', (req, res) => {
 
   res.render('admin/usuarios', {
     title: 'Usuarios',
+    active: 'usuarios',
     users,
     companies: activeCompanies(),
     summary,
@@ -376,6 +378,7 @@ router.get('/usuarios/:id', (req, res) => {
 
   res.render('admin/client', {
     title: cliente.display_name || cliente.username,
+    active: 'usuarios',
     cliente,
     companies: activeCompanies(),
     filesFromClient,

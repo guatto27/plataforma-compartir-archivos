@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title><%= title %> · <%= brand.name %></title>
+  <link rel="icon" type="image/svg+xml" href="/static/img/logo.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/styles.css" />
+</head>
+<%
+  var role = currentUser ? currentUser.role : 'client';
+  var isClient = role === 'client';
+  var isStaff = role === 'admin' || role === 'colaborador';
+  var homeBase = isStaff ? '/admin' : '/app';
+  var act = (typeof active !== 'undefined') ? active : '';
+%>
+<body class="has-sidebar">
+  <aside class="sidebar">
+    <a class="sidebar-brand" href="<%= homeBase %>">
+      <img src="/static/img/logo.svg" alt="<%= brand.name %>" width="34" height="34" />
+      <span>
+        <strong><%= brand.name %></strong>
+        <small><%= brand.tagline %></small>
+      </span>
+    </a>
+    <% if (isClient) { %>
+      <div class="sidebar-section">Cliente</div>
+      <nav class="sidebar-nav">
+        <a href="/app" class="<%= act === 'proyecto' ? 'active' : '' %>">Mi proyecto</a>
+        <a href="/app/entregables" class="<%= act === 'entregables' ? 'active' : '' %>">Entregables</a>
+        <a href="/app/minutas" class="<%= act === 'minutas' ? 'active' : '' %>">Minutas</a>
+        <a href="/app/agente" class="<%= act === 'agente' ? 'active' : '' %>">Agente de levantamiento</a>
+      </nav>
+    <% } else { %>
+      <div class="sidebar-section"><%= role === 'admin' ? 'Administración' : 'Equipo' %></div>
+      <nav class="sidebar-nav">
+        <a href="/admin" class="<%= act === 'entrevistas' ? 'active' : '' %>">Entrevistas</a>
+        <a href="/admin/archivos" class="<%= act === 'archivos' ? 'active' : '' %>">Archivos</a>
+        <a href="/admin/empresas" class="<%= act === 'empresas' ? 'active' : '' %>">Empresas</a>
+        <a href="/admin/usuarios" class="<%= act === 'usuarios' ? 'active' : '' %>">Usuarios</a>
+      </nav>
+    <% } %>
+  </aside>
+
+  <div class="shell-main">
+    <header class="topbar-2">
+      <% if (isClient) { %>
+        <span class="cuenta-chip">
+          <span class="dot"></span>
+          <span><span class="lbl">Cuenta activa</span><br><strong><%= (typeof companyName !== 'undefined' && companyName) ? companyName : brand.name %></strong></span>
+        </span>
+      <% } else { %>
+        <span class="cuenta-chip">
+          <span class="dot"></span>
+          <span><span class="lbl">Sesión</span><br><strong><%= role === 'admin' ? 'Administrador' : 'Colaborador' %></strong></span>
+        </span>
+      <% } %>
+      <% if (currentUser) { %>
+        <nav class="nav">
+          <details class="usermenu">
+            <summary class="avatar" title="<%= currentUser.displayName %>"><%= (currentUser.displayName || '?').charAt(0).toUpperCase() %></summary>
+            <div class="usermenu-pop">
+              <div class="usermenu-name"><%= currentUser.displayName %></div>
+              <a href="/cambiar-password">Cambiar mi contraseña</a>
+              <form method="post" action="/logout">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                <button type="submit" class="usermenu-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                  Salir
+                </button>
+              </form>
+            </div>
+          </details>
+        </nav>
+      <% } %>
+    </header>
+    <main class="shell-content">
+      <%- include('flash') %>
