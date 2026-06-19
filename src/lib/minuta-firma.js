@@ -172,8 +172,6 @@ function placeBlock(pdfDoc, font, fontB, rgb, target, anchor, fallbackSide, data
 
 function drawFooters(pdfDoc, font, rgb, footerTxt) {
   for (const page of pdfDoc.getPages()) {
-    const { width } = page.getSize();
-    page.drawLine({ start: { x: 28, y: 24 }, end: { x: width - 28, y: 24 }, thickness: 0.4, color: rgb(0.66, 0.66, 0.66) });
     page.drawText(footerTxt, { x: 28, y: 13, size: 6, font, color: rgb(0.44, 0.44, 0.44) });
   }
 }
