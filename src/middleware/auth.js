@@ -30,6 +30,17 @@ function requireStaff(req, res, next) {
   });
 }
 
+// Requiere usuario de empresa cliente: 'client' (usuario) o 'cliente_responsable'
+function requireClientArea(req, res, next) {
+  if (req.session && req.session.userId && (req.session.role === 'client' || req.session.role === 'cliente_responsable')) {
+    return next();
+  }
+  return res.status(403).render('error', {
+    title: 'Acceso denegado',
+    message: 'No tienes permiso para ver esta página.',
+  });
+}
+
 // Si el usuario debe cambiar su contraseña, lo forzamos antes de seguir
 function requirePasswordChanged(req, res, next) {
   if (req.session && req.session.mustChangePassword) {
@@ -87,6 +98,7 @@ module.exports = {
   requireLogin,
   requireRole,
   requireStaff,
+  requireClientArea,
   requirePasswordChanged,
   csrfProtection,
   verifyCsrf,

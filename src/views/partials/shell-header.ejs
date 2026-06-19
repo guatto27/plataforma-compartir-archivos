@@ -13,7 +13,7 @@
 </head>
 <%
   var role = currentUser ? currentUser.role : 'client';
-  var isClient = role === 'client';
+  var isClient = role === 'client' || role === 'cliente_responsable';
   var isAdmin  = role === 'admin';
   var isColab  = role === 'colaborador';
   var isStaff  = isAdmin || isColab;

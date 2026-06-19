@@ -48,7 +48,7 @@ function activeClients() {
     .prepare(
       `SELECT u.id, u.username, u.display_name, u.company_id, c.name AS company_name
        FROM users u LEFT JOIN companies c ON c.id = u.company_id
-       WHERE u.role = 'client' AND u.active = 1
+       WHERE u.role IN ('client', 'cliente_responsable') AND u.active = 1
        ORDER BY c.name, u.display_name`
     )
     .all();
@@ -198,7 +198,7 @@ router.get('/empresas', (req, res) => {
   const companies = db
     .prepare(
       `SELECT c.*,
-              (SELECT COUNT(*) FROM users u WHERE u.company_id = c.id AND u.role = 'client') AS user_count
+              (SELECT COUNT(*) FROM users u WHERE u.company_id = c.id AND u.role IN ('client', 'cliente_responsable')) AS user_count
        FROM companies c ORDER BY c.created_at DESC`
     )
     .all();
@@ -264,11 +264,11 @@ router.get('/usuarios', (req, res) => {
               (SELECT COUNT(*) FROM files f WHERE f.client_id = u.id AND f.direction = 'to_admin') AS files_in,
               (SELECT COUNT(*) FROM interviews iv WHERE iv.client_id = u.id) AS links
        FROM users u LEFT JOIN companies co ON co.id = u.company_id
-       WHERE u.role IN ('client', 'colaborador') ORDER BY u.created_at DESC`
+       WHERE u.role IN ('client', 'colaborador', 'cliente_responsable') ORDER BY u.created_at DESC`
     )
     .all();
 
-  const clients = users.filter((u) => u.role === 'client');
+  const clients = users.filter((u) => u.role !== 'colaborador');
   const summary = {
     total: users.length,
     collaborators: users.filter((u) => u.role === 'colaborador').length,
@@ -294,10 +294,10 @@ router.get('/usuarios', (req, res) => {
 // Crear un usuario. role = 'client' (cliente de una empresa) o 'colaborador'
 // (equipo BusinessCool, sin empresa).
 router.post('/usuarios', requireAdmin, async (req, res) => {
-  const role = req.body.role === 'colaborador' ? 'colaborador' : 'client';
+  const role = ['colaborador', 'cliente_responsable'].includes(req.body.role) ? req.body.role : 'client';
 
   let company = null;
-  if (role === 'client') {
+  if (role !== 'colaborador') {
     company = db.prepare(`SELECT * FROM companies WHERE id = ? AND active = 1`).get(req.body.company_id);
     if (!company) {
       req.session.flash = { type: 'error', text: 'Selecciona una empresa válida para el usuario cliente. Si no hay, créala en Empresas primero.' };
@@ -359,7 +359,7 @@ router.get('/usuarios/:id', (req, res) => {
     .prepare(
       `SELECT u.*, co.name AS company_name_real
        FROM users u LEFT JOIN companies co ON co.id = u.company_id
-       WHERE u.id = ? AND u.role IN ('client', 'colaborador')`
+       WHERE u.id = ? AND u.role IN ('client', 'colaborador', 'cliente_responsable')`
     )
     .get(req.params.id);
   if (!cliente) {
@@ -421,14 +421,14 @@ router.post('/usuarios/:id/upload', upload.array('files', 10), (req, res) => {
 
 // Editar un usuario (acceso, nombre, empresa, rol, correo)
 router.post('/usuarios/:id/edit', requireAdmin, (req, res) => {
-  const client = db.prepare(`SELECT * FROM users WHERE id = ? AND role IN ('client', 'colaborador')`).get(req.params.id);
+  const client = db.prepare(`SELECT * FROM users WHERE id = ? AND role IN ('client', 'colaborador', 'cliente_responsable')`).get(req.params.id);
   if (!client) {
     return res.status(404).render('error', { title: 'No encontrado', message: 'Usuario no encontrado.' });
   }
   const username = String(req.body.username || '').trim().toLowerCase();
   const displayName = String(req.body.display_name || '').trim().slice(0, 120);
   const email = String(req.body.email || '').trim().slice(0, 160);
-  const role = req.body.role === 'colaborador' ? 'colaborador' : 'client';
+  const role = ['colaborador', 'cliente_responsable'].includes(req.body.role) ? req.body.role : 'client';
   const back = `/admin/usuarios/${client.id}`;
 
   if (!USERNAME_RE.test(username)) {
@@ -445,7 +445,7 @@ router.post('/usuarios/:id/edit', requireAdmin, (req, res) => {
   }
 
   let company = null;
-  if (role === 'client') {
+  if (role !== 'colaborador') {
     company = db.prepare('SELECT * FROM companies WHERE id = ?').get(req.body.company_id);
     if (!company) {
       req.session.flash = { type: 'error', text: 'Selecciona una empresa válida para el usuario cliente.' };
@@ -469,7 +469,7 @@ router.post('/usuarios/:id/edit', requireAdmin, (req, res) => {
 
 // Restablecer contraseña de un usuario
 router.post('/usuarios/:id/reset-password', requireAdmin, async (req, res) => {
-  const client = db.prepare(`SELECT * FROM users WHERE id = ? AND role IN ('client', 'colaborador')`).get(req.params.id);
+  const client = db.prepare(`SELECT * FROM users WHERE id = ? AND role IN ('client', 'colaborador', 'cliente_responsable')`).get(req.params.id);
   if (!client) {
     return res.status(404).render('error', { title: 'No encontrado', message: 'Usuario no encontrado.' });
   }
@@ -494,7 +494,7 @@ router.post('/usuarios/:id/reset-password', requireAdmin, async (req, res) => {
 
 // Activar / desactivar acceso de un usuario
 router.post('/usuarios/:id/toggle-active', requireAdmin, (req, res) => {
-  const client = db.prepare(`SELECT * FROM users WHERE id = ? AND role IN ('client', 'colaborador')`).get(req.params.id);
+  const client = db.prepare(`SELECT * FROM users WHERE id = ? AND role IN ('client', 'colaborador', 'cliente_responsable')`).get(req.params.id);
   if (!client) {
     return res.status(404).render('error', { title: 'No encontrado', message: 'Usuario no encontrado.' });
   }
@@ -507,7 +507,7 @@ router.post('/usuarios/:id/toggle-active', requireAdmin, (req, res) => {
 
 // Eliminar un usuario por completo (sus entrevistas, archivos y comentarios)
 router.post('/usuarios/:id/delete', requireAdmin, (req, res) => {
-  const client = db.prepare(`SELECT * FROM users WHERE id = ? AND role IN ('client', 'colaborador')`).get(req.params.id);
+  const client = db.prepare(`SELECT * FROM users WHERE id = ? AND role IN ('client', 'colaborador', 'cliente_responsable')`).get(req.params.id);
   if (!client) {
     return res.status(404).render('error', { title: 'No encontrado', message: 'Usuario no encontrado.' });
   }

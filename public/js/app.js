@@ -1,5 +1,15 @@
 'use strict';
 
+// Carrusel: botones ‹ › que desplazan el track horizontalmente
+document.addEventListener('click', function (e) {
+  var nav = e.target.closest('[data-carousel]');
+  if (!nav) return;
+  var track = nav.parentElement.querySelector('.pipeline');
+  if (!track) return;
+  var amount = 346; // ancho de tarjeta + separación
+  track.scrollBy({ left: nav.getAttribute('data-carousel') === 'next' ? amount : -amount, behavior: 'smooth' });
+});
+
 // --- Ventanas emergentes (modales) con <dialog> ---
 // Abrir: cualquier elemento con data-dialog="id-del-dialog"
 // Cerrar: cualquier elemento con [data-close] dentro del dialog, clic en el fondo, o Esc.

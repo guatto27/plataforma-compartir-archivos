@@ -5,7 +5,7 @@
   <h1><%= cliente.display_name || cliente.username %></h1>
   <p class="muted">
     Usuario: <code><%= cliente.username %></code>
-    · Tipo: <%= cliente.role === 'colaborador' ? 'Colaborador' : 'Usuario' %>
+    · Tipo: <%= cliente.role === 'colaborador' ? 'Colaborador' : (cliente.role === 'cliente_responsable' ? 'Cliente responsable' : 'Usuario') %>
     · Empresa: <%= cliente.role === 'colaborador' ? '—' : (cliente.company_name_real || cliente.company_name || '—') %>
     · <%= cliente.active ? 'Activo' : 'Inactivo' %>
   </p>
@@ -32,7 +32,8 @@
     <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
     <label>Tipo de usuario
       <select name="role">
-        <option value="client" <%= cliente.role !== 'colaborador' ? 'selected' : '' %>>Usuario (cliente de una empresa)</option>
+        <option value="client" <%= cliente.role === 'client' ? 'selected' : '' %>>Usuario (cliente de una empresa)</option>
+        <option value="cliente_responsable" <%= cliente.role === 'cliente_responsable' ? 'selected' : '' %>>Cliente responsable (de una empresa)</option>
         <option value="colaborador" <%= cliente.role === 'colaborador' ? 'selected' : '' %>>Colaborador (equipo <%= brand.name %>)</option>
       </select>
     </label>

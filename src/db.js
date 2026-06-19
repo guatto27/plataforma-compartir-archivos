@@ -19,7 +19,7 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
-    role TEXT NOT NULL CHECK (role IN ('admin', 'client', 'colaborador')),
+    role TEXT NOT NULL CHECK (role IN ('admin', 'client', 'colaborador', 'cliente_responsable')),
     display_name TEXT,
     company_name TEXT,
     must_change_password INTEGER NOT NULL DEFAULT 1,
@@ -113,13 +113,13 @@ if (!userCols.some((c) => c.name === 'email')) {
 // Migración: permitir el rol 'colaborador'. En bases creadas con el CHECK
 // antiguo (solo admin/client) se reconstruye la tabla users preservando datos.
 const usersSql = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='users'").get();
-if (usersSql && usersSql.sql && !usersSql.sql.includes("'colaborador'")) {
+if (usersSql && usersSql.sql && !usersSql.sql.includes("'cliente_responsable'")) {
   db.exec('PRAGMA foreign_keys = OFF');
   db.exec(`CREATE TABLE users_new (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
-    role TEXT NOT NULL CHECK (role IN ('admin', 'client', 'colaborador')),
+    role TEXT NOT NULL CHECK (role IN ('admin', 'client', 'colaborador', 'cliente_responsable')),
     display_name TEXT,
     company_name TEXT,
     must_change_password INTEGER NOT NULL DEFAULT 1,

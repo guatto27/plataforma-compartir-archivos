@@ -419,9 +419,24 @@ body.has-sidebar { display: flex; min-height: 100vh; }
 }
 
 /* ---------- Pipeline (línea de tiempo) ---------- */
-.pipeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 20px; align-items: start; }
-@media (max-width: 980px) { .pipeline { grid-template-columns: 1fr 1fr; } }
-@media (max-width: 560px) { .pipeline { grid-template-columns: 1fr; } }
+/* Carrusel de fases */
+.carousel { position: relative; margin-top: 20px; }
+.pipeline { display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; padding: 4px 2px 14px; align-items: start; }
+.pipeline::-webkit-scrollbar { height: 8px; }
+.pipeline::-webkit-scrollbar-thumb { background: var(--bc-border-2); border-radius: 4px; }
+.pipeline .phase { flex: 0 0 330px; scroll-snap-align: start; }
+.carousel-nav {
+  position: absolute; top: 90px; width: 40px; height: 40px; border-radius: 50%;
+  background: var(--bc-surface); border: 1px solid var(--bc-border-2); color: var(--bc-text);
+  font-size: 24px; line-height: 1; cursor: pointer; z-index: 5; display: grid; place-items: center;
+  box-shadow: var(--bc-shadow);
+}
+.carousel-nav:hover { border-color: var(--bc-gold); color: var(--bc-gold); }
+.carousel-nav.prev { left: -10px; }
+.carousel-nav.next { right: -10px; }
+.phase-topline { display: flex; align-items: center; justify-content: space-between; }
+.phase-num { font-size: 11px; color: #71717a; text-transform: uppercase; letter-spacing: .05em; }
+@media (max-width: 700px) { .carousel-nav { display: none; } }
 .phase {
   background: var(--bc-surface); border: 1px solid var(--bc-border); border-radius: 12px; padding: 18px;
   border-top: 3px solid var(--bc-border-2);

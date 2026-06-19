@@ -9,7 +9,7 @@ const { makeFileRouter } = require('./files');
 const { makeInterviewActionsRouter, getAccessibleInterview } = require('./interviews');
 const {
   requireLogin,
-  requireRole,
+  requireClientArea,
   requirePasswordChanged,
   verifyCsrf,
   denyCsrf,
@@ -17,8 +17,8 @@ const {
 
 const router = express.Router();
 
-// Todas las rutas requieren cliente (usuario) autenticado con contraseña cambiada
-router.use(requireLogin, requireRole('client'), requirePasswordChanged);
+// Todas las rutas requieren usuario de empresa (client o cliente_responsable)
+router.use(requireLogin, requireClientArea, requirePasswordChanged);
 
 // Acciones por archivo y por entrevista (ver, descargar, eliminar, comentar, link)
 router.use(makeFileRouter());
@@ -54,9 +54,9 @@ const PIPELINE = [
     entregable: 'Mapa de procesos As-Is validado',
   },
   {
-    state: 'current', label: 'En curso', name: 'Rediseño To-Be', sub: 'Arquitectura futura con IA',
+    state: 'pending', label: 'Pendiente', name: 'Rediseño To-Be', sub: 'Arquitectura futura con IA',
     items: [
-      { t: 'Arquitectura de procesos To-Be', s: 'cur' },
+      { t: 'Arquitectura de procesos To-Be', s: '' },
       { t: 'Puntos de fricción + IA estratégica', s: '' },
       { t: 'Business case de automatización', s: '' },
     ],
@@ -104,7 +104,7 @@ const SAMPLE_MINUTA = {
 router.get('/', (req, res) => {
   res.render('client/proyecto', {
     title: 'Mi proyecto', active: 'proyecto', companyName: companyOf(req),
-    phase: PIPELINE[0], // por ahora solo la Fase 1; las demás se agregan después
+    phases: PIPELINE,
   });
 });
 

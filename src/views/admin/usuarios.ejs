@@ -1,5 +1,5 @@
 <%- include('../partials/shell-header') %>
-<% function roleLabel(r){ return r === 'colaborador' ? 'Colaborador' : 'Usuario'; } %>
+<% function roleLabel(r){ return r === 'colaborador' ? 'Colaborador' : (r === 'cliente_responsable' ? 'Cliente responsable' : 'Usuario'); } %>
 
 <div class="page-head">
   <div class="head-row">
@@ -84,7 +84,8 @@
         <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
         <label>Tipo de usuario
           <select name="role">
-            <option value="client" <%= u.role !== 'colaborador' ? 'selected' : '' %>>Usuario (cliente de una empresa)</option>
+            <option value="client" <%= u.role === 'client' ? 'selected' : '' %>>Usuario (cliente de una empresa)</option>
+            <option value="cliente_responsable" <%= u.role === 'cliente_responsable' ? 'selected' : '' %>>Cliente responsable (de una empresa)</option>
             <option value="colaborador" <%= u.role === 'colaborador' ? 'selected' : '' %>>Colaborador (equipo <%= brand.name %>)</option>
           </select>
         </label>
@@ -120,10 +121,11 @@
       <label>Tipo de usuario
         <select name="role">
           <option value="client">Usuario (cliente de una empresa)</option>
+          <option value="cliente_responsable">Cliente responsable (de una empresa)</option>
           <option value="colaborador">Colaborador (equipo <%= brand.name %>)</option>
         </select>
       </label>
-      <label>Empresa (solo si es Usuario cliente; déjala vacía para Colaborador)
+      <label>Empresa (para Usuario y Cliente responsable; déjala vacía solo para Colaborador)
         <select name="company_id">
           <option value="">— Sin empresa (colaborador) —</option>
           <% companies.forEach((co) => { %>
