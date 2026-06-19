@@ -485,6 +485,7 @@ body.has-sidebar { display: flex; min-height: 100vh; }
 /* ---------- Minutas ---------- */
 .ai-tag { font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 999px; background: rgba(251,191,36,.14); color: var(--bc-gold); }
 .minuta-summary { border-left: 3px solid var(--bc-gold); }
+.empty-state { padding: 48px 28px; text-align: center; color: var(--bc-muted); font-size: 14px; background: var(--bc-surface); border: 1px solid var(--bc-border); border-radius: 14px; }
 
 /* ---------- Secuencia de actividades (pasos de una fase) ---------- */
 .phase-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 22px 0 14px; }

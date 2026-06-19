@@ -150,10 +150,10 @@ router.get('/entregables', (req, res) => {
   });
 });
 
-// Minutas (ejemplo)
+// Minutas
 router.get('/minutas', (req, res) => {
   res.render('client/minutas', {
-    title: 'Minutas', active: 'minutas', companyName: companyOf(req), minuta: SAMPLE_MINUTA,
+    title: 'Minutas', active: 'minutas', companyName: companyOf(req), minutas: [],
   });
 });
 

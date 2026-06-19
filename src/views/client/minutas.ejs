@@ -6,41 +6,52 @@
       <h1>Minutas semanales</h1>
       <p class="muted"><%= companyName || brand.name %></p>
     </div>
-    <button class="btn btn-primary" type="button" disabled title="Disponible próximamente">Generar minuta con IA</button>
   </div>
 </div>
 
-<section class="card minuta-summary">
-  <div class="head-row">
-    <h2 style="margin:0">Resumen de la sesión</h2>
-    <span class="ai-tag">Generado por IA</span>
+<% if (minutas && minutas.length > 0) { %>
+  <% minutas.forEach(function (m) { %>
+    <section class="card minuta-summary" style="margin-bottom:20px">
+      <div class="head-row">
+        <div>
+          <h2 style="margin:0"><%= m.titulo %></h2>
+          <span class="meta"><%= m.fecha %></span>
+        </div>
+        <span class="ai-tag">Generado por IA</span>
+      </div>
+      <p class="muted" style="margin-top:12px"><%= m.resumen %></p>
+      <% if (m.compromisos && m.compromisos.length > 0) { %>
+        <div style="margin-top:16px">
+          <h3 style="font-size:14px;margin-bottom:10px">Compromisos y asignaciones</h3>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr><th>Compromiso</th><th>Responsable</th><th>Vence</th><th>Estado</th></tr>
+              </thead>
+              <tbody>
+                <% m.compromisos.forEach(function (c) { %>
+                  <tr>
+                    <td><%= c.t %></td>
+                    <td><%= c.who %></td>
+                    <td class="meta"><%= c.due %></td>
+                    <td>
+                      <% if (c.status === 'aprob') { %><span class="st aprob">Aprobado</span>
+                      <% } else if (c.status === 'rev') { %><span class="st rev">En revisión</span>
+                      <% } else { %><span class="st pend">Pendiente</span><% } %>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      <% } %>
+    </section>
+  <% }) %>
+<% } else { %>
+  <div class="empty-state">
+    <p>Aún no hay minutas publicadas. El equipo de BusinessCool AI las subirá después de cada sesión.</p>
   </div>
-  <p class="muted"><%= minuta.summary %></p>
-</section>
-
-<section class="card" style="margin-top:20px">
-  <h2>Compromisos y asignaciones</h2>
-  <div class="table-wrap">
-    <table class="table">
-      <thead>
-        <tr><th>Compromiso</th><th>Responsable</th><th>Vence</th><th>Estado</th></tr>
-      </thead>
-      <tbody>
-        <% minuta.commitments.forEach(function (c) { %>
-          <tr>
-            <td><%= c.t %></td>
-            <td><%= c.who %></td>
-            <td class="meta"><%= c.due %></td>
-            <td>
-              <% if (c.status === 'aprob') { %><span class="st aprob">Aprobado</span>
-              <% } else if (c.status === 'rev') { %><span class="st rev">En revisión</span>
-              <% } else { %><span class="st pend">Pendiente</span><% } %>
-            </td>
-          </tr>
-        <% }) %>
-      </tbody>
-    </table>
-  </div>
-</section>
+<% } %>
 
 <%- include('../partials/shell-footer') %>
