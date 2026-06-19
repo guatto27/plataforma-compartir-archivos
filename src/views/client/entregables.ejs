@@ -4,36 +4,9 @@
   <div class="head-row">
     <div>
       <h1>Entregables</h1>
-      <p class="muted">Revisa los entregables formales de cada fase del proyecto.</p>
+      <p class="muted">Aquí aparecerán los entregables formales de cada fase una vez que el equipo los publique.</p>
     </div>
   </div>
 </div>
-
-<% if (interview) { %>
-  <div class="flash flash-success">Mostrando archivos de la entrevista: <strong><%= interview.nombre %></strong> — <a href="/app/entregables">ver todos</a></div>
-<% } %>
-
-<section class="card">
-  <h2>Aprobación de entregables</h2>
-  <p class="muted">Estado de cada entregable por fase.</p>
-  <% deliverables.forEach(function (d) { %>
-    <div class="deliv">
-      <div class="fase"><%= d.fase %></div>
-      <div class="deliv-body">
-        <strong><%= d.name %></strong>
-        <span class="meta"><%= d.phase %></span>
-      </div>
-      <div class="deliv-actions">
-        <% if (d.status === 'aprob') { %>
-          <span class="st aprob">Aprobado</span>
-        <% } else if (d.status === 'rev') { %>
-          <span class="st rev">En revisión</span>
-        <% } else { %>
-          <span class="st pend">Pendiente</span>
-        <% } %>
-      </div>
-    </div>
-  <% }) %>
-</section>
 
 <%- include('../partials/shell-footer') %>
