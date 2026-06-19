@@ -175,6 +175,29 @@ router.get('/minutas/:id/descargar', (req, res) => {
   res.download(filePath, m.archivo_nombre || m.archivo_path);
 });
 
+// Previsualizar PDF de una minuta publicada (para el colocador de firma)
+router.get('/minutas/:id/ver-pdf', (req, res) => {
+  if (req.session.role === 'client') return res.status(403).send('Sin acceso.');
+  const me = db.prepare('SELECT company_id, company_name FROM users WHERE id = ?').get(req.session.userId);
+  const m  = db.prepare('SELECT * FROM minutas WHERE id = ? AND publicada = 1').get(req.params.id);
+  if (!m || !m.archivo_path) return res.status(404).send('Sin archivo');
+  const allowed = me && (
+    (me.company_id && me.company_id === m.company_id) ||
+    (!m.company_id && me.company_name === m.company_name)
+  );
+  if (!allowed) return res.status(403).send('Sin acceso.');
+  const path = require('path');
+  const fs   = require('fs');
+  const filePath = path.join(require('../config').uploadsDir, 'minutas', m.archivo_path);
+  if (!fs.existsSync(filePath)) return res.status(404).send('Archivo no encontrado');
+  res.removeHeader('X-Frame-Options');
+  res.removeHeader('Content-Security-Policy');
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', 'inline; filename="minuta.pdf"');
+  res.setHeader('Cache-Control', 'private, max-age=60');
+  fs.createReadStream(filePath).pipe(res);
+});
+
 // Minutas — solo cliente_responsable (lee minutas publicadas de su empresa)
 router.get('/minutas', (req, res) => {
   if (req.session.role === 'client') return res.redirect('/app/agente');
@@ -230,7 +253,10 @@ router.post('/minutas/:id/firmar', memUploadClient.fields([{ name: 'key_file', m
   }
 
   try {
-    const result = await firmarPDFCliente(m.id, m, keyFile.buffer, cerFile.buffer, passphrase, req.session.userId, req.ip);
+    const placement = (req.body.sig_x !== '' && req.body.sig_y !== '' && req.body.sig_x != null && req.body.sig_y != null)
+      ? { page: req.body.sig_page, x: req.body.sig_x, y: req.body.sig_y }
+      : null;
+    const result = await firmarPDFCliente(m.id, m, keyFile.buffer, cerFile.buffer, passphrase, req.session.userId, req.ip, placement);
     req.session.flash = { type: 'success', text: `Minuta firmada con tu e.firma. Folio cliente: ${result.folio}` };
   } catch (err) {
     req.session.flash = { type: 'error', text: 'Error al firmar: ' + err.message };

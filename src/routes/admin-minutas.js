@@ -207,8 +207,11 @@ router.post('/:id/firmar', memUpload.fields([{ name: 'key_file', maxCount: 1 }, 
 
   try {
     if (m.archivo_path) {
-      // PDF adjunto: añadir página de firma electrónica al PDF (nuevo estilo SAT)
-      const result = await firmarPDF(m.id, m, keyFile.buffer, cerFile.buffer, passphrase, req.session.userId, req.ip);
+      // PDF adjunto: dibuja el bloque de firma en las coordenadas elegidas
+      const placement = (req.body.sig_x !== '' && req.body.sig_y !== '')
+        ? { page: req.body.sig_page, x: req.body.sig_x, y: req.body.sig_y }
+        : null;
+      const result = await firmarPDF(m.id, m, keyFile.buffer, cerFile.buffer, passphrase, req.session.userId, req.ip, placement);
       req.session.flash = { type: 'success', text: `PDF firmado electrónicamente. Folio: ${result.folio}` };
     } else {
       // Minuta de texto: firmar el contenido y anotar al final

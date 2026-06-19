@@ -121,11 +121,30 @@ function drawCompactBlock(page, font, fontB, rgb, { x, bottomY, w, data, qrImg }
   return H;
 }
 
-// Coloca un bloque encima de la línea del firmante (o, si no se detectó, abajo).
-function placeBlock(pdfDoc, font, fontB, rgb, anchor, fallbackSide, data, qrImg) {
+// Convierte coordenadas del colocador (página 1-based, x/y como fracción 0..1
+// de la esquina superior-izquierda, Y medida desde ARRIBA) a un objetivo de dibujo.
+function placementToTarget(pdfDoc, placement) {
+  if (!placement || placement.x == null || placement.y == null) return null;
+  const H = 60;
+  const idx = Math.max(0, Math.min(pdfDoc.getPageCount() - 1, (parseInt(placement.page, 10) || 1) - 1));
+  const page = pdfDoc.getPages()[idx];
+  const { width, height } = page.getSize();
+  const w = Math.min(255, width - 12);
+  const x = Math.max(6, Math.min(Number(placement.x) * width, width - w - 6));
+  const topY = height * (1 - Number(placement.y));      // borde superior del recuadro
+  const bottomY = Math.max(6, topY - H);
+  return { pageIndex: idx, x, bottomY, w };
+}
+
+// Coloca el bloque: 1) en coordenadas manuales, 2) sobre la línea detectada,
+// o 3) al pie de la última página (fallback).
+function placeBlock(pdfDoc, font, fontB, rgb, target, anchor, fallbackSide, data, qrImg) {
   const H = 60;
   let page, x, bottomY, w;
-  if (anchor) {
+  if (target) {
+    page = pdfDoc.getPages()[target.pageIndex];
+    ({ x, bottomY, w } = target);
+  } else if (anchor) {
     page = pdfDoc.getPages()[anchor.pageIndex];
     const { width, height } = page.getSize();
     x = Math.max(24, anchor.x - 2);
@@ -152,7 +171,7 @@ function drawFooters(pdfDoc, font, rgb, footerTxt) {
 }
 
 // ── Firma ADMIN: dibuja el bloque sobre la línea de BusinessCool ──────────────
-async function firmarPDF(minutaId, m, keyBuf, cerBuf, passphrase, actorUserId, ip) {
+async function firmarPDF(minutaId, m, keyBuf, cerBuf, passphrase, actorUserId, ip, placement) {
   const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
   const QRCode = require('qrcode');
 
@@ -171,11 +190,13 @@ async function firmarPDF(minutaId, m, keyBuf, cerBuf, passphrase, actorUserId, i
   const clave      = String(minutaId).padStart(5, '0');
   const fechaFirma = fechaMX();
 
-  const signers = await detectSigners(pdfBytes);
-
   const pdfDoc = await PDFDocument.load(pdfBytes);
   const font   = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const fontB  = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+  // 1) coordenadas manuales del colocador; si no hay, 2) detección automática
+  const target  = placementToTarget(pdfDoc, placement);
+  const signers = target ? null : await detectSigners(pdfBytes);
 
   drawFooters(pdfDoc, font, rgb, `Clave: ${clave}  Folio: ${folio}`);
 
@@ -186,7 +207,7 @@ async function firmarPDF(minutaId, m, keyBuf, cerBuf, passphrase, actorUserId, i
     nombre: certData.nombre, rfc: certData.rfc, serial: certData.serial,
     email: certData.email, folio, fecha: fechaFirma,
   };
-  placeBlock(pdfDoc, font, fontB, rgb, signers && signers.admin, 'left', adminData, qrImg);
+  placeBlock(pdfDoc, font, fontB, rgb, target, signers && signers.admin, 'left', adminData, qrImg);
 
   const signedBytes = await pdfDoc.save();
   const ext         = path.extname(m.archivo_path);
@@ -208,7 +229,7 @@ async function firmarPDF(minutaId, m, keyBuf, cerBuf, passphrase, actorUserId, i
 exports.firmarPDF = firmarPDF;
 
 // ── Firma CLIENTE: dibuja el bloque sobre la línea del cliente ────────────────
-async function firmarPDFCliente(minutaId, m, keyBuf, cerBuf, passphrase, actorUserId, ip) {
+async function firmarPDFCliente(minutaId, m, keyBuf, cerBuf, passphrase, actorUserId, ip, placement) {
   const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
   const QRCode = require('qrcode');
 
@@ -224,11 +245,13 @@ async function firmarPDFCliente(minutaId, m, keyBuf, cerBuf, passphrase, actorUs
   const clientFolio = crypto.randomUUID();
   const fechaFirma  = fechaMX();
 
-  const signers = await detectSigners(pdfBytes);
-
   const pdfDoc = await PDFDocument.load(pdfBytes);
   const font   = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const fontB  = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+  // 1) coordenadas manuales del colocador; si no hay, 2) detección automática
+  const target  = placementToTarget(pdfDoc, placement);
+  const signers = target ? null : await detectSigners(pdfBytes);
 
   const qrBuf = await QRCode.toBuffer(`${VERIFY_BASE}/${clientFolio}`, { width: 130, margin: 1, type: 'png', errorCorrectionLevel: 'M' });
   const qrImg = await pdfDoc.embedPng(qrBuf);
@@ -237,9 +260,8 @@ async function firmarPDFCliente(minutaId, m, keyBuf, cerBuf, passphrase, actorUs
     nombre: certData.nombre, rfc: certData.rfc, serial: certData.serial,
     email: certData.email, folio: clientFolio, fecha: fechaFirma,
   };
-  // Usa la línea del cliente; si solo se detectó una, cae a la derecha abajo
-  const anchor = signers && (signers.client || (signers.admin ? null : null));
-  placeBlock(pdfDoc, font, fontB, rgb, anchor, 'right', clientData, qrImg);
+  const anchor = signers && signers.client;
+  placeBlock(pdfDoc, font, fontB, rgb, target, anchor, 'right', clientData, qrImg);
 
   const signedBytes = await pdfDoc.save();
   const ext         = path.extname(m.archivo_path);

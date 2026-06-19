@@ -75,12 +75,15 @@
           </a>
 
         <% } else { %>
-          <p class="muted" style="font-size:13px;margin-bottom:16px">
-            Carga tu <strong>.key</strong> y <strong>.cer</strong> del SAT. Se generará una página de firma estilo SAT y se añadirá al PDF. Los archivos <strong>nunca se guardan</strong> en el servidor.
+          <p class="muted" style="font-size:13px;margin-bottom:12px">
+            <strong>1.</strong> Haz clic en el documento (derecha) para colocar el recuadro de la firma sobre la línea correspondiente. <strong>2.</strong> Carga tu <strong>.key</strong> y <strong>.cer</strong> y firma. Los archivos <strong>nunca se guardan</strong>.
           </p>
-
-          <form method="post" action="/admin/minutas/<%= m.id %>/firmar" enctype="multipart/form-data">
+          <form method="post" action="/admin/minutas/<%= m.id %>/firmar" enctype="multipart/form-data" id="firma-form-<%= m.id %>">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <input type="hidden" name="sig_page" value="" />
+            <input type="hidden" name="sig_x" value="" />
+            <input type="hidden" name="sig_y" value="" />
+            <p class="placer-hint" data-placer-hint>Aún no has colocado la firma. Haz clic sobre el documento donde quieres que aparezca.</p>
 
             <label style="margin-bottom:12px">
               <span style="font-size:12px;font-weight:600;color:var(--bc-muted);display:block;margin-bottom:4px">Archivo .key — Llave privada</span>
@@ -120,22 +123,31 @@
       </section>
     </div>
 
-    <!-- Panel derecho: vista previa del PDF -->
+    <!-- Panel derecho: colocador interactivo (sin firmar) o vista previa (firmado) -->
     <div>
-      <section class="card" style="padding:0;overflow:hidden;border-radius:14px;background:#525659">
-        <object
-          data="/admin/minutas/<%= m.id %>/ver-pdf"
-          type="application/pdf"
-          style="width:100%;height:820px;border:none;display:block">
-          <embed
-            src="/admin/minutas/<%= m.id %>/ver-pdf"
+      <% if (!m.firmada) { %>
+        <div class="pdf-placer" data-pdf-url="/admin/minutas/<%= m.id %>/ver-pdf" data-form="firma-form-<%= m.id %>"></div>
+      <% } else { %>
+        <section class="card" style="padding:0;overflow:hidden;border-radius:14px;background:#525659">
+          <object
+            data="/admin/minutas/<%= m.id %>/ver-pdf"
             type="application/pdf"
-            style="width:100%;height:820px;border:none;display:block" />
-        </object>
-      </section>
+            style="width:100%;height:820px;border:none;display:block">
+            <embed
+              src="/admin/minutas/<%= m.id %>/ver-pdf"
+              type="application/pdf"
+              style="width:100%;height:820px;border:none;display:block" />
+          </object>
+        </section>
+      <% } %>
     </div>
 
   </div>
+
+  <% if (!m.firmada) { %>
+    <script src="/static/js/pdf.min.js"></script>
+    <script src="/static/js/firma-placer.js"></script>
+  <% } %>
 
 <% } else { %>
   <!-- ═══ LAYOUT ESTÁNDAR: sin PDF (transcripción + contenido IA) ═══ -->
