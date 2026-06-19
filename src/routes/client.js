@@ -166,15 +166,63 @@ router.get('/minutas', (req, res) => {
 });
 
 // Agente de levantamiento (entrevistas reales)
+// cliente_responsable ve todas las entrevistas de su empresa
 router.get('/agente', (req, res) => {
-  const interviews = db
-    .prepare(
-      `SELECT iv.*, (SELECT COUNT(*) FROM files f WHERE f.interview_id = iv.id) AS file_count
-       FROM interviews iv WHERE iv.client_id = ? ORDER BY iv.created_at DESC`
-    )
-    .all(req.session.userId);
+  let interviews;
+  if (req.session.role === 'cliente_responsable') {
+    const me = db.prepare('SELECT company_id, company_name FROM users WHERE id = ?').get(req.session.userId);
+    const subq = me && me.company_id
+      ? 'SELECT id FROM users WHERE company_id = ? AND active = 1'
+      : 'SELECT id FROM users WHERE company_name = ? AND active = 1';
+    const param = me && (me.company_id || me.company_name);
+    interviews = param
+      ? db.prepare(
+          `SELECT iv.*, u.display_name AS client_name,
+                  (SELECT COUNT(*) FROM files f WHERE f.interview_id = iv.id) AS file_count
+           FROM interviews iv
+           LEFT JOIN users u ON u.id = iv.client_id
+           WHERE iv.client_id IN (${subq})
+           ORDER BY iv.created_at DESC`
+        ).all(param)
+      : [];
+  } else {
+    interviews = db
+      .prepare(
+        `SELECT iv.*, (SELECT COUNT(*) FROM files f WHERE f.interview_id = iv.id) AS file_count
+         FROM interviews iv WHERE iv.client_id = ? ORDER BY iv.created_at DESC`
+      )
+      .all(req.session.userId);
+  }
   res.render('client/agente', {
-    title: 'Agente de levantamiento', active: 'agente', companyName: companyOf(req), interviews,
+    title: 'Entrevista', active: 'agente', companyName: companyOf(req), interviews,
+    isResponsable: req.session.role === 'cliente_responsable',
+  });
+});
+
+// Archivos de empresa (solo cliente_responsable — lee todos los archivos de su empresa)
+router.get('/archivos', (req, res) => {
+  if (req.session.role !== 'cliente_responsable') return res.redirect('/app/agente');
+  const me = db.prepare('SELECT company_id, company_name FROM users WHERE id = ?').get(req.session.userId);
+  const subq = me && me.company_id
+    ? 'SELECT id FROM users WHERE company_id = ? AND active = 1'
+    : 'SELECT id FROM users WHERE company_name = ? AND active = 1';
+  const param = me && (me.company_id || me.company_name);
+  const files = param
+    ? db.prepare(
+        `SELECT f.*,
+                u.username AS owner_username, u.display_name AS owner_name, u.role AS owner_role,
+                iv.nombre AS interview_nombre,
+                (SELECT COUNT(*) FROM comments c WHERE c.file_id = f.id) AS comment_count
+         FROM files f
+         LEFT JOIN users u ON u.id = f.uploaded_by
+         LEFT JOIN interviews iv ON iv.id = f.interview_id
+         WHERE f.client_id IN (${subq})
+         ORDER BY f.created_at DESC`
+      ).all(param)
+    : [];
+  res.render('client/archivos', {
+    title: 'Archivos', active: 'archivos-empresa', companyName: companyOf(req),
+    files, interviews: [], interview: null, maxFileMb: 0, readonly: true,
   });
 });
 

@@ -3,10 +3,12 @@
 <div class="page-head">
   <div class="head-row">
     <div>
-      <h1>Mis archivos</h1>
-      <p class="muted">Sube aquí los archivos relacionados con tu entrevista de levantamiento.</p>
+      <h1><% if (locals.readonly) { %>Archivos de la empresa<% } else { %>Mis archivos<% } %></h1>
+      <p class="muted"><% if (locals.readonly) { %>Todos los archivos subidos por los usuarios de tu empresa.<% } else { %>Sube aquí los archivos relacionados con tu entrevista de levantamiento.<% } %></p>
     </div>
-    <button class="btn btn-primary" type="button" data-dialog="dlg-add-file">+ Agregar archivo</button>
+    <% if (!locals.readonly) { %>
+      <button class="btn btn-primary" type="button" data-dialog="dlg-add-file">+ Agregar archivo</button>
+    <% } %>
   </div>
 </div>
 
@@ -18,6 +20,7 @@
   <%- include('../partials/filetable') %>
 </section>
 
+<% if (!locals.readonly) { %>
 <dialog id="dlg-add-file" class="modal" data-strict <%= interview ? 'data-autoopen' : '' %>>
   <h2>Agregar archivo<% if (interview) { %> · <%= interview.nombre %><% } %></h2>
   <form method="post" action="/app/upload" enctype="multipart/form-data">
@@ -47,5 +50,6 @@
     </div>
   </form>
 </dialog>
+<% } %>
 
 <%- include('../partials/shell-footer') %>
