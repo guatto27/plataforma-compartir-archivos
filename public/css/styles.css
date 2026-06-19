@@ -561,6 +561,10 @@ body.has-sidebar { display: flex; min-height: 100vh; }
 .lbl-small { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: #71717a; }
 
 /* ── Colocador interactivo de firma sobre PDF ── */
+.minuta-firma-grid {
+  display: grid; grid-template-columns: 320px 1fr; gap: 18px; align-items: start;
+}
+@media (max-width: 760px) { .minuta-firma-grid { grid-template-columns: 1fr; } }
 .pdf-placer {
   max-height: 820px; overflow: auto; background: #525659;
   border-radius: 14px; padding: 12px; display: flex; flex-direction: column;

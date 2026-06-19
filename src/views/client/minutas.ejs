@@ -59,15 +59,13 @@
             Firmar con mi e.firma (FIEL)
           </summary>
           <div style="margin-top:14px;padding:16px;background:var(--bc-surface-2,#f4f4f6);border-radius:10px">
-            <p style="margin:0 0 12px;font-size:13px;color:var(--bc-muted)">
-              <strong>1.</strong> Haz clic en el documento para colocar tu firma sobre la línea del cliente.
-              <strong>2.</strong> Carga tu e.firma del SAT y firma. Los archivos <strong>.key</strong> y <strong>.cer</strong>
+            <p style="margin:0 0 14px;font-size:13px;color:var(--bc-muted)">
+              <strong>1.</strong> Haz clic en el documento (derecha) para colocar tu firma sobre la línea del cliente.
+              <strong>2.</strong> Carga tu e.firma del SAT (izquierda) y firma. Los archivos <strong>.key</strong> y <strong>.cer</strong>
               <strong>nunca se almacenan</strong> en el servidor.
             </p>
 
-            <div class="pdf-placer" style="max-height:540px;margin-bottom:14px"
-                 data-pdf-url="/app/minutas/<%= m.id %>/ver-pdf" data-form="firma-cli-<%= m.id %>"></div>
-
+            <div class="minuta-firma-grid">
             <form method="post" action="/app/minutas/<%= m.id %>/firmar" enctype="multipart/form-data" id="firma-cli-<%= m.id %>">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
               <input type="hidden" name="sig_page" value="" />
@@ -96,8 +94,11 @@
                 </div>
               </label>
 
-              <button class="btn btn-primary" type="submit">Firmar minuta con mi e.firma</button>
+              <button class="btn btn-primary" type="submit" style="width:100%;justify-content:center">Firmar minuta con mi e.firma</button>
             </form>
+
+            <div class="pdf-placer" data-pdf-url="/app/minutas/<%= m.id %>/ver-pdf" data-form="firma-cli-<%= m.id %>"></div>
+            </div>
           </div>
         </details>
       <% } %>
