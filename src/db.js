@@ -168,12 +168,21 @@ if (usersSql && usersSql.sql && !usersSql.sql.includes("'cliente_responsable'"))
   console.log('[migración] tabla users actualizada para admitir el rol "colaborador".');
 }
 
-// Migración: columnas de archivo adjunto en minutas
+// Migración: columnas de archivo adjunto y firma en minutas
 const minutaCols = db.prepare('PRAGMA table_info(minutas)').all();
-if (!minutaCols.some((c) => c.name === 'archivo_path')) {
-  db.exec('ALTER TABLE minutas ADD COLUMN archivo_path TEXT');
-  db.exec('ALTER TABLE minutas ADD COLUMN archivo_nombre TEXT');
-}
+const minutaHas = (col) => minutaCols.some((c) => c.name === col);
+if (!minutaHas('archivo_path'))          db.exec('ALTER TABLE minutas ADD COLUMN archivo_path TEXT');
+if (!minutaHas('archivo_nombre'))        db.exec('ALTER TABLE minutas ADD COLUMN archivo_nombre TEXT');
+if (!minutaHas('firma_folio'))           db.exec('ALTER TABLE minutas ADD COLUMN firma_folio TEXT');
+if (!minutaHas('firma_email'))           db.exec('ALTER TABLE minutas ADD COLUMN firma_email TEXT');
+if (!minutaHas('firma_rfc'))             db.exec('ALTER TABLE minutas ADD COLUMN firma_rfc TEXT');
+if (!minutaHas('firmada_cliente'))       db.exec('ALTER TABLE minutas ADD COLUMN firmada_cliente INTEGER NOT NULL DEFAULT 0');
+if (!minutaHas('firma_cliente_serial'))  db.exec('ALTER TABLE minutas ADD COLUMN firma_cliente_serial TEXT');
+if (!minutaHas('firma_cliente_nombre'))  db.exec('ALTER TABLE minutas ADD COLUMN firma_cliente_nombre TEXT');
+if (!minutaHas('firma_cliente_fecha'))   db.exec('ALTER TABLE minutas ADD COLUMN firma_cliente_fecha TEXT');
+if (!minutaHas('firma_cliente_folio'))   db.exec('ALTER TABLE minutas ADD COLUMN firma_cliente_folio TEXT');
+if (!minutaHas('firma_cliente_email'))   db.exec('ALTER TABLE minutas ADD COLUMN firma_cliente_email TEXT');
+if (!minutaHas('firma_cliente_rfc'))     db.exec('ALTER TABLE minutas ADD COLUMN firma_cliente_rfc TEXT');
 
 // Bootstrap: crea un administrador inicial desde variables de entorno si aún
 // no existe. Útil en despliegues (Hostinger, etc.) donde la BD arranca vacía.

@@ -16,19 +16,81 @@
         <div>
           <h2 style="margin:0"><%= m.titulo %></h2>
           <span class="meta"><%= m.fecha %></span>
-          <% if (m.firmada) { %><span class="st aprob" style="margin-left:8px">Firmada electrónicamente</span><% } %>
+          <% if (m.firmada) { %><span class="st aprob" style="margin-left:8px">Firmada por BusinessCool AI</span><% } %>
+          <% if (m.firmada_cliente) { %><span class="st aprob" style="margin-left:6px">Firmada por el cliente</span><% } %>
         </div>
-      </div>
-      <% if (m.archivo_path) { %>
-        <div style="margin-top:14px">
+        <% if (m.archivo_path) { %>
           <a href="/app/minutas/<%= m.id %>/descargar" class="btn btn-ghost" style="display:inline-flex;align-items:center;gap:6px">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Descargar minuta (<%= m.archivo_nombre || 'archivo' %>)
+            Descargar (<%= m.archivo_nombre || 'minuta.pdf' %>)
           </a>
+        <% } %>
+      </div>
+
+      <% if (m.firmada && m.firma_nombre) { %>
+        <div style="margin-top:12px;padding:10px 14px;background:var(--bc-surface-2,#f4f4f6);border-radius:8px;font-size:12px;color:var(--bc-muted)">
+          Firmado electrónicamente por <strong style="color:var(--bc-text)"><%= m.firma_nombre %></strong>
+          <% if (m.firma_fecha) { %> · <%= m.firma_fecha %><% } %>
+          <% if (m.firma_folio) { %><br>Folio BusinessCool AI: <code style="font-size:11px"><%= m.firma_folio %></code><% } %>
         </div>
       <% } %>
+
+      <% if (m.firmada_cliente && m.firma_cliente_nombre) { %>
+        <div style="margin-top:8px;padding:10px 14px;background:var(--bc-surface-2,#f4f4f6);border-radius:8px;font-size:12px;color:var(--bc-muted)">
+          Firmado por el cliente: <strong style="color:var(--bc-text)"><%= m.firma_cliente_nombre %></strong>
+          <% if (m.firma_cliente_fecha) { %> · <%= m.firma_cliente_fecha %><% } %>
+          <% if (m.firma_cliente_folio) { %><br>Folio cliente: <code style="font-size:11px"><%= m.firma_cliente_folio %></code><% } %>
+        </div>
+      <% } %>
+
       <% if (m.contenido) { %>
         <div class="minuta-preview" style="margin-top:14px"><%= m.contenido %></div>
+      <% } %>
+
+      <%
+        /* Mostrar opción de firma solo si: PDF adjunto, firmado por admin, y el cliente aún no firmó */
+        const puedeFirmar = m.archivo_path && m.archivo_path.toLowerCase().endsWith('.pdf')
+                            && m.firmada && !m.firmada_cliente;
+      %>
+      <% if (puedeFirmar) { %>
+        <details style="margin-top:14px">
+          <summary style="cursor:pointer;font-size:13px;font-weight:600;color:var(--bc-primary,#2563eb);padding:8px 0;list-style:none;display:flex;align-items:center;gap:6px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Firmar con mi e.firma (FIEL)
+          </summary>
+          <div style="margin-top:14px;padding:16px;background:var(--bc-surface-2,#f4f4f6);border-radius:10px">
+            <p style="margin:0 0 12px;font-size:13px;color:var(--bc-muted)">
+              Valida este documento con tu e.firma del SAT. Los archivos <strong>.key</strong> y <strong>.cer</strong>
+              <strong>nunca se almacenan</strong> en el servidor.
+            </p>
+            <form method="post" action="/app/minutas/<%= m.id %>/firmar" enctype="multipart/form-data">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+              <label style="display:block;margin-bottom:12px">
+                <span style="font-size:12px;font-weight:600;color:var(--bc-muted);display:block;margin-bottom:4px">Archivo .key — Llave privada</span>
+                <input type="file" name="key_file" accept=".key" required />
+              </label>
+
+              <label style="display:block;margin-bottom:12px">
+                <span style="font-size:12px;font-weight:600;color:var(--bc-muted);display:block;margin-bottom:4px">Archivo .cer — Certificado</span>
+                <input type="file" name="cer_file" accept=".cer" required />
+              </label>
+
+              <label style="display:block;margin-bottom:16px">
+                <span style="font-size:12px;font-weight:600;color:var(--bc-muted);display:block;margin-bottom:4px">Contraseña de e.firma</span>
+                <div class="pw-wrap">
+                  <input type="password" id="efirma-pw-<%= m.id %>" name="passphrase" required maxlength="100" placeholder="Contraseña del SAT" />
+                  <button type="button" class="pw-eye" aria-label="Mostrar" data-pw-toggle="efirma-pw-<%= m.id %>">
+                    <svg class="eye-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <svg class="eye-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                  </button>
+                </div>
+              </label>
+
+              <button class="btn btn-primary" type="submit">Firmar minuta con mi e.firma</button>
+            </form>
+          </div>
+        </details>
       <% } %>
     </section>
   <% }) %>

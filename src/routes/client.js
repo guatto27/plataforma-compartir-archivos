@@ -192,6 +192,52 @@ router.get('/minutas', (req, res) => {
   });
 });
 
+// Firma de minuta por el cliente con su e.firma (FIEL)
+const multer = require('multer');
+const { firmarPDFCliente } = require('../lib/minuta-firma');
+const memUploadClient = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2 * 1024 * 1024 } });
+
+router.post('/minutas/:id/firmar', memUploadClient.fields([{ name: 'key_file', maxCount: 1 }, { name: 'cer_file', maxCount: 1 }]), async (req, res) => {
+  if (req.session.role === 'client') return res.redirect('/app/agente');
+  if (!verifyCsrf(req)) return denyCsrf(res);
+
+  const me = db.prepare('SELECT company_id, company_name FROM users WHERE id = ?').get(req.session.userId);
+  const m  = db.prepare('SELECT * FROM minutas WHERE id = ? AND publicada = 1 AND firmada = 1').get(req.params.id);
+
+  if (!m || !m.archivo_path) {
+    req.session.flash = { type: 'error', text: 'Minuta no encontrada o no disponible para firmar.' };
+    return res.redirect('/app/minutas');
+  }
+
+  const allowed = me && (
+    (me.company_id && me.company_id === m.company_id) ||
+    (!m.company_id && me.company_name === m.company_name)
+  );
+  if (!allowed) return res.status(403).send('Sin acceso.');
+
+  if (m.firmada_cliente) {
+    req.session.flash = { type: 'error', text: 'Esta minuta ya fue firmada por el cliente.' };
+    return res.redirect('/app/minutas');
+  }
+
+  const keyFile    = req.files && req.files['key_file'] && req.files['key_file'][0];
+  const cerFile    = req.files && req.files['cer_file'] && req.files['cer_file'][0];
+  const passphrase = String(req.body.passphrase || '');
+
+  if (!keyFile || !cerFile || !passphrase) {
+    req.session.flash = { type: 'error', text: 'Sube los archivos .key y .cer e ingresa la contraseña.' };
+    return res.redirect('/app/minutas');
+  }
+
+  try {
+    const result = await firmarPDFCliente(m.id, m, keyFile.buffer, cerFile.buffer, passphrase, req.session.userId, req.ip);
+    req.session.flash = { type: 'success', text: `Minuta firmada con tu e.firma. Folio cliente: ${result.folio}` };
+  } catch (err) {
+    req.session.flash = { type: 'error', text: 'Error al firmar: ' + err.message };
+  }
+  res.redirect('/app/minutas');
+});
+
 // Agente de levantamiento (entrevistas reales)
 // cliente_responsable ve todas las entrevistas de su empresa
 router.get('/agente', (req, res) => {

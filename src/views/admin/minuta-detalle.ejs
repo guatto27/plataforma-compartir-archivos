@@ -6,8 +6,9 @@
       <p class="muted" style="margin:0 0 2px"><%= m.company_name || 'Sin empresa' %> · <%= m.fecha %></p>
       <h1><%= m.titulo %></h1>
       <span class="meta"><%= fmtObj.label %></span>
-      <% if (m.firmada)   { %><span class="st aprob" style="margin-left:8px">Firmada</span><% } %>
-      <% if (m.publicada) { %><span class="st rev"   style="margin-left:8px">Publicada</span><% } %>
+      <% if (m.firmada)         { %><span class="st aprob" style="margin-left:8px">Firmada (BC)</span><% } %>
+      <% if (m.firmada_cliente) { %><span class="st aprob" style="margin-left:6px">Firmada (Cliente)</span><% } %>
+      <% if (m.publicada)       { %><span class="st rev"   style="margin-left:6px">Publicada</span><% } %>
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
       <form method="post" action="/admin/minutas/<%= m.id %>/publicar">
@@ -39,14 +40,35 @@
         <h2 style="margin-top:0">Firma electrónica (e.firma SAT)</h2>
 
         <% if (m.firmada) { %>
-          <div class="flash flash-success" style="margin:0 0 16px">
-            <strong>Documento firmado</strong>
+          <!-- Firma BusinessCool AI -->
+          <div style="margin:0 0 10px;padding:10px 12px;background:#eef7ee;border:1px solid #b6d9b6;border-radius:8px">
+            <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#2a6a2a">✓ Firmado por BusinessCool AI</p>
+            <dl style="font-size:11px;display:grid;grid-template-columns:auto 1fr;gap:2px 8px;margin:0;color:var(--bc-muted)">
+              <dt>Nombre</dt><dd style="margin:0;word-break:break-all;color:var(--bc-text)"><%= m.firma_nombre %></dd>
+              <% if (m.firma_rfc) { %><dt>RFC</dt><dd style="margin:0"><%= m.firma_rfc %></dd><% } %>
+              <dt>No. serie</dt><dd style="margin:0;word-break:break-all;font-size:10px"><%= m.firma_serial %></dd>
+              <dt>Fecha</dt><dd style="margin:0"><%= m.firma_fecha %></dd>
+              <% if (m.firma_folio) { %><dt>Folio</dt><dd style="margin:0;font-size:10px;word-break:break-all"><%= m.firma_folio %></dd><% } %>
+            </dl>
           </div>
-          <dl style="font-size:13px;display:grid;grid-template-columns:auto 1fr;gap:4px 10px;margin:0 0 16px">
-            <dt class="muted">Nombre</dt><dd style="margin:0;word-break:break-all"><%= m.firma_nombre %></dd>
-            <dt class="muted">No. serie</dt><dd style="margin:0;word-break:break-all;font-size:11px"><%= m.firma_serial %></dd>
-            <dt class="muted">Fecha</dt><dd style="margin:0"><%= m.firma_fecha %></dd>
-          </dl>
+
+          <!-- Firma del cliente -->
+          <% if (m.firmada_cliente) { %>
+            <div style="margin:0 0 14px;padding:10px 12px;background:#eef7ee;border:1px solid #b6d9b6;border-radius:8px">
+              <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#2a6a2a">✓ Firmado por el cliente</p>
+              <dl style="font-size:11px;display:grid;grid-template-columns:auto 1fr;gap:2px 8px;margin:0;color:var(--bc-muted)">
+                <dt>Nombre</dt><dd style="margin:0;word-break:break-all;color:var(--bc-text)"><%= m.firma_cliente_nombre %></dd>
+                <% if (m.firma_cliente_rfc) { %><dt>RFC</dt><dd style="margin:0"><%= m.firma_cliente_rfc %></dd><% } %>
+                <dt>No. serie</dt><dd style="margin:0;word-break:break-all;font-size:10px"><%= m.firma_cliente_serial %></dd>
+                <dt>Fecha</dt><dd style="margin:0"><%= m.firma_cliente_fecha %></dd>
+              </dl>
+            </div>
+          <% } else { %>
+            <div style="margin:0 0 14px;padding:10px 12px;background:#fdf6e3;border:1px solid #e4d090;border-radius:8px">
+              <p style="margin:0;font-size:11px;color:#856a00">Pendiente de firma del cliente — el cliente puede firmar desde su portal con su e.firma.</p>
+            </div>
+          <% } %>
+
           <a href="/admin/minutas/<%= m.id %>/descargar" class="btn btn-primary" style="display:inline-flex;align-items:center;gap:8px;width:100%;justify-content:center">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Descargar PDF firmado
