@@ -129,10 +129,7 @@ async function detectSigners(pdfBytes) {
 // ── Dibujar bloque de firma compacto (QR + datos) ────────────────────────────
 function drawCompactBlock(page, font, fontB, rgb, { x, bottomY, w, data, qrImg }) {
   const H = BLOCK_H;
-  page.drawRectangle({
-    x, y: bottomY, width: w, height: H,
-    color: rgb(0.980, 0.980, 0.995), borderColor: rgb(0.74, 0.74, 0.84), borderWidth: 0.5,
-  });
+  // Sin recuadro: solo QR + datos para que no sobresalga de la línea del firmante.
 
   const qr = 84;
   if (qrImg) page.drawImage(qrImg, { x: x + 8, y: bottomY + (H - qr) / 2, width: qr, height: qr });
