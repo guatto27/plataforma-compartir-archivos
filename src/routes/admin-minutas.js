@@ -37,9 +37,9 @@ router.get('/nueva', (req, res) => {
   res.render('admin/minuta-form', { title: 'Nueva minuta', active: 'minutas', minuta: null, empresas, FORMATOS, error: null });
 });
 
-router.post('/nueva', (req, res) => {
+router.post('/nueva', async (req, res) => {
   if (!verifyCsrf(req)) return denyCsrf(res);
-  const { titulo, fecha, company_id, company_name, formato } = req.body;
+  const { titulo, fecha, company_id, company_name, formato, transcripcion, accion } = req.body;
   if (!titulo || !fecha) {
     const empresas = db.prepare('SELECT id, name FROM companies ORDER BY name').all();
     return res.status(400).render('admin/minuta-form', {
@@ -50,11 +50,16 @@ router.post('/nueva', (req, res) => {
     ? (db.prepare('SELECT name FROM companies WHERE id = ?').get(company_id) || {}).name || company_name
     : company_name;
   const result = db.prepare(
-    `INSERT INTO minutas (titulo, fecha, company_id, company_name, formato, created_by)
-     VALUES (?, ?, ?, ?, ?, ?)`
-  ).run(titulo, fecha, company_id || null, cName || null, formato || 'ejecutiva', req.session.userId);
+    `INSERT INTO minutas (titulo, fecha, company_id, company_name, formato, transcripcion, created_by)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`
+  ).run(titulo, fecha, company_id || null, cName || null, formato || 'ejecutiva', transcripcion || null, req.session.userId);
+  const id = result.lastInsertRowid;
   logAction(req.session.userId, 'minuta_created', titulo, req.ip);
-  res.redirect(`/admin/minutas/${result.lastInsertRowid}`);
+
+  if (accion === 'generar' && transcripcion && transcripcion.trim()) {
+    await generarConGemini(id, { titulo, fecha, company_name: cName, formato: formato || 'ejecutiva', transcripcion }, req);
+  }
+  res.redirect(`/admin/minutas/${id}`);
 });
 
 // ── Detalle de minuta ───────────────────────────────────────────────────────
@@ -75,6 +80,43 @@ router.post('/:id/guardar', (req, res) => {
   res.redirect(`/admin/minutas/${req.params.id}`);
 });
 
+// ── Helpers ─────────────────────────────────────────────────────────────────
+function buildPrompt(m) {
+  const prompts = {
+    ejecutiva:
+      `Eres un asistente experto en redacción de minutas corporativas. Genera una minuta EJECUTIVA en español. ` +
+      `Incluye: encabezado con título "${m.titulo}", fecha ${m.fecha}, empresa ${m.company_name || ''}; ` +
+      `resumen ejecutivo (3-5 puntos clave); acuerdos y compromisos con responsable y fecha; próximos pasos. ` +
+      `Usa Markdown limpio con encabezados ##.`,
+    detallada:
+      `Eres un asistente experto en redacción de minutas corporativas. Genera una minuta DETALLADA en español. ` +
+      `Incluye: encabezado con título "${m.titulo}", fecha ${m.fecha}, empresa ${m.company_name || ''}; ` +
+      `lista de participantes mencionados; cada tema tratado con su discusión y resolución; ` +
+      `tabla de compromisos con responsable, acción y fecha; próxima reunión si se menciona. ` +
+      `Usa Markdown con ## y tablas donde aplique.`,
+    acta_formal:
+      `Eres un asistente experto en redacción de actas formales corporativas. Redacta un ACTA FORMAL en español. ` +
+      `Incluye: encabezado formal con título "${m.titulo}", fecha ${m.fecha}, empresa ${m.company_name || ''}; ` +
+      `participantes; objeto de la reunión; acuerdos en artículos numerados (PRIMERO, SEGUNDO…); ` +
+      `sección de firmas. Usa Markdown.`,
+  };
+  return prompts[m.formato] || prompts.ejecutiva;
+}
+
+async function generarConGemini(id, m, req) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error('GEMINI_API_KEY no configurado en el servidor.');
+  const { GoogleGenerativeAI } = require('@google/generative-ai');
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+  const prompt = buildPrompt(m) + `\n\nTRANSCRIPCIÓN / DESCRIPCIÓN DE LA REUNIÓN:\n${m.transcripcion}`;
+  const result = await model.generateContent(prompt);
+  const contenido = result.response.text();
+  db.prepare('UPDATE minutas SET contenido = ? WHERE id = ?').run(contenido, id);
+  if (req && req.session) logAction(req.session.userId, 'minuta_generated_gemini', m.titulo, req.ip);
+  return contenido;
+}
+
 // ── Generar minuta con IA ──────────────────────────────────────────────────
 router.post('/:id/generar', async (req, res) => {
   if (!verifyCsrf(req)) return denyCsrf(res);
@@ -86,32 +128,9 @@ router.post('/:id/generar', async (req, res) => {
     return res.redirect(`/admin/minutas/${m.id}`);
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    req.session.flash = { type: 'error', text: 'ANTHROPIC_API_KEY no configurado en el servidor.' };
-    return res.redirect(`/admin/minutas/${m.id}`);
-  }
-
-  const fmtLabel = (FORMATOS.find(f => f.id === m.formato) || FORMATOS[0]).label;
-  const prompts = {
-    ejecutiva: `Genera una minuta ejecutiva en español a partir de la siguiente transcripción. Incluye: fecha (${m.fecha}), empresa (${m.company_name || ''}), resumen ejecutivo en 3-5 puntos clave, acuerdos tomados con responsables y fechas comprometidas. Usa formato Markdown limpio con encabezados ##.`,
-    detallada: `Genera una minuta detallada en español. Incluye: fecha (${m.fecha}), empresa (${m.company_name || ''}), lista de participantes mencionados, cada tema tratado con su discusión y resolución, compromisos y responsables, y próxima reunión si se menciona. Usa Markdown con ## y tablas donde aplique.`,
-    acta_formal: `Redacta un acta formal en español con numeración de artículos (Primero, Segundo…). Incluye: encabezado formal con fecha (${m.fecha}), empresa (${m.company_name || ''}), participantes, objeto de la reunión, acuerdos en forma de artículos numerados, y sección de firmas al final. Usa Markdown.`,
-  };
-  const systemPrompt = prompts[m.formato] || prompts.ejecutiva;
-
   try {
-    const Anthropic = require('@anthropic-ai/sdk');
-    const client = new Anthropic.default({ apiKey });
-    const msg = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 2000,
-      messages: [{ role: 'user', content: `${systemPrompt}\n\nTRANSCRIPCIÓN:\n${m.transcripcion}` }],
-    });
-    const contenido = msg.content[0].text;
-    db.prepare('UPDATE minutas SET contenido = ? WHERE id = ?').run(contenido, m.id);
-    logAction(req.session.userId, 'minuta_generated', m.titulo, req.ip);
-    req.session.flash = { type: 'success', text: 'Minuta generada con IA correctamente.' };
+    await generarConGemini(m.id, m, req);
+    req.session.flash = { type: 'success', text: 'Minuta generada con Gemini correctamente.' };
   } catch (err) {
     req.session.flash = { type: 'error', text: 'Error al generar: ' + err.message };
   }

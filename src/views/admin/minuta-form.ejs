@@ -6,39 +6,50 @@
 
 <% if (error) { %><div class="flash flash-error"><%= error %></div><% } %>
 
-<section class="card" style="max-width:600px">
+<section class="card" style="max-width:720px">
   <form method="post" action="/admin/minutas/<%= minuta ? minuta.id + '/guardar-meta' : 'nueva' %>">
     <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
 
-    <label>Título de la minuta <span class="req">*</span>
-      <input type="text" name="titulo" required maxlength="200" value="<%= minuta ? minuta.titulo : '' %>" placeholder="Ej. Sesión de levantamiento — semana 1" />
-    </label>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <label>Título de la minuta <span class="req">*</span>
+        <input type="text" name="titulo" required maxlength="200" value="<%= minuta ? minuta.titulo : '' %>" placeholder="Ej. Sesión de levantamiento — semana 1" />
+      </label>
+      <label>Fecha de la reunión <span class="req">*</span>
+        <input type="date" name="fecha" required value="<%= minuta ? minuta.fecha : new Date().toISOString().slice(0,10) %>" />
+      </label>
+    </div>
 
-    <label>Fecha de la reunión <span class="req">*</span>
-      <input type="date" name="fecha" required value="<%= minuta ? minuta.fecha : new Date().toISOString().slice(0,10) %>" />
-    </label>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:4px">
+      <label>Empresa cliente
+        <select name="company_id">
+          <option value="">— Sin empresa —</option>
+          <% empresas.forEach(function(e) { %>
+            <option value="<%= e.id %>" <%= minuta && minuta.company_id == e.id ? 'selected' : '' %>><%= e.name %></option>
+          <% }) %>
+        </select>
+      </label>
+      <label>Formato de minuta
+        <select name="formato">
+          <% FORMATOS.forEach(function(f) { %>
+            <option value="<%= f.id %>" <%= (!minuta && f.id === 'ejecutiva') || (minuta && minuta.formato === f.id) ? 'selected' : '' %>>
+              <%= f.label %>
+            </option>
+          <% }) %>
+        </select>
+      </label>
+    </div>
 
-    <label>Empresa cliente
-      <select name="company_id">
-        <option value="">— Sin empresa —</option>
-        <% empresas.forEach(function(e) { %>
-          <option value="<%= e.id %>" <%= minuta && minuta.company_id == e.id ? 'selected' : '' %>><%= e.name %></option>
-        <% }) %>
-      </select>
-    </label>
-
-    <label>Formato de minuta
-      <select name="formato">
-        <% FORMATOS.forEach(function(f) { %>
-          <option value="<%= f.id %>" <%= (!minuta && f.id === 'ejecutiva') || (minuta && minuta.formato === f.id) ? 'selected' : '' %>>
-            <%= f.label %> — <%= f.desc %>
-          </option>
-        <% }) %>
-      </select>
+    <label style="margin-top:12px">Transcripción / descripción de la reunión
+      <textarea name="transcripcion" rows="12" placeholder="Pega aquí el texto completo de la reunión, notas o transcripción de audio…" style="resize:vertical"><%= minuta ? minuta.transcripcion || '' : '' %></textarea>
     </label>
 
     <div class="modal-actions" style="margin-top:20px">
-      <button class="btn btn-primary" type="submit"><%= minuta ? 'Guardar cambios' : 'Crear minuta' %></button>
+      <button class="btn btn-primary" type="submit" name="accion" value="guardar">
+        <%= minuta ? 'Guardar cambios' : 'Crear minuta' %>
+      </button>
+      <button class="btn btn-primary" type="submit" name="accion" value="generar" style="background:var(--bc-gold);color:#1c1c1f">
+        <%= minuta ? 'Guardar y regenerar con IA' : 'Crear y generar con IA ✨' %>
+      </button>
       <a class="btn btn-ghost" href="/admin/minutas">Cancelar</a>
     </div>
   </form>
