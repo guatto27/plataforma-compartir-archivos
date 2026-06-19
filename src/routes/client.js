@@ -33,7 +33,7 @@ function companyOf(req) {
 // --- Contenido de ejemplo (estructura fija; se hará editable más adelante) ---
 const PIPELINE = [
   {
-    state: 'current', label: 'En curso', name: 'Diagnóstico As-Is', sub: 'Levantamiento del estado actual',
+    state: 'current', label: 'En curso', name: 'Diagnóstico y Levantamiento', sub: 'Levantamiento del estado actual',
     items: [
       {
         n: 1, state: 'current', stateLabel: 'En proceso',
