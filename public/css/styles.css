@@ -379,12 +379,24 @@ body.has-sidebar { display: flex; min-height: 100vh; }
 .sidebar-section { padding: 16px 18px 6px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #71717a; }
 .sidebar-nav { display: flex; flex-direction: column; gap: 2px; padding: 0 10px; }
 .sidebar-nav a {
-  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  display: flex; align-items: center; gap: 10px;
   padding: 10px 12px; border-radius: 9px; color: var(--bc-muted); font-size: 14px; font-weight: 500;
+  transition: background .15s ease, color .15s ease;
 }
 .sidebar-nav a:hover { background: var(--bc-surface-2); color: var(--bc-text); text-decoration: none; }
 .sidebar-nav a.active { background: rgba(251,191,36,.12); color: var(--bc-gold); border: 1px solid rgba(251,191,36,.3); }
+.sidebar-nav a .count-badge { margin-left: auto; }
 .sidebar-nav .count-badge { background: var(--bc-gold); color: #1c1c1f; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 0 7px; min-width: 18px; text-align: center; }
+
+/* Icono SVG en cada elemento del menú lateral */
+.nav-icon { flex: 0 0 auto; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; opacity: .7; }
+.nav-icon svg { width: 18px; height: 18px; }
+.sidebar-nav a:hover .nav-icon,
+.sidebar-nav a.active .nav-icon { opacity: 1; }
+
+/* Variantes del punto de sesión en la topbar */
+.cuenta-chip .dot-admin { background: #a78bfa; }
+.cuenta-chip .dot-colab { background: #34d399; }
 
 .shell-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
 .topbar-2 {

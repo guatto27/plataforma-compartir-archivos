@@ -523,6 +523,14 @@ router.post('/usuarios/:id/delete', requireAdmin, (req, res) => {
   res.redirect('/admin/usuarios');
 });
 
+// Auditoría (solo admin)
+router.get('/auditoria', requireAdmin, (req, res) => {
+  const rows = db.prepare(
+    `SELECT al.*, u.username FROM audit_log al LEFT JOIN users u ON u.id = al.user_id ORDER BY al.created_at DESC LIMIT 300`
+  ).all();
+  res.render('admin/audit', { title: 'Auditoría', active: 'auditoria', rows });
+});
+
 // Compatibilidad: la antigua "Clientes" ahora son Usuarios
 router.get('/gestion', (req, res) => res.redirect('/admin/usuarios'));
 
