@@ -35,9 +35,18 @@ const PIPELINE = [
   {
     state: 'done', label: 'Completada', name: 'Diagnóstico As-Is', sub: 'Levantamiento del estado actual',
     items: [
-      { t: 'Inventario de procesos actuales', s: 'ok' },
-      { t: 'Encuestas al personal (As-Is)', s: 'ok' },
-      { t: 'Mapa de procesos As-Is', s: 'ok' },
+      {
+        t: 'Levantamiento de Requerimientos', s: 'ok', paso: 'Paso 1 · Captura de Información',
+        desc: 'Entrevistas y encuestas IMA con las partes interesadas para entender su proceso. Es la fuente de materia prima: se escucha activamente a usuarios, líderes de área y operadores para recolectar sus dolores, necesidades y expectativas sin filtros.',
+      },
+      {
+        t: 'Mapeo de Procesos Actuales (As-Is)', s: 'ok', paso: 'Paso 2 · Diagnóstico Fotográfico',
+        desc: 'Documentar cómo se hacen las cosas actualmente. Con la información recolectada se plasma de forma visual y documental la realidad de la organización hoy, identificando cuellos de botella, retrabajos y tareas manuales que absorben tiempo excesivo.',
+      },
+      {
+        t: 'Informe de Integración de Hallazgos', s: 'ok', paso: 'Paso 3 · Análisis y Cruce de Datos',
+        desc: 'Transformar datos dispersos en una lectura unificada. Cruza las notas de las entrevistas y el mapa As-Is para unificar criterios, detectar contradicciones entre áreas, datos duplicados y las brechas (gaps) entre la realidad actual y el potencial tecnológico.',
+      },
     ],
     entregable: 'Mapa de procesos As-Is validado',
   },
