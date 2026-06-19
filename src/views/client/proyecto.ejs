@@ -6,25 +6,22 @@
   <p class="muted">El proyecto avanza por fases, cada una con un entregable formal obligatorio. La <strong>Fase 1 — Diagnóstico As-Is</strong> levanta los requerimientos, mapea los procesos actuales e integra los hallazgos: es la materia prima sobre la que se construye el rediseño To-Be con IA.</p>
 </div>
 
-<div class="pipeline"<%= phases.length === 1 ? ' style="grid-template-columns: minmax(0, 440px)"' : '' %>>
-  <% phases.forEach(function (p) { %>
-    <div class="phase <%= p.state %>">
-      <div class="ph-state"><%= p.label %></div>
-      <h3><%= p.name %></h3>
-      <div class="ph-sub"><%= p.sub %></div>
-      <ul>
-        <% p.items.forEach(function (it) { %>
-          <li class="<%= it.s %>">
-            <span class="it-title"><%= it.t %></span>
-            <% if (it.paso) { %><span class="it-paso"><%= it.paso %></span><% } %>
-            <% if (it.desc) { %><span class="it-desc"><%= it.desc %></span><% } %>
-          </li>
-        <% }) %>
-      </ul>
-      <div class="entregable-box">
-        <div class="lbl">Entregable formal</div>
-        <div class="val"><%= p.entregable %></div>
+<div class="phase-head">
+  <span class="ph-state <%= phase.state %>"><%= phase.label %></span>
+  <h2><%= phase.name %></h2>
+  <span class="muted">· <%= phase.sub %> · Entregable: <strong><%= phase.entregable %></strong></span>
+</div>
+
+<div class="steps">
+  <% phase.items.forEach(function (it, i) { %>
+    <div class="step-card <%= it.state %>">
+      <div class="step-top">
+        <span class="step-num"><%= it.n %></span>
+        <span class="step-state <%= it.state %>"><%= it.stateLabel %></span>
       </div>
+      <h3><%= it.t %></h3>
+      <div class="step-paso"><%= it.paso %></div>
+      <p class="step-desc"><%= it.desc %></p>
     </div>
   <% }) %>
 </div>

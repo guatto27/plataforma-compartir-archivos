@@ -33,18 +33,21 @@ function companyOf(req) {
 // --- Contenido de ejemplo (estructura fija; se hará editable más adelante) ---
 const PIPELINE = [
   {
-    state: 'done', label: 'Completada', name: 'Diagnóstico As-Is', sub: 'Levantamiento del estado actual',
+    state: 'current', label: 'En curso', name: 'Diagnóstico As-Is', sub: 'Levantamiento del estado actual',
     items: [
       {
-        t: 'Levantamiento de Requerimientos', s: 'ok', paso: 'Paso 1 · Captura de Información',
+        n: 1, state: 'current', stateLabel: 'En proceso',
+        t: 'Levantamiento de Requerimientos', paso: 'Paso 1 · Captura de Información',
         desc: 'Entrevistas y encuestas IMA con las partes interesadas para entender su proceso. Es la fuente de materia prima: se escucha activamente a usuarios, líderes de área y operadores para recolectar sus dolores, necesidades y expectativas sin filtros.',
       },
       {
-        t: 'Mapeo de Procesos Actuales (As-Is)', s: 'ok', paso: 'Paso 2 · Diagnóstico Fotográfico',
+        n: 2, state: 'pending', stateLabel: 'Pendiente',
+        t: 'Mapeo de Procesos Actuales (As-Is)', paso: 'Paso 2 · Diagnóstico Fotográfico',
         desc: 'Documentar cómo se hacen las cosas actualmente. Con la información recolectada se plasma de forma visual y documental la realidad de la organización hoy, identificando cuellos de botella, retrabajos y tareas manuales que absorben tiempo excesivo.',
       },
       {
-        t: 'Informe de Integración de Hallazgos', s: 'ok', paso: 'Paso 3 · Análisis y Cruce de Datos',
+        n: 3, state: 'pending', stateLabel: 'Pendiente',
+        t: 'Informe de Integración de Hallazgos', paso: 'Paso 3 · Análisis y Cruce de Datos',
         desc: 'Transformar datos dispersos en una lectura unificada. Cruza las notas de las entrevistas y el mapa As-Is para unificar criterios, detectar contradicciones entre áreas, datos duplicados y las brechas (gaps) entre la realidad actual y el potencial tecnológico.',
       },
     ],
@@ -101,7 +104,7 @@ const SAMPLE_MINUTA = {
 router.get('/', (req, res) => {
   res.render('client/proyecto', {
     title: 'Mi proyecto', active: 'proyecto', companyName: companyOf(req),
-    phases: PIPELINE.slice(0, 1), // por ahora solo la Fase 1; las demás se agregan después
+    phase: PIPELINE[0], // por ahora solo la Fase 1; las demás se agregan después
   });
 });
 

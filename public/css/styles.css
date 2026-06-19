@@ -461,3 +461,33 @@ body.has-sidebar { display: flex; min-height: 100vh; }
 /* ---------- Minutas ---------- */
 .ai-tag { font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 999px; background: rgba(251,191,36,.14); color: var(--bc-gold); }
 .minuta-summary { border-left: 3px solid var(--bc-gold); }
+
+/* ---------- Secuencia de actividades (pasos de una fase) ---------- */
+.phase-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 22px 0 14px; }
+.phase-head h2 { margin: 0; font-size: 18px; }
+.phase-head .ph-state { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; padding: 3px 10px; border-radius: 999px; }
+.phase-head .ph-state.current { background: rgba(251,191,36,.14); color: var(--bc-gold); }
+.phase-head .ph-state.done { background: rgba(34,197,94,.14); color: #4ade80; }
+.phase-head .ph-state.pending { background: var(--bc-surface-2); color: #a1a1aa; }
+
+.steps { display: flex; gap: 22px; align-items: stretch; flex-wrap: wrap; }
+.step-card {
+  position: relative; flex: 1 1 260px; min-width: 260px;
+  background: var(--bc-surface); border: 1px solid var(--bc-border); border-radius: 12px;
+  padding: 18px; border-top: 3px solid var(--bc-border-2);
+}
+.step-card.current { border-top-color: var(--bc-gold); box-shadow: 0 0 0 1px rgba(251,191,36,.25); }
+.step-card.done { border-top-color: var(--bc-green); }
+.step-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.step-num { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; background: var(--bc-surface-2); color: #a1a1aa; border: 1px solid var(--bc-border-2); }
+.step-card.current .step-num { background: var(--bc-gradient); color: #1c1c1f; border: none; }
+.step-card.done .step-num { background: rgba(34,197,94,.2); color: #4ade80; border-color: rgba(34,197,94,.4); }
+.step-state { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: 2px 9px; border-radius: 999px; }
+.step-state.current { background: rgba(251,191,36,.14); color: var(--bc-gold); }
+.step-state.pending { background: var(--bc-surface-2); color: #a1a1aa; border: 1px solid var(--bc-border-2); }
+.step-state.done { background: rgba(34,197,94,.14); color: #4ade80; }
+.step-card h3 { margin: 4px 0 2px; font-size: 16px; }
+.step-paso { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--bc-gold); margin-bottom: 8px; }
+.step-desc { font-size: 13px; color: var(--bc-muted); line-height: 1.5; margin: 0; }
+.step-card:not(:last-child)::after { content: '\203A'; position: absolute; right: -22px; top: 36px; color: var(--bc-border-2); font-size: 30px; line-height: 1; }
+@media (max-width: 900px) { .step-card:not(:last-child)::after { display: none; } }
