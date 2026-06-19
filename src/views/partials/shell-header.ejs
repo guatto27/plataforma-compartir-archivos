@@ -95,12 +95,6 @@
           </span>
           Gestión de clientes
         </a>
-        <a href="/admin/auditoria" class="<%= act === 'auditoria' ? 'active' : '' %>">
-          <span class="nav-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          </span>
-          Auditoría
-        </a>
       </nav>
 
     <% } else { %>
@@ -137,17 +131,7 @@
 
   <div class="shell-main">
     <header class="topbar-2">
-      <% if (isClient) { %>
-        <span class="cuenta-chip">
-          <span class="dot"></span>
-          <span><span class="lbl">Cuenta activa</span><br><strong><%= (typeof companyName !== 'undefined' && companyName) ? companyName : brand.name %></strong></span>
-        </span>
-      <% } else { %>
-        <span class="cuenta-chip">
-          <span class="dot <%= isAdmin ? 'dot-admin' : 'dot-colab' %>"></span>
-          <span><span class="lbl">Sesión activa</span><br><strong><%= isAdmin ? 'Administrador' : 'Colaborador' %></strong></span>
-        </span>
-      <% } %>
+      <div></div>
       <% if (currentUser) { %>
         <nav class="nav">
           <details class="usermenu">
