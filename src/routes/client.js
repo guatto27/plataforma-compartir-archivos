@@ -50,6 +50,11 @@ const PIPELINE = [
         t: 'Informe de Integración de Hallazgos', paso: 'Paso 3 · Análisis y Cruce de Datos',
         desc: 'Transformar datos dispersos en una lectura unificada. Cruza las notas de las entrevistas y el mapa As-Is para unificar criterios, detectar contradicciones entre áreas, datos duplicados y las brechas (gaps) entre la realidad actual y el potencial tecnológico.',
       },
+      {
+        n: 4, state: 'pending', stateLabel: 'Pendiente',
+        t: 'Mapeo de Procesos Deseados (To-Be)', paso: 'Paso 4 · Rediseño Optimizado',
+        desc: 'Modelar y documentar el proceso deseado. Una vez que sabes qué está mal y analizaste las causas raíz, diseñas el proceso ideal: cómo operará la organización con la nueva plataforma a la medida para automatizar y agilizar los flujos.',
+      },
     ],
     entregable: 'Mapa de procesos As-Is validado',
   },
@@ -105,7 +110,6 @@ router.get('/', (req, res) => {
   res.render('client/proyecto', {
     title: 'Mi proyecto', active: 'proyecto', companyName: companyOf(req),
     phase: PIPELINE[0],
-    nextPhase: PIPELINE[1], // tarjeta resumen To-Be al final del carrusel
   });
 });
 
