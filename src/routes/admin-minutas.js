@@ -182,8 +182,12 @@ router.get('/:id/ver-pdf', (req, res) => {
   if (!m || !m.archivo_path) return res.status(404).send('Sin archivo');
   const filePath = path.join(MINUTAS_DIR, m.archivo_path);
   if (!fs.existsSync(filePath)) return res.status(404).send('Archivo no encontrado');
+  // Eliminar cabeceras que bloquean embedding de PDF en iframe/object
+  res.removeHeader('X-Frame-Options');
+  res.removeHeader('Content-Security-Policy');
   res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(m.archivo_nombre || 'minuta.pdf')}"`);
+  res.setHeader('Content-Disposition', 'inline; filename="minuta.pdf"');
+  res.setHeader('Cache-Control', 'private, max-age=60');
   fs.createReadStream(filePath).pipe(res);
 });
 
@@ -206,10 +210,12 @@ async function firmarPDF(minutaId, m, keyBuf, cerBuf, passphrase) {
   const nomM    = cn.match(/[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}\s*\/?\s*(.+)/i);
   const nombre  = nomM ? nomM[1].trim() : cn;
 
-  // Descifrar llave privada
-  const keyDer  = forge.util.createBuffer(keyBuf.toString('binary'));
-  const encKey  = forge.pki.encryptedPrivateKeyFromAsn1(forge.asn1.fromDer(keyDer));
-  const privKey = forge.pki.decryptRsaPrivateKey(encKey, passphrase);
+  // Descifrar llave privada: convertir DER → PEM y usar decryptRsaPrivateKey
+  const b64Key  = keyBuf.toString('base64');
+  const pemKey  = '-----BEGIN ENCRYPTED PRIVATE KEY-----\n' +
+                  b64Key.match(/.{1,64}/g).join('\n') +
+                  '\n-----END ENCRYPTED PRIVATE KEY-----';
+  const privKey = forge.pki.decryptRsaPrivateKey(pemKey, passphrase);
   if (!privKey) throw new Error('Contraseña incorrecta o archivo .key inválido.');
 
   // Leer y firmar el PDF
@@ -386,9 +392,11 @@ router.post('/:id/firmar', memUpload.fields([{ name: 'key_file', maxCount: 1 }, 
         req.session.flash = { type: 'error', text: 'Genera o escribe el contenido antes de firmar.' };
         return res.redirect(`/admin/minutas/${m.id}`);
       }
-      const keyDer  = forge.util.createBuffer(keyBuf.buffer.toString('binary'));
-      const encKey  = forge.pki.encryptedPrivateKeyFromAsn1(forge.asn1.fromDer(keyDer));
-      const keyPem  = forge.pki.decryptRsaPrivateKey(encKey, passphrase);
+      const b64Key2 = keyBuf.buffer.toString('base64');
+      const pemKey2 = '-----BEGIN ENCRYPTED PRIVATE KEY-----\n' +
+                      b64Key2.match(/.{1,64}/g).join('\n') +
+                      '\n-----END ENCRYPTED PRIVATE KEY-----';
+      const keyPem  = forge.pki.decryptRsaPrivateKey(pemKey2, passphrase);
       if (!keyPem) throw new Error('Contraseña incorrecta o archivo .key inválido.');
       const cerDer  = forge.util.createBuffer(cerBuf.buffer.toString('binary'));
       const cert    = forge.pki.certificateFromAsn1(forge.asn1.fromDer(cerDer));

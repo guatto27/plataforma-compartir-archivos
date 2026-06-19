@@ -100,12 +100,16 @@
 
     <!-- Panel derecho: vista previa del PDF -->
     <div>
-      <section class="card" style="padding:0;overflow:hidden;border-radius:14px">
-        <iframe
-          src="/admin/minutas/<%= m.id %>/ver-pdf"
-          style="width:100%;height:820px;border:none;display:block"
-          title="Vista previa — <%= m.titulo %>">
-        </iframe>
+      <section class="card" style="padding:0;overflow:hidden;border-radius:14px;background:#525659">
+        <object
+          data="/admin/minutas/<%= m.id %>/ver-pdf"
+          type="application/pdf"
+          style="width:100%;height:820px;border:none;display:block">
+          <embed
+            src="/admin/minutas/<%= m.id %>/ver-pdf"
+            type="application/pdf"
+            style="width:100%;height:820px;border:none;display:block" />
+        </object>
       </section>
     </div>
 
