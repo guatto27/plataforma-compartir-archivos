@@ -100,6 +100,8 @@ db.exec(`
     formato TEXT NOT NULL DEFAULT 'ejecutiva',
     transcripcion TEXT,
     contenido TEXT,
+    archivo_path TEXT,
+    archivo_nombre TEXT,
     firmada INTEGER NOT NULL DEFAULT 0,
     firma_serial TEXT,
     firma_nombre TEXT,
@@ -164,6 +166,13 @@ if (usersSql && usersSql.sql && !usersSql.sql.includes("'cliente_responsable'"))
   db.exec('CREATE INDEX IF NOT EXISTS idx_users_company ON users(company_id)');
   db.exec('PRAGMA foreign_keys = ON');
   console.log('[migración] tabla users actualizada para admitir el rol "colaborador".');
+}
+
+// Migración: columnas de archivo adjunto en minutas
+const minutaCols = db.prepare('PRAGMA table_info(minutas)').all();
+if (!minutaCols.some((c) => c.name === 'archivo_path')) {
+  db.exec('ALTER TABLE minutas ADD COLUMN archivo_path TEXT');
+  db.exec('ALTER TABLE minutas ADD COLUMN archivo_nombre TEXT');
 }
 
 // Bootstrap: crea un administrador inicial desde variables de entorno si aún

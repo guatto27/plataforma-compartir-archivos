@@ -74,6 +74,24 @@ document.addEventListener('click', function (e) {
   if (hideSvg) hideSvg.style.display = isHidden ? '' : 'none';
 });
 
+// Toggle de paneles con radio buttons (data-toggle-target / data-toggle-group)
+document.addEventListener('change', function (e) {
+  var radio = e.target.closest('input[type=radio][data-toggle-target]');
+  if (!radio) return;
+  var group = radio.getAttribute('data-toggle-group');
+  // Ocultar todos los paneles del grupo
+  document.querySelectorAll('input[type=radio][data-toggle-group="' + group + '"]').forEach(function (r) {
+    var panel = document.getElementById(r.getAttribute('data-toggle-target'));
+    if (panel) panel.style.display = 'none';
+  });
+  // Mostrar el panel del radio activo
+  var activePanel = document.getElementById(radio.getAttribute('data-toggle-target'));
+  if (activePanel) activePanel.style.display = '';
+  // Ajustar el texto/visibilidad del botón generar si existe
+  var btnGenerar = document.getElementById('btn-generar');
+  if (btnGenerar) btnGenerar.style.display = radio.value === 'archivo' ? 'none' : '';
+});
+
 // Copiar credenciales al portapapeles (botón con data-copy="id1|id2")
 document.addEventListener('click', function (e) {
   var btn = e.target.closest('[data-copy]');

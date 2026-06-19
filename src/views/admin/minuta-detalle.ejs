@@ -68,12 +68,30 @@
     <% } %>
   </div>
 
-  <!-- ── Panel derecho: contenido + firma ── -->
+  <!-- ── Panel derecho: archivo adjunto + contenido + firma ── -->
   <div>
+    <% if (m.archivo_path) { %>
+    <section class="card" style="margin-bottom:20px">
+      <h2>Archivo adjunto</h2>
+      <div style="display:flex;align-items:center;gap:14px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:36px;height:36px;color:var(--bc-gold);flex-shrink:0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <div>
+          <p style="margin:0;font-weight:600"><%= m.archivo_nombre || m.archivo_path %></p>
+          <a href="/admin/minutas/<%= m.id %>/descargar" class="btn btn-ghost" style="margin-top:8px;display:inline-flex;align-items:center;gap:6px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Descargar archivo
+          </a>
+        </div>
+      </div>
+    </section>
+    <% } %>
+
     <section class="card" style="margin-bottom:20px">
       <h2>Contenido de la minuta</h2>
-      <% if (!m.contenido) { %>
+      <% if (!m.contenido && !m.archivo_path) { %>
         <p class="muted">Agrega la transcripción y presiona «Generar minuta con IA», o escribe el contenido directamente.</p>
+      <% } else if (!m.contenido && m.archivo_path) { %>
+        <p class="muted">El contenido está en el archivo adjunto. Puedes añadir notas adicionales aquí.</p>
       <% } %>
       <% if (!m.firmada) { %>
         <form method="post" action="/admin/minutas/<%= m.id %>/guardar">

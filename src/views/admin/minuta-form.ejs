@@ -6,19 +6,24 @@
 
 <% if (error) { %><div class="flash flash-error"><%= error %></div><% } %>
 
-<section class="card" style="max-width:720px">
-  <form method="post" action="/admin/minutas/<%= minuta ? minuta.id + '/guardar-meta' : 'nueva' %>">
+<section class="card" style="max-width:760px">
+  <form method="post" action="/admin/minutas/<%= minuta ? minuta.id + '/guardar-meta' : 'nueva' %>" enctype="multipart/form-data">
     <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
 
+    <!-- Título + Fecha -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
       <label>Título de la minuta <span class="req">*</span>
-        <input type="text" name="titulo" required maxlength="200" value="<%= minuta ? minuta.titulo : '' %>" placeholder="Ej. Sesión de levantamiento — semana 1" />
+        <input type="text" name="titulo" required maxlength="200"
+               value="<%= minuta ? minuta.titulo : '' %>"
+               placeholder="Ej. Sesión de levantamiento — semana 1" />
       </label>
       <label>Fecha de la reunión <span class="req">*</span>
-        <input type="date" name="fecha" required value="<%= minuta ? minuta.fecha : new Date().toISOString().slice(0,10) %>" />
+        <input type="date" name="fecha" required
+               value="<%= minuta ? minuta.fecha : new Date().toISOString().slice(0,10) %>" />
       </label>
     </div>
 
+    <!-- Empresa + Formato -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:4px">
       <label>Empresa cliente
         <select name="company_id">
@@ -39,16 +44,52 @@
       </label>
     </div>
 
-    <label style="margin-top:12px">Transcripción / descripción de la reunión
-      <textarea name="transcripcion" rows="12" placeholder="Pega aquí el texto completo de la reunión, notas o transcripción de audio…" style="resize:vertical"><%= minuta ? minuta.transcripcion || '' : '' %></textarea>
-    </label>
+    <!-- Toggle: IA o Subir archivo -->
+    <div style="margin-top:20px;margin-bottom:4px">
+      <p style="font-size:13px;font-weight:600;margin:0 0 10px;color:var(--bc-text)">¿Cómo quieres agregar el contenido?</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <label class="fmt-option" id="tab-ia" style="flex:1;min-width:180px">
+          <input type="radio" name="modo_contenido" value="ia" checked data-toggle-target="panel-ia" data-toggle-group="modo" />
+          <div>
+            <strong>Generar con IA ✨</strong>
+            <span class="muted"> — Pega la transcripción y Gemini redacta la minuta</span>
+          </div>
+        </label>
+        <label class="fmt-option" id="tab-archivo" style="flex:1;min-width:180px">
+          <input type="radio" name="modo_contenido" value="archivo" data-toggle-target="panel-archivo" data-toggle-group="modo" />
+          <div>
+            <strong>Subir archivo</strong>
+            <span class="muted"> — Adjunta un PDF o Word ya generado</span>
+          </div>
+        </label>
+      </div>
+    </div>
 
+    <!-- Panel: Transcripción para IA -->
+    <div id="panel-ia" style="margin-top:12px">
+      <label>Transcripción / descripción de la reunión
+        <textarea name="transcripcion" rows="12"
+                  placeholder="Pega aquí el texto completo de la reunión, notas o transcripción de audio…"
+                  style="resize:vertical"><%= minuta ? minuta.transcripcion || '' : '' %></textarea>
+      </label>
+    </div>
+
+    <!-- Panel: Subir archivo -->
+    <div id="panel-archivo" style="display:none;margin-top:12px">
+      <label>Archivo de la minuta
+        <input type="file" name="archivo" accept=".pdf,.docx,.doc,.xlsx,.pptx" />
+      </label>
+      <p class="muted" style="font-size:12px;margin-top:6px">Formatos aceptados: PDF, Word (DOCX/DOC). Máx. 20 MB.</p>
+    </div>
+
+    <!-- Acciones -->
     <div class="modal-actions" style="margin-top:20px">
-      <button class="btn btn-primary" type="submit" name="accion" value="guardar">
-        <%= minuta ? 'Guardar cambios' : 'Crear minuta' %>
+      <button class="btn btn-ghost" type="submit" name="accion" value="guardar">
+        Crear minuta
       </button>
-      <button class="btn btn-primary" type="submit" name="accion" value="generar" style="background:var(--bc-gold);color:#1c1c1f">
-        <%= minuta ? 'Guardar y regenerar con IA' : 'Crear y generar con IA ✨' %>
+      <button class="btn btn-primary" type="submit" name="accion" value="generar"
+              id="btn-generar" style="background:var(--bc-gold);color:#1c1c1f">
+        Crear y generar con IA ✨
       </button>
       <a class="btn btn-ghost" href="/admin/minutas">Cancelar</a>
     </div>

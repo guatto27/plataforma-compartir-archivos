@@ -157,6 +157,24 @@ router.get('/entregables', (req, res) => {
   });
 });
 
+// Descargar archivo adjunto de una minuta publicada
+router.get('/minutas/:id/descargar', (req, res) => {
+  if (req.session.role === 'client') return res.redirect('/app/agente');
+  const me = db.prepare('SELECT company_id, company_name FROM users WHERE id = ?').get(req.session.userId);
+  const m  = db.prepare('SELECT * FROM minutas WHERE id = ? AND publicada = 1').get(req.params.id);
+  if (!m || !m.archivo_path) return res.status(404).send('Archivo no encontrado.');
+  const allowed = me && (
+    (me.company_id && me.company_id === m.company_id) ||
+    (!m.company_id && me.company_name === m.company_name)
+  );
+  if (!allowed) return res.status(403).send('Sin acceso.');
+  const path = require('path');
+  const fs   = require('fs');
+  const filePath = path.join(require('../config').uploadsDir, 'minutas', m.archivo_path);
+  if (!fs.existsSync(filePath)) return res.status(404).send('Archivo no encontrado en servidor.');
+  res.download(filePath, m.archivo_nombre || m.archivo_path);
+});
+
 // Minutas — solo cliente_responsable (lee minutas publicadas de su empresa)
 router.get('/minutas', (req, res) => {
   if (req.session.role === 'client') return res.redirect('/app/agente');

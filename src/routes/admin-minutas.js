@@ -3,12 +3,36 @@
 const express = require('express');
 const multer  = require('multer');
 const forge   = require('node-forge');
+const path    = require('path');
+const fs      = require('fs');
+const crypto  = require('crypto');
 
 const { db, logAction } = require('../db');
+const config  = require('../config');
 const { requireLogin, requireRole, verifyCsrf, denyCsrf } = require('../middleware/auth');
 
 const router = express.Router();
 router.use(requireLogin, requireRole('admin', 'colaborador'));
+
+// Directorio para minutas subidas como archivo
+const MINUTAS_DIR = path.join(config.uploadsDir, 'minutas');
+if (!fs.existsSync(MINUTAS_DIR)) fs.mkdirSync(MINUTAS_DIR, { recursive: true });
+
+// Multer en disco para archivos de minuta (PDF/DOCX)
+const minutaUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, MINUTAS_DIR),
+    filename: (req, file, cb) => {
+      const ext = path.extname(file.originalname).toLowerCase();
+      cb(null, `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${ext}`);
+    },
+  }),
+  limits: { fileSize: 20 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = ['.pdf', '.docx', '.doc', '.xlsx', '.pptx'];
+    cb(null, allowed.includes(path.extname(file.originalname).toLowerCase()));
+  },
+});
 
 // Multer en memoria para .key / .cer (nunca se guardan en disco)
 const memUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2 * 1024 * 1024 } });
@@ -37,10 +61,11 @@ router.get('/nueva', (req, res) => {
   res.render('admin/minuta-form', { title: 'Nueva minuta', active: 'minutas', minuta: null, empresas, FORMATOS, error: null });
 });
 
-router.post('/nueva', async (req, res) => {
+router.post('/nueva', minutaUpload.single('archivo'), async (req, res) => {
   if (!verifyCsrf(req)) return denyCsrf(res);
   const { titulo, fecha, company_id, company_name, formato, transcripcion, accion } = req.body;
   if (!titulo || !fecha) {
+    if (req.file) fs.unlink(req.file.path, () => {});
     const empresas = db.prepare('SELECT id, name FROM companies ORDER BY name').all();
     return res.status(400).render('admin/minuta-form', {
       title: 'Nueva minuta', active: 'minutas', minuta: null, empresas, FORMATOS, error: 'Título y fecha son obligatorios.',
@@ -49,10 +74,15 @@ router.post('/nueva', async (req, res) => {
   const cName = company_id
     ? (db.prepare('SELECT name FROM companies WHERE id = ?').get(company_id) || {}).name || company_name
     : company_name;
+
+  const archivoPath   = req.file ? req.file.filename : null;
+  const archivoNombre = req.file ? req.file.originalname : null;
+
   const result = db.prepare(
-    `INSERT INTO minutas (titulo, fecha, company_id, company_name, formato, transcripcion, created_by)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`
-  ).run(titulo, fecha, company_id || null, cName || null, formato || 'ejecutiva', transcripcion || null, req.session.userId);
+    `INSERT INTO minutas (titulo, fecha, company_id, company_name, formato, transcripcion, archivo_path, archivo_nombre, created_by)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(titulo, fecha, company_id || null, cName || null, formato || 'ejecutiva',
+        transcripcion || null, archivoPath, archivoNombre, req.session.userId);
   const id = result.lastInsertRowid;
   logAction(req.session.userId, 'minuta_created', titulo, req.ip);
 
@@ -60,6 +90,15 @@ router.post('/nueva', async (req, res) => {
     await generarConGemini(id, { titulo, fecha, company_name: cName, formato: formato || 'ejecutiva', transcripcion }, req);
   }
   res.redirect(`/admin/minutas/${id}`);
+});
+
+// ── Descargar archivo adjunto ────────────────────────────────────────────────
+router.get('/:id/descargar', (req, res) => {
+  const m = db.prepare('SELECT archivo_path, archivo_nombre FROM minutas WHERE id = ?').get(req.params.id);
+  if (!m || !m.archivo_path) return res.status(404).send('Archivo no encontrado.');
+  const filePath = path.join(MINUTAS_DIR, m.archivo_path);
+  if (!fs.existsSync(filePath)) return res.status(404).send('Archivo no encontrado en servidor.');
+  res.download(filePath, m.archivo_nombre || m.archivo_path);
 });
 
 // ── Detalle de minuta ───────────────────────────────────────────────────────
