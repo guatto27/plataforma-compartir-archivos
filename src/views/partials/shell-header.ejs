@@ -256,18 +256,24 @@
     <main class="shell-content">
       <% if (isClient && currentUser) { %>
         <div class="client-banner">
-          <div class="cb-side">
-            <img class="cb-logo" src="/static/img/logo-mark.png" alt="<%= brand.name %>" />
-            <span class="cb-name cb-bc"><%= brand.name %></span>
+          <div class="cb-row">
+            <div class="cb-col">
+              <img class="cb-icon" src="/static/img/logo-mark.png" alt="<%= brand.name %>" />
+              <img class="cb-wordmark wm-dark" src="/static/img/logo-wordmark.png" alt="<%= brand.name %>" />
+              <img class="cb-wordmark wm-light" src="/static/img/logo-wordmark-dark.png" alt="<%= brand.name %>" />
+            </div>
+            <span class="cb-divider"></span>
+            <div class="cb-col">
+              <% if (currentUser.companyHasLogo) { %>
+                <img class="cb-comp-logo" src="/app/empresa/logo" alt="<%= currentUser.companyName %>" />
+              <% } else if (currentUser.companyName) { %>
+                <span class="cb-name"><%= currentUser.companyName %></span>
+              <% } %>
+            </div>
           </div>
-          <span class="cb-divider"></span>
-          <div class="cb-side">
-            <% if (currentUser.companyHasLogo) { %>
-              <img class="cb-logo cb-logo-comp" src="/app/empresa/logo" alt="<%= currentUser.companyName %>" />
-            <% } else if (currentUser.companyName) { %>
-              <span class="cb-name"><%= currentUser.companyName %></span>
-            <% } %>
-          </div>
+          <% if (currentUser.companyProject) { %>
+            <div class="cb-project"><strong>Proyecto:</strong> <%= currentUser.companyProject %></div>
+          <% } %>
         </div>
       <% } %>
       <%- include('flash') %>

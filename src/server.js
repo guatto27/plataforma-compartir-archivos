@@ -71,9 +71,11 @@ app.use((req, res, next) => {
   if (req.session.userId) {
     var u = db.prepare('SELECT display_name, company_id, company_name FROM users WHERE id = ?').get(req.session.userId);
     var companyHasLogo = false;
+    var companyProject = null;
     if (u && u.company_id) {
-      var c = db.prepare('SELECT logo_path FROM companies WHERE id = ?').get(u.company_id);
+      var c = db.prepare('SELECT logo_path, project FROM companies WHERE id = ?').get(u.company_id);
       companyHasLogo = !!(c && c.logo_path);
+      companyProject = c ? c.project : null;
     }
     res.locals.currentUser = {
       id: req.session.userId,
@@ -83,6 +85,7 @@ app.use((req, res, next) => {
       companyName: u ? u.company_name : null,
       companyId: u ? u.company_id : null,
       companyHasLogo: companyHasLogo,
+      companyProject: companyProject,
     };
   } else {
     res.locals.currentUser = null;

@@ -891,24 +891,29 @@ body.has-sidebar { display: flex; min-height: 100vh; }
 
 /* Banner de alianza (BusinessCool + empresa atendida) en el portal del cliente */
 .client-banner {
-  display: flex; align-items: center; justify-content: center; gap: 30px;
-  padding: 18px 26px; margin: 0 0 24px;
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  padding: 22px 26px; margin: 0 0 24px;
   background: var(--bc-surface); border: 1px solid var(--bc-border);
   border-radius: 14px; box-shadow: var(--bc-shadow);
 }
-.client-banner .cb-side { display: flex; align-items: center; gap: 14px; min-width: 0; }
-.client-banner .cb-logo { height: 46px; width: auto; max-width: 220px; object-fit: contain; display: block; }
-.client-banner .cb-logo-comp { height: 52px; max-width: 260px; }
-.client-banner .cb-name { font-size: 21px; font-weight: 800; color: var(--bc-text); white-space: nowrap; }
-.client-banner .cb-bc {
-  background: var(--bc-gradient); -webkit-background-clip: text; background-clip: text;
-  -webkit-text-fill-color: transparent; color: transparent;
-}
-.client-banner .cb-divider { width: 2px; height: 50px; background: var(--bc-border-2); border-radius: 2px; flex: 0 0 auto; }
+.client-banner .cb-row { display: flex; align-items: center; justify-content: center; gap: 38px; }
+.client-banner .cb-col { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; min-width: 0; }
+.client-banner .cb-icon { width: 62px; height: 62px; border-radius: 14px; display: block; }
+.client-banner .cb-wordmark { height: 21px; width: auto; display: block; }
+.client-banner .cb-comp-logo { max-height: 104px; max-width: 230px; width: auto; object-fit: contain; display: block; }
+.client-banner .cb-name { font-size: 22px; font-weight: 800; color: var(--bc-text); white-space: nowrap; }
+.client-banner .cb-divider { width: 2px; height: 96px; background: var(--bc-border-2); border-radius: 2px; flex: 0 0 auto; }
+.client-banner .cb-project { font-size: 15px; color: var(--bc-text); }
+.client-banner .cb-project strong { font-weight: 700; }
+/* Intercambio del wordmark del banner según el tema */
+.client-banner .cb-wordmark.wm-light { display: none; }
+:root[data-theme="light"] .client-banner .cb-wordmark.wm-dark { display: none; }
+:root[data-theme="light"] .client-banner .cb-wordmark.wm-light { display: block; }
 @media (max-width: 640px) {
-  .client-banner { gap: 16px; padding: 14px; }
-  .client-banner .cb-name { font-size: 16px; }
-  .client-banner .cb-logo { height: 34px; }
-  .client-banner .cb-logo-comp { height: 38px; }
-  .client-banner .cb-divider { height: 38px; }
+  .client-banner { padding: 16px; }
+  .client-banner .cb-row { gap: 20px; }
+  .client-banner .cb-icon { width: 48px; height: 48px; }
+  .client-banner .cb-comp-logo { max-height: 70px; max-width: 150px; }
+  .client-banner .cb-divider { height: 70px; }
+  .client-banner .cb-name { font-size: 17px; }
 }

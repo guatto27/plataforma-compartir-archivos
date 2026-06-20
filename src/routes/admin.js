@@ -242,8 +242,9 @@ router.post('/empresas', requireAdmin, logoUpload.single('logo'), (req, res) => 
     req.session.flash = { type: 'error', text: 'El nombre de la empresa es obligatorio.' };
     return res.redirect('/admin/empresas');
   }
+  const project = String(req.body.project || '').trim().slice(0, 160);
   const logoPath = req.file ? req.file.filename : null;
-  db.prepare(`INSERT INTO companies (name, contact, notes, logo_path) VALUES (?, ?, ?, ?)`).run(name, contact, notes, logoPath);
+  db.prepare(`INSERT INTO companies (name, contact, notes, project, logo_path) VALUES (?, ?, ?, ?, ?)`).run(name, contact, notes, project, logoPath);
   logAction(req.session.userId, 'company_create', name, req.ip);
   req.session.flash = { type: 'success', text: 'Empresa registrada.' };
   res.redirect('/admin/empresas');
@@ -264,12 +265,13 @@ router.post('/empresas/:id/edit', requireAdmin, logoUpload.single('logo'), (req,
     req.session.flash = { type: 'error', text: 'El nombre de la empresa es obligatorio.' };
     return res.redirect('/admin/empresas');
   }
+  const project = String(req.body.project || '').trim().slice(0, 160);
   let logoPath = company.logo_path;
   if (req.file) {
     if (company.logo_path) { try { fs.unlinkSync(path.join(LOGOS_DIR, company.logo_path)); } catch (_) {} }
     logoPath = req.file.filename;
   }
-  db.prepare('UPDATE companies SET name = ?, contact = ?, notes = ?, logo_path = ? WHERE id = ?').run(name, contact, notes, logoPath, company.id);
+  db.prepare('UPDATE companies SET name = ?, contact = ?, notes = ?, project = ?, logo_path = ? WHERE id = ?').run(name, contact, notes, project, logoPath, company.id);
   logAction(req.session.userId, 'company_edit', name, req.ip);
   req.session.flash = { type: 'success', text: 'Empresa actualizada.' };
   res.redirect('/admin/empresas');
