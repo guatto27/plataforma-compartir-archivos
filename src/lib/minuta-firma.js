@@ -218,7 +218,10 @@ async function detectSignatureRow(pdfBytes) {
     const bc = anchors.filter((a) => /business\s*cool/i.test(a.label));
     const pool = bc.length ? bc : anchors;
     pool.sort((a, b) => (b.page - a.page) || (a.y - b.y));
-    return { page: pool[0].page, y: pool[0].y };
+    const admin = pool[0];
+    // Cliente: otro "Por ..." en la misma página y altura, en la columna derecha.
+    const client = anchors.find((a) => a.page === admin.page && Math.abs(a.y - admin.y) < 6 && a.x - admin.x > 40);
+    return { page: admin.page, y: admin.y, adminX: admin.x, clientX: client ? client.x : null };
   } catch (err) {
     console.error('[firma] detectSignatureRow falló:', err.message);
     return null;
@@ -232,7 +235,19 @@ function colTarget(pdfDoc, row, side) {
   const page = pdfDoc.getPages()[idx];
   const { width, height } = page.getSize();
   const colW = Math.min(BLOCK_W, (width - 60 - 16) / 2);
-  const x = side === 'left' ? 30 : (width - 30 - colW);
+  // El QR se dibuja a (x + 8) dentro del bloque; restamos ese padding para que
+  // el borde IZQUIERDO del QR quede alineado con el inicio de la línea del
+  // firmante (deja libre el margen izquierdo para perforar/archivar).
+  const QR_PAD = 8;
+  let x;
+  if (side === 'left') {
+    const lx = (row.adminX != null) ? Number(row.adminX) : 30;
+    x = lx - QR_PAD;
+  } else {
+    const rx = (row.clientX != null) ? Number(row.clientX) : (width - 30 - colW + QR_PAD);
+    x = rx - QR_PAD;
+  }
+  x = Math.max(6, Math.min(x, width - colW - 6));
   let bottomY = Number(row.y) + 16; // justo arriba de la línea del firmante
   if (bottomY + BLOCK_H > height - 18) bottomY = height - 18 - BLOCK_H;
   if (bottomY < 12) bottomY = 12;
