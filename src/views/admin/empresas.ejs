@@ -20,7 +20,7 @@
     <div class="table-wrap">
       <table class="table">
         <thead>
-          <tr><th>Empresa</th><th>Contacto</th><th>Usuarios</th><% if (canManage) { %><th class="ta-actions">Acciones</th><% } %></tr>
+          <tr><th>Empresa</th><th>Proyecto</th><th>Contacto</th><th>Usuarios</th><% if (canManage) { %><th class="ta-actions">Acciones</th><% } %></tr>
         </thead>
         <tbody>
           <% companies.forEach((c) => { %>
@@ -32,9 +32,16 @@
                   <% } else { %>
                     <span class="empresa-logo empresa-logo-ph"><%= (c.name || '?').charAt(0).toUpperCase() %></span>
                   <% } %>
-                  <span><%= c.name %><% if (c.notes) { %><div class="meta"><%= c.notes %></div><% } %></span>
+                  <span>
+                    <%= c.name %>
+                    <div class="empresa-flags">
+                      <% if (c.logo_path) { %><span class="flag-ok">✓ Logo</span><% } %>
+                      <% if (c.eslogan_path) { %><span class="flag-ok">✓ Nombre</span><% } %>
+                    </div>
+                  </span>
                 </div>
               </td>
+              <td><%= c.project || '—' %></td>
               <td><%= c.contact || '—' %></td>
               <td><%= c.user_count %></td>
               <% if (canManage) { %>
