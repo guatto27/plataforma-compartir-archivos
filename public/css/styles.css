@@ -465,6 +465,39 @@ body.has-sidebar { display: flex; height: 100vh; overflow: hidden; }
 .sidebar-nav a:hover .nav-icon,
 .sidebar-nav a.active .nav-icon { opacity: 1; }
 
+/* ───────── Árbol de fases plegable (cliente responsable) ───────── */
+.sidebar-tree { padding: 0 8px; gap: 1px; }
+.sidebar-tree details { margin: 0; }
+.sidebar-tree summary {
+  list-style: none; cursor: pointer; display: flex; align-items: center; gap: 6px;
+  padding: 9px 8px; border-radius: 7px; color: var(--bc-text); font-weight: 600; font-size: 12.5px;
+  user-select: none;
+}
+.sidebar-tree summary::-webkit-details-marker { display: none; }
+.sidebar-tree summary:hover { background: var(--bc-surface-2); }
+.sidebar-tree .phase-title { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sidebar-tree .tree-caret { flex: 0 0 auto; width: 15px; height: 15px; color: var(--bc-muted); transition: transform .15s ease; }
+.sidebar-tree details[open] > summary .tree-caret { transform: rotate(180deg); }
+.sidebar-tree .phase-body { padding: 2px 0 6px 10px; display: flex; flex-direction: column; gap: 1px; }
+.sidebar-tree .tree-group-label {
+  padding: 6px 8px 4px; font-size: 12px; font-weight: 600; color: var(--bc-text);
+  display: flex; align-items: center; white-space: nowrap;
+}
+.sidebar-tree .tree-group-label::before { content: "•"; color: var(--bc-gold); margin-right: 7px; }
+.sidebar-tree .tree-group { display: flex; flex-direction: column; gap: 1px; padding-left: 12px; }
+.sidebar-tree a {
+  display: flex; align-items: center; padding: 6px 8px; border-radius: 6px;
+  color: var(--bc-muted); font-size: 12px; font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sidebar-tree a::before { content: "◦"; flex: 0 0 auto; margin-right: 7px; color: var(--bc-muted); }
+.sidebar-tree a.tree-leaf::before { content: "•"; color: var(--bc-gold); }
+.sidebar-tree a.tree-top { font-weight: 600; font-size: 12.5px; color: var(--bc-text); margin-top: 2px; }
+.sidebar-tree a.tree-top::before { content: ""; margin: 0; }
+.sidebar-tree a:hover { background: var(--bc-surface-2); color: var(--bc-text); text-decoration: none; }
+.sidebar-tree a.active { background: rgba(251,191,36,.12); color: var(--bc-gold); border: 1px solid rgba(251,191,36,.3); }
+.sidebar-tree a.active::before { color: var(--bc-gold); }
+
 /* Variantes del punto de sesión en la topbar */
 .cuenta-chip .dot-admin { background: #a78bfa; }
 .cuenta-chip .dot-colab { background: #34d399; }

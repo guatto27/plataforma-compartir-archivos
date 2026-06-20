@@ -34,41 +34,51 @@
     </a>
 
     <% if (role === 'cliente_responsable') { %>
-      <!-- ────────── Menú CLIENTE RESPONSABLE ────────── -->
-      <div class="sidebar-section">Cliente</div>
-      <nav class="sidebar-nav">
-        <a href="/app" class="<%= act === 'proyecto' ? 'active' : '' %>">
-          <span class="nav-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-          </span>
-          F1 Diagnóstico y Levantamiento
-        </a>
-        <a href="/app/entregables" class="<%= act === 'entregables' ? 'active' : '' %>">
-          <span class="nav-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-          </span>
-          Entregables
-        </a>
-        <a href="/app/minutas" class="<%= act === 'minutas' ? 'active' : '' %>">
-          <span class="nav-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-          </span>
-          Minutas
-        </a>
-        <a href="/app/agente" class="<%= (act === 'agente' || act === 'archivos-empresa') ? 'active' : '' %>">
-          <span class="nav-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          </span>
-          Levantamiento
-        </a>
-        <div class="sidebar-subnav">
-          <a href="/app/archivos" class="<%= act === 'archivos-empresa' ? 'active' : '' %>">
-            <span class="nav-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-            </span>
-            Archivos
-          </a>
-        </div>
+      <!-- ────────── Menú CLIENTE RESPONSABLE (fases plegables) ────────── -->
+      <%
+        var caret = '<svg class="tree-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+        var f1Active = (act === 'proyecto' || act === 'agente' || act === 'entregables' || act === 'archivos-empresa');
+      %>
+      <div class="sidebar-section">Fases del proyecto</div>
+      <nav class="sidebar-nav sidebar-tree">
+
+        <details class="nav-phase"<%= f1Active ? ' open' : '' %>>
+          <summary><span class="phase-title" title="F1 Diagnóstico y Levantamiento">F1 Diagnóstico y Levantamiento</span><%- caret %></summary>
+          <div class="phase-body">
+            <div class="tree-group-label">Actividades</div>
+            <div class="tree-group">
+              <a href="/app/agente" class="<%= act === 'agente' ? 'active' : '' %>" title="Entrevistas y Encuesta IMA">Entrevistas y Encuesta IMA</a>
+              <a href="/app" class="<%= act === 'proyecto' ? 'active' : '' %>" title="Mapeo de Procesos Actuales (AS-IS)">Mapeo de Procesos Actuales (AS-IS)</a>
+              <a href="/app" title="Informe de Integración de Hallazgos">Informe de Integración de Hallazgos</a>
+              <a href="/app" title="Mapeo de Proceso Deseado (TO-BE)">Mapeo de Proceso Deseado (TO-BE)</a>
+            </div>
+            <a href="/app/entregables" class="tree-leaf <%= act === 'entregables' ? 'active' : '' %>" title="Entregables">Entregables</a>
+          </div>
+        </details>
+
+        <details class="nav-phase">
+          <summary><span class="phase-title" title="F2 Diseño y Arquitectura (Construcción)">F2 Diseño y Arquitectura (Construcción)</span><%- caret %></summary>
+          <div class="phase-body">
+            <a href="/app/entregables" class="tree-leaf" title="Entregables">Entregables</a>
+          </div>
+        </details>
+
+        <details class="nav-phase">
+          <summary><span class="phase-title" title="F3 QA Final, Validación y Lanzamiento">F3 QA Final, Validación y Lanzamiento</span><%- caret %></summary>
+          <div class="phase-body">
+            <a href="/app/entregables" class="tree-leaf" title="Entregables">Entregables</a>
+          </div>
+        </details>
+
+        <details class="nav-phase">
+          <summary><span class="phase-title" title="F4 Operatividad, Soporte y Seguimiento">F4 Operatividad, Soporte y Seguimiento</span><%- caret %></summary>
+          <div class="phase-body">
+            <a href="/app/entregables" class="tree-leaf" title="Entregables">Entregables</a>
+          </div>
+        </details>
+
+        <a href="/app/minutas" class="tree-top <%= act === 'minutas' ? 'active' : '' %>" title="Minutas">Minutas</a>
+        <a href="/app/archivos" class="tree-top <%= act === 'archivos-empresa' ? 'active' : '' %>" title="Archivos">Archivos</a>
       </nav>
 
     <% } else if (role === 'client') { %>
