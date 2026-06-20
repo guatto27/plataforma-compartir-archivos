@@ -484,6 +484,15 @@ body.has-sidebar { display: flex; height: 100vh; overflow: hidden; }
 }
 .sidebar-tree summary::-webkit-details-marker { display: none; }
 .sidebar-tree summary:hover { background: var(--bc-surface-2); }
+.sidebar-tree summary.is-current { background: rgba(251,191,36,.12); color: var(--bc-gold); border: 1px solid rgba(251,191,36,.3); }
+.sidebar-tree .tree-caret-btn { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; padding: 2px; margin: -2px -2px -2px 0; border-radius: 6px; }
+.sidebar-tree summary[data-href] .tree-caret-btn:hover { background: rgba(255,255,255,.08); }
+/* Pasos informativos (no navegables) dentro de una fase */
+.sidebar-tree .tree-info {
+  display: flex; align-items: center; padding: 6px 8px; font-size: 12px; font-weight: 500;
+  color: var(--bc-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sidebar-tree .tree-info::before { content: "◦"; flex: 0 0 auto; margin-right: 7px; color: var(--bc-muted); }
 .sidebar-tree .phase-title { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sidebar-tree .tree-caret { flex: 0 0 auto; width: 15px; height: 15px; color: var(--bc-muted); transition: transform .15s ease; }
 .sidebar-tree details[open] > summary .tree-caret { transform: rotate(180deg); }

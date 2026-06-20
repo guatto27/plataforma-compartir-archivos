@@ -81,6 +81,18 @@ document.addEventListener('click', function (e) {
   if (hideSvg) hideSvg.style.display = isHidden ? '' : 'none';
 });
 
+// Árbol de fases: un summary con data-href navega al hacer clic en el título;
+// el caret (data-tree-toggle) sigue plegando/desplegando.
+document.addEventListener('click', function (e) {
+  var summary = e.target.closest('.sidebar-tree details > summary');
+  if (!summary) return;
+  var href = summary.getAttribute('data-href');
+  if (!href) return;                                   // fases sin página: comportamiento normal (toggle)
+  if (e.target.closest('[data-tree-toggle]')) return;  // clic en el caret → dejar que pliegue/despliegue
+  e.preventDefault();                                  // evita que el <details> alterne
+  window.location.href = href;
+});
+
 // Selector que envía su formulario al cambiar (p. ej. selector de proyecto)
 document.addEventListener('change', function (e) {
   var sel = e.target.closest('select[data-autosubmit]');

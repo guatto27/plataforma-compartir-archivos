@@ -36,7 +36,7 @@
     <% if (role === 'cliente_responsable') { %>
       <!-- ────────── Menú CLIENTE RESPONSABLE (fases plegables) ────────── -->
       <%
-        var caret = '<svg class="tree-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+        var caret = '<span class="tree-caret-btn" data-tree-toggle><svg class="tree-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>';
         var f1Active = (act === 'proyecto' || act === 'agente' || act === 'entregables' || act === 'archivos-empresa');
       %>
       <% if (typeof sidebarProjects !== 'undefined' && sidebarProjects && sidebarProjects.length) { %>
@@ -54,14 +54,14 @@
       <nav class="sidebar-nav sidebar-tree">
 
         <details class="nav-phase"<%= f1Active ? ' open' : '' %>>
-          <summary><span class="phase-title" title="F1 Diagnóstico y Levantamiento">F1 Diagnóstico y Levantamiento</span><%- caret %></summary>
+          <summary data-href="/app" class="<%= act === 'proyecto' ? 'is-current' : '' %>"><span class="phase-title" title="F1 Diagnóstico y Levantamiento">F1 Diagnóstico y Levantamiento</span><%- caret %></summary>
           <div class="phase-body">
             <div class="tree-group-label">Actividades</div>
             <div class="tree-group">
               <a href="/app/agente" class="<%= act === 'agente' ? 'active' : '' %>" title="Entrevistas y Encuesta IMA">Entrevistas y Encuesta IMA</a>
-              <a href="/app" class="<%= act === 'proyecto' ? 'active' : '' %>" title="Mapeo de Procesos Actuales (AS-IS)">Mapeo de Procesos Actuales (AS-IS)</a>
-              <a href="/app" title="Informe de Integración de Hallazgos">Informe de Integración de Hallazgos</a>
-              <a href="/app" title="Mapeo de Proceso Deseado (TO-BE)">Mapeo de Proceso Deseado (TO-BE)</a>
+              <span class="tree-info" title="Mapeo de Procesos Actuales (AS-IS)">Mapeo de Procesos Actuales (AS-IS)</span>
+              <span class="tree-info" title="Informe de Integración de Hallazgos">Informe de Integración de Hallazgos</span>
+              <span class="tree-info" title="Mapeo de Proceso Deseado (TO-BE)">Mapeo de Proceso Deseado (TO-BE)</span>
             </div>
             <a href="/app/entregables" class="tree-leaf <%= act === 'entregables' ? 'active' : '' %>" title="Entregables">Entregables</a>
           </div>
