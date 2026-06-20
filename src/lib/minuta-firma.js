@@ -236,7 +236,7 @@ async function firmarPDF(minutaId, m, keyBuf, cerBuf, passphrase, actorUserId, i
   const target  = placementToTarget(pdfDoc, placement);
   const signers = target ? null : await detectSigners(pdfBytes);
 
-  drawFooters(pdfDoc, font, rgb, `Clave: ${clave}  Folio: ${folio}`);
+  drawFooters(pdfDoc, font, rgb, `Clave: ${clave}  Folio BC: ${folio}`);
 
   const qrBuf = await QRCode.toBuffer(`${VERIFY_BASE}/${folio}`, { width: 130, margin: 1, type: 'png', errorCorrectionLevel: 'M' });
   const qrImg = await pdfDoc.embedPng(qrBuf);
@@ -300,6 +300,15 @@ async function firmarPDFCliente(minutaId, m, keyBuf, cerBuf, passphrase, actorUs
   };
   const anchor = signers && signers.client;
   placeBlock(pdfDoc, font, fontB, rgb, target, anchor, 'right', clientData, qrImg);
+
+  // Folio del cliente en el pie de todas las hojas (alineado a la derecha,
+  // junto al "Folio BC" del admin que ya quedó horneado en el documento).
+  const cfTxt = `Folio cliente: ${clientFolio}`;
+  for (const page of pdfDoc.getPages()) {
+    const { width } = page.getSize();
+    const tw = font.widthOfTextAtSize(cfTxt, 6);
+    page.drawText(cfTxt, { x: width - 28 - tw, y: 13, size: 6, font, color: rgb(0.44, 0.44, 0.44) });
+  }
 
   const signedBytes = await pdfDoc.save();
   const ext         = path.extname(m.archivo_path);
