@@ -931,3 +931,7 @@ body.has-sidebar { display: flex; min-height: 100vh; }
 /* Indicadores de recursos cargados en la tabla de empresas */
 .table th.ta-center, .table td.ta-center { text-align: center; }
 .check-circle { width: 24px; height: 24px; vertical-align: middle; display: inline-block; }
+.st-chip { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+.st-chip.st-vig { color: #3fb950; background: rgba(63,185,80,.12); border: 1px solid rgba(63,185,80,.35); }
+.st-chip.st-pau { color: #e3b659; background: rgba(227,182,89,.12); border: 1px solid rgba(227,182,89,.35); }
+.st-chip.st-fin { color: var(--bc-muted); background: var(--bc-surface-2); border: 1px solid var(--bc-border-2); }

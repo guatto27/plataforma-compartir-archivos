@@ -20,7 +20,7 @@
     <div class="table-wrap">
       <table class="table">
         <thead>
-          <tr><th>Empresa</th><th>Proyecto</th><th class="ta-center">Logo</th><th class="ta-center">Nombre</th><th>Contacto</th><th>Usuarios</th><% if (canManage) { %><th class="ta-actions">Acciones</th><% } %></tr>
+          <tr><th>Empresa</th><th>Proyecto</th><th>Estatus</th><th class="ta-center">Logo</th><th class="ta-center">Nombre</th><th>Contacto</th><th class="ta-center">Usuarios</th><% if (canManage) { %><th class="ta-actions">Acciones</th><% } %></tr>
         </thead>
         <tbody>
           <% companies.forEach((c) => { %>
@@ -36,11 +36,14 @@
                 </div>
               </td>
               <td><%= c.project || '—' %></td>
+              <% var ps = c.project_status || 'Vigente';
+                 var psCls = ps === 'Finalizado' ? 'st-fin' : (ps === 'En pausa' ? 'st-pau' : 'st-vig'); %>
+              <td><span class="st-chip <%= psCls %>"><%= ps %></span></td>
               <% var chkOk = '<svg class="check-circle" viewBox="0 0 24 24" fill="none" stroke="#3fb950" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.4l2.6 2.6 5-5.6"/></svg>'; %>
               <td class="ta-center"><% if (c.logo_path) { %><%- chkOk %><% } else { %><span class="meta">—</span><% } %></td>
               <td class="ta-center"><% if (c.eslogan_path) { %><%- chkOk %><% } else { %><span class="meta">—</span><% } %></td>
               <td><%= c.contact || '—' %></td>
-              <td><%= c.user_count %></td>
+              <td class="ta-center"><%= c.user_count %></td>
               <% if (canManage) { %>
               <td class="ta-actions">
                 <button class="iconbtn" type="button" data-dialog="dlg-edit-company-<%= c.id %>" title="Editar" aria-label="Editar">
@@ -76,6 +79,13 @@
       </label>
       <label>Proyecto (opcional)
         <input type="text" name="project" value="<%= c.project || '' %>" maxlength="160" placeholder="ej. Validación de Franquicias" />
+      </label>
+      <label>Estatus del proyecto
+        <select name="project_status">
+          <% ['Vigente','En pausa','Finalizado'].forEach(function(s){ %>
+            <option value="<%= s %>" <%= (c.project_status || 'Vigente') === s ? 'selected' : '' %>><%= s %></option>
+          <% }) %>
+        </select>
       </label>
       <label>Nombre de la empresa — imagen <%= c.eslogan_path ? '(reemplazar)' : '(opcional)' %>
         <span class="meta" style="font-weight:400;display:block;margin:2px 0 0">Versión del nombre como imagen (se le quita el fondo). Si no se sube, se usa el nombre de texto de arriba.</span>
@@ -113,6 +123,13 @@
     </label>
     <label>Proyecto (opcional)
       <input type="text" name="project" maxlength="160" placeholder="ej. Validación de Franquicias" />
+    </label>
+    <label>Estatus del proyecto
+      <select name="project_status">
+        <option value="Vigente" selected>Vigente</option>
+        <option value="En pausa">En pausa</option>
+        <option value="Finalizado">Finalizado</option>
+      </select>
     </label>
     <label>Nombre de la empresa — imagen (opcional)
       <span class="meta" style="font-weight:400;display:block;margin:2px 0 0">Versión del nombre como imagen (se le quita el fondo). Si no, se usa el nombre de texto.</span>

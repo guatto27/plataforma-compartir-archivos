@@ -182,6 +182,9 @@ if (!companyCols.some((c) => c.name === 'eslogan')) {
 if (!companyCols.some((c) => c.name === 'eslogan_path')) {
   db.exec('ALTER TABLE companies ADD COLUMN eslogan_path TEXT');
 }
+if (!companyCols.some((c) => c.name === 'project_status')) {
+  db.exec("ALTER TABLE companies ADD COLUMN project_status TEXT DEFAULT 'Vigente'");
+}
 
 // Migración: columnas de archivo adjunto y firma en minutas
 const minutaCols = db.prepare('PRAGMA table_info(minutas)').all();

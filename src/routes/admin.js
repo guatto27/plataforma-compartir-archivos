@@ -259,9 +259,11 @@ router.post('/empresas', requireAdmin, logoUpload, async (req, res) => {
   }
   const project = String(req.body.project || '').trim().slice(0, 160);
   const eslogan = String(req.body.eslogan || '').trim().slice(0, 160);
+  const PROJECT_STATUSES = ['Vigente', 'En pausa', 'Finalizado'];
+  const projectStatus = PROJECT_STATUSES.includes(req.body.project_status) ? req.body.project_status : 'Vigente';
   const logoPath = await processCompanyImage(logoFile);
   const esloPath = await processCompanyImage(esloFile);
-  db.prepare(`INSERT INTO companies (name, contact, notes, project, eslogan, logo_path, eslogan_path) VALUES (?, ?, ?, ?, ?, ?, ?)`).run(name, contact, notes, project, eslogan, logoPath, esloPath);
+  db.prepare(`INSERT INTO companies (name, contact, notes, project, eslogan, project_status, logo_path, eslogan_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(name, contact, notes, project, eslogan, projectStatus, logoPath, esloPath);
   logAction(req.session.userId, 'company_create', name, req.ip);
   req.session.flash = { type: 'success', text: 'Empresa registrada.' };
   res.redirect('/admin/empresas');
@@ -288,6 +290,8 @@ router.post('/empresas/:id/edit', requireAdmin, logoUpload, async (req, res) => 
   }
   const project = String(req.body.project || '').trim().slice(0, 160);
   const eslogan = String(req.body.eslogan || '').trim().slice(0, 160);
+  const PROJECT_STATUSES = ['Vigente', 'En pausa', 'Finalizado'];
+  const projectStatus = PROJECT_STATUSES.includes(req.body.project_status) ? req.body.project_status : 'Vigente';
   let logoPath = company.logo_path;
   if (logoFile) {
     if (company.logo_path) { try { fs.unlinkSync(path.join(LOGOS_DIR, company.logo_path)); } catch (_) {} }
@@ -298,7 +302,7 @@ router.post('/empresas/:id/edit', requireAdmin, logoUpload, async (req, res) => 
     if (company.eslogan_path) { try { fs.unlinkSync(path.join(LOGOS_DIR, company.eslogan_path)); } catch (_) {} }
     esloPath = await processCompanyImage(esloFile);
   }
-  db.prepare('UPDATE companies SET name = ?, contact = ?, notes = ?, project = ?, eslogan = ?, logo_path = ?, eslogan_path = ? WHERE id = ?').run(name, contact, notes, project, eslogan, logoPath, esloPath, company.id);
+  db.prepare('UPDATE companies SET name = ?, contact = ?, notes = ?, project = ?, eslogan = ?, project_status = ?, logo_path = ?, eslogan_path = ? WHERE id = ?').run(name, contact, notes, project, eslogan, projectStatus, logoPath, esloPath, company.id);
   logAction(req.session.userId, 'company_edit', name, req.ip);
   req.session.flash = { type: 'success', text: 'Empresa actualizada.' };
   res.redirect('/admin/empresas');
