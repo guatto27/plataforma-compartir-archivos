@@ -16,42 +16,49 @@
   <p class="muted">Listado de proyectos de tu empresa con su estatus y avance. Aquí ves todo el panorama de lo que trabajamos contigo.</p>
 </div>
 
-<% if (!projectName) { %>
-  <section class="card">
+<section class="card">
+  <% if (!projectName) { %>
     <p class="empty">Aún no hay un proyecto asignado a tu empresa. En cuanto se registre, aparecerá aquí con su avance.</p>
-  </section>
-<% } else { %>
-
-  <section class="card project-card">
-    <div class="project-card-head">
-      <div>
-        <h2 style="margin:0"><%= projectName %></h2>
-        <p class="muted" style="margin:4px 0 0"><%= companyName %></p>
-      </div>
-      <span class="st-chip <%= stCls %>"><%= projectStatus %></span>
+  <% } else { %>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Proyecto</th>
+            <th class="ta-center">Estatus</th>
+            <th class="ta-center">Entregables</th>
+            <th class="ta-center">Minutas</th>
+            <th class="ta-center">Entrevistas</th>
+            <th class="th-progress">Avance</th>
+            <th class="ta-actions">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="fname">
+              <strong><%= projectName %></strong>
+              <span class="meta" style="display:block"><%= companyName %></span>
+            </td>
+            <td class="ta-center"><span class="st-chip <%= stCls %>"><%= projectStatus %></span></td>
+            <td class="ta-center"><%= filesCount %></td>
+            <td class="ta-center"><%= minutasCount %></td>
+            <td class="ta-center"><%= interviewsCount %></td>
+            <td>
+              <div class="table-progress">
+                <div class="progress-bar"><span style="width:<%= pct %>%"></span></div>
+                <span class="table-progress-pct"><%= pct %>%</span>
+              </div>
+            </td>
+            <td class="ta-actions">
+              <a class="btn btn-ghost btn-sm" href="/app">Ver pipeline</a>
+              <a class="btn btn-ghost btn-sm" href="/app/entregables">Entregables</a>
+              <a class="btn btn-ghost btn-sm" href="/app/minutas">Minutas</a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
-
-    <div class="project-progress">
-      <div class="project-progress-top">
-        <span class="muted">Avance del proyecto</span>
-        <strong><%= pct %>%</strong>
-      </div>
-      <div class="progress-bar"><span style="width:<%= pct %>%"></span></div>
-    </div>
-
-    <div class="project-metrics">
-      <div><strong><%= filesCount %></strong><span class="muted">Entregables / archivos</span></div>
-      <div><strong><%= minutasCount %></strong><span class="muted">Minutas publicadas</span></div>
-      <div><strong><%= interviewsCount %></strong><span class="muted">Entrevistas</span></div>
-    </div>
-
-    <div class="home-shortcuts" style="margin-top:18px">
-      <a class="btn btn-ghost" href="/app">Ver pipeline</a>
-      <a class="btn btn-ghost" href="/app/entregables">Entregables</a>
-      <a class="btn btn-ghost" href="/app/minutas">Minutas</a>
-    </div>
-  </section>
-
-<% } %>
+  <% } %>
+</section>
 
 <%- include('../partials/shell-footer') %>
