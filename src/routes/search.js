@@ -13,7 +13,7 @@ function pagesFor(role) {
     return [
       { label: 'Inicio', kw: 'inicio portada bienvenida objetivo', url: '/app/inicio' },
       { label: 'Proyectos', kw: 'proyectos proyecto avance estatus', url: '/app/proyectos' },
-      { label: 'Nosotros', kw: 'nosotros quienes somos empresa acerca', url: '/app/nosotros' },
+      { label: '¿Quiénes somos?', kw: 'nosotros quienes somos empresa acerca', url: '/app/nosotros' },
       { label: 'Mi proyecto', kw: 'mi proyecto pipeline fases', url: '/app' },
       { label: 'Entregables', kw: 'entregables archivos documentos', url: '/app/entregables' },
       { label: 'Minutas', kw: 'minutas actas firmas reuniones', url: '/app/minutas' },
