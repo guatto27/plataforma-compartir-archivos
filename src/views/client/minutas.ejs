@@ -69,18 +69,12 @@
           </summary>
           <div style="margin-top:14px;padding:16px;background:var(--bc-surface-2,#f4f4f6);border-radius:10px">
             <p style="margin:0 0 14px;font-size:13px;color:var(--bc-muted)">
-              <strong>1.</strong> Haz clic en el documento (derecha) para colocar tu firma sobre la línea del cliente.
-              <strong>2.</strong> Carga tu e.firma del SAT (izquierda) y firma. Los archivos <strong>.key</strong> y <strong>.cer</strong>
-              <strong>nunca se almacenan</strong> en el servidor.
+              Carga tu e.firma del SAT y firma. Tu firma se coloca <strong>automáticamente</strong> sobre el apartado del cliente, alineada con la de BusinessCool AI. Los archivos <strong>.key</strong> y <strong>.cer</strong> <strong>nunca se almacenan</strong> en el servidor.
             </p>
 
             <div class="minuta-firma-grid">
             <form method="post" action="/app/minutas/<%= m.id %>/firmar" enctype="multipart/form-data" id="firma-cli-<%= m.id %>">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-              <input type="hidden" name="sig_page" value="" />
-              <input type="hidden" name="sig_x" value="" />
-              <input type="hidden" name="sig_y" value="" />
-              <p class="placer-hint" data-placer-hint style="margin-top:0">Aún no has colocado tu firma. Haz clic sobre el documento donde quieres que aparezca.</p>
 
               <label style="display:block;margin-bottom:12px">
                 <span style="font-size:12px;font-weight:600;color:var(--bc-muted);display:block;margin-bottom:4px">Archivo .key — Llave privada</span>
@@ -106,7 +100,11 @@
               <button class="btn btn-primary" type="submit" style="width:100%;justify-content:center">Firmar minuta con mi e.firma</button>
             </form>
 
-            <div class="pdf-placer" data-pdf-url="/app/minutas/<%= m.id %>/ver-pdf" data-form="firma-cli-<%= m.id %>"></div>
+            <section style="padding:0;overflow:hidden;border-radius:12px;background:#525659">
+              <object data="/app/minutas/<%= m.id %>/ver-pdf" type="application/pdf" style="width:100%;height:620px;border:none;display:block">
+                <embed src="/app/minutas/<%= m.id %>/ver-pdf" type="application/pdf" style="width:100%;height:620px;border:none;display:block" />
+              </object>
+            </section>
             </div>
           </div>
         </details>
@@ -117,14 +115,6 @@
   <div class="empty-state">
     <p>Aún no hay minutas publicadas. El equipo de BusinessCool AI las subirá después de cada sesión.</p>
   </div>
-<% } %>
-
-<% const hayFirmables = (minutas || []).some(function (mm) {
-     return mm.archivo_path && mm.archivo_path.toLowerCase().endsWith('.pdf') && mm.firmada && !mm.firmada_cliente;
-   }); %>
-<% if (hayFirmables) { %>
-  <script src="/static/js/pdf.min.js"></script>
-  <script src="/static/js/firma-placer.js"></script>
 <% } %>
 
 <%- include('../partials/shell-footer') %>

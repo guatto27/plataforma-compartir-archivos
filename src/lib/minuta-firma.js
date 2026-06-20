@@ -180,6 +180,65 @@ async function detectSigners(pdfBytes) {
   }
 }
 
+// Detecta la FILA de firma (página + altura y) sobre la que van los bloques.
+// Se usa para colocar admin (izquierda) y cliente (derecha) a la MISMA altura.
+async function detectSignatureRow(pdfBytes) {
+  try {
+    const pdfjs = require('pdfjs-dist/legacy/build/pdf.js');
+    const doc = await pdfjs.getDocument({
+      data: Uint8Array.from(pdfBytes), useSystemFonts: true,
+      isEvalSupported: false, disableFontFace: true,
+    }).promise;
+
+    const items = [];
+    for (let i = 1; i <= doc.numPages; i++) {
+      const page = await doc.getPage(i);
+      const content = await page.getTextContent();
+      for (const it of content.items) {
+        const s = (it.str || '').trim();
+        if (s) items.push({ page: i - 1, x: it.transform[4], y: it.transform[5], str: s });
+      }
+    }
+    await doc.destroy();
+
+    const anchors = [];
+    for (const it of items) {
+      if (!/^por[\s.:]/i.test(it.str) && !/^por$/i.test(it.str)) continue;
+      const sameLine = items
+        .filter((o) => o.page === it.page && Math.abs(o.y - it.y) < 3 && o.x >= it.x && o.x < it.x + 220)
+        .sort((a, b) => a.x - b.x);
+      const label = sameLine.map((o) => o.str).join(' ').replace(/\s+/g, ' ').trim();
+      if (/firmado/i.test(label)) continue; // ignora bloques de firma ya dibujados
+      anchors.push({ page: it.page, x: it.x, y: it.y, label });
+    }
+    if (!anchors.length) return null;
+
+    // Preferimos la etiqueta de BusinessCool; el apartado de firmas está al final
+    // del documento → mayor página y, dentro de ella, la más abajo (menor y).
+    const bc = anchors.filter((a) => /business\s*cool/i.test(a.label));
+    const pool = bc.length ? bc : anchors;
+    pool.sort((a, b) => (b.page - a.page) || (a.y - b.y));
+    return { page: pool[0].page, y: pool[0].y };
+  } catch (err) {
+    console.error('[firma] detectSignatureRow falló:', err.message);
+    return null;
+  }
+}
+
+// Objetivo de dibujo para una columna (izquierda=admin, derecha=cliente) a la
+// altura de la fila de firma. Ambas columnas comparten la misma y → alineadas.
+function colTarget(pdfDoc, row, side) {
+  const idx = Math.max(0, Math.min(pdfDoc.getPageCount() - 1, parseInt(row.page, 10) || 0));
+  const page = pdfDoc.getPages()[idx];
+  const { width, height } = page.getSize();
+  const colW = Math.min(BLOCK_W, (width - 60 - 16) / 2);
+  const x = side === 'left' ? 30 : (width - 30 - colW);
+  let bottomY = Number(row.y) + 16; // justo arriba de la línea del firmante
+  if (bottomY + BLOCK_H > height - 18) bottomY = height - 18 - BLOCK_H;
+  if (bottomY < 12) bottomY = 12;
+  return { pageIndex: idx, x, bottomY, w: colW };
+}
+
 // ── Dibujar bloque de firma compacto (QR + datos) ────────────────────────────
 function drawCompactBlock(page, font, fontB, rgb, { x, bottomY, w, data, qrImg }) {
   const H = BLOCK_H;
@@ -286,9 +345,9 @@ async function firmarPDF(minutaId, m, keyBuf, cerBuf, passphrase, actorUserId, i
   const font   = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const fontB  = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-  // 1) coordenadas manuales del colocador; si no hay, 2) detección automática
-  const target  = placementToTarget(pdfDoc, placement);
-  const signers = target ? null : await detectSigners(pdfBytes);
+  // Detecta la fila de firmantes (apartados "Por ...") en el documento limpio.
+  // Admin va en la columna izquierda; el cliente, luego, en la derecha — misma altura.
+  const row = (await detectSignatureRow(pdfBytes)) || { page: pdfDoc.getPageCount() - 1, y: 150 };
 
   drawFooters(pdfDoc, font, rgb, `Clave: ${clave}  Folio BC: ${folio}`);
 
@@ -299,7 +358,7 @@ async function firmarPDF(minutaId, m, keyBuf, cerBuf, passphrase, actorUserId, i
     nombre: certData.nombre, rfc: certData.rfc, serial: certData.serial,
     email: certData.email, folio, fecha: fechaFirma,
   };
-  placeBlock(pdfDoc, font, fontB, rgb, target, signers && signers.admin, 'left', adminData, qrImg);
+  placeBlock(pdfDoc, font, fontB, rgb, colTarget(pdfDoc, row, 'left'), null, 'left', adminData, qrImg);
 
   const signedBytes = await pdfDoc.save();
   const ext         = path.extname(m.archivo_path);
@@ -315,9 +374,9 @@ async function firmarPDF(minutaId, m, keyBuf, cerBuf, passphrase, actorUserId, i
 
   db.prepare(`UPDATE minutas SET firmada=1, firma_serial=?, firma_nombre=?, firma_fecha=?,
               firma_folio=?, firma_email=?, firma_rfc=?, firma_hash=?, firma_sello=?, firma_cert=?,
-              archivo_path=?, archivo_nombre=? WHERE id=?`)
+              firma_slots=?, archivo_path=?, archivo_nombre=? WHERE id=?`)
     .run(certData.serial, certData.nombre, fechaFirma, folio, certData.email, certData.rfc,
-         hashHex, sello, certPem, signedFile, signedName, minutaId);
+         hashHex, sello, certPem, JSON.stringify(row), signedFile, signedName, minutaId);
 
   if (actorUserId) logAction(actorUserId, 'minuta_pdf_signed', `${m.titulo} · ${certData.serial}`, ip);
   return { folio, clave, ...certData, fechaFirma };
@@ -346,9 +405,11 @@ async function firmarPDFCliente(minutaId, m, keyBuf, cerBuf, passphrase, actorUs
   const font   = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const fontB  = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-  // 1) coordenadas manuales del colocador; si no hay, 2) detección automática
-  const target  = placementToTarget(pdfDoc, placement);
-  const signers = target ? null : await detectSigners(pdfBytes);
+  // Reusa la MISMA fila que detectó el admin (guardada en firma_slots) para que
+  // ambas firmas queden a la misma altura. Si no hay, detecta como respaldo.
+  let row = null;
+  try { row = m.firma_slots ? JSON.parse(m.firma_slots) : null; } catch (_) { row = null; }
+  if (!row) row = (await detectSignatureRow(pdfBytes)) || { page: pdfDoc.getPageCount() - 1, y: 150 };
 
   const qrBuf = await QRCode.toBuffer(`${VERIFY_BASE}/${clientFolio}`, { width: 130, margin: 1, type: 'png', errorCorrectionLevel: 'M' });
   const qrImg = await pdfDoc.embedPng(qrBuf);
@@ -357,8 +418,7 @@ async function firmarPDFCliente(minutaId, m, keyBuf, cerBuf, passphrase, actorUs
     nombre: certData.nombre, rfc: certData.rfc, serial: certData.serial,
     email: certData.email, folio: clientFolio, fecha: fechaFirma,
   };
-  const anchor = signers && signers.client;
-  placeBlock(pdfDoc, font, fontB, rgb, target, anchor, 'right', clientData, qrImg);
+  placeBlock(pdfDoc, font, fontB, rgb, colTarget(pdfDoc, row, 'right'), null, 'right', clientData, qrImg);
 
   // Folio del cliente en el pie de todas las hojas (alineado a la derecha,
   // junto al "Folio BC" del admin que ya quedó horneado en el documento).

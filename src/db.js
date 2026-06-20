@@ -190,6 +190,8 @@ if (!minutaHas('firma_cert'))            db.exec('ALTER TABLE minutas ADD COLUMN
 if (!minutaHas('firma_cliente_hash'))    db.exec('ALTER TABLE minutas ADD COLUMN firma_cliente_hash TEXT');
 if (!minutaHas('firma_cliente_sello'))   db.exec('ALTER TABLE minutas ADD COLUMN firma_cliente_sello TEXT');
 if (!minutaHas('firma_cliente_cert'))    db.exec('ALTER TABLE minutas ADD COLUMN firma_cliente_cert TEXT');
+// Fila de firma detectada (JSON {page,y}) para alinear admin y cliente
+if (!minutaHas('firma_slots'))           db.exec('ALTER TABLE minutas ADD COLUMN firma_slots TEXT');
 
 // Bootstrap: crea un administrador inicial desde variables de entorno si aún
 // no existe. Útil en despliegues (Hostinger, etc.) donde la BD arranca vacía.

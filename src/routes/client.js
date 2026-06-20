@@ -253,10 +253,7 @@ router.post('/minutas/:id/firmar', memUploadClient.fields([{ name: 'key_file', m
   }
 
   try {
-    const placement = (req.body.sig_x !== '' && req.body.sig_y !== '' && req.body.sig_x != null && req.body.sig_y != null)
-      ? { page: req.body.sig_page, x: req.body.sig_x, y: req.body.sig_y }
-      : null;
-    const result = await firmarPDFCliente(m.id, m, keyFile.buffer, cerFile.buffer, passphrase, req.session.userId, req.ip, placement);
+    const result = await firmarPDFCliente(m.id, m, keyFile.buffer, cerFile.buffer, passphrase, req.session.userId, req.ip);
     req.session.flash = { type: 'success', text: `Minuta firmada con tu e.firma. Folio cliente: ${result.folio}` };
   } catch (err) {
     req.session.flash = { type: 'error', text: 'Error al firmar: ' + err.message };
