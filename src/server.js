@@ -69,12 +69,12 @@ app.use(
 app.use((req, res, next) => {
   res.locals.brand = config.brand;
   if (req.session.userId) {
-    var u = db.prepare('SELECT company_name FROM users WHERE id = ?').get(req.session.userId);
+    var u = db.prepare('SELECT display_name, company_name FROM users WHERE id = ?').get(req.session.userId);
     res.locals.currentUser = {
       id: req.session.userId,
       username: req.session.username,
       role: req.session.role,
-      displayName: req.session.displayName,
+      displayName: (u && u.display_name) || req.session.displayName || req.session.username,
       companyName: u ? u.company_name : null,
     };
   } else {
