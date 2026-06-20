@@ -7,6 +7,7 @@ const session = require('express-session');
 const helmet = require('helmet');
 
 const config = require('./config');
+const { db } = require('./db');
 const { csrfProtection } = require('./middleware/auth');
 
 // Asegura carpetas necesarias
@@ -67,14 +68,18 @@ app.use(
 // Variables disponibles en todas las vistas
 app.use((req, res, next) => {
   res.locals.brand = config.brand;
-  res.locals.currentUser = req.session.userId
-    ? {
-        id: req.session.userId,
-        username: req.session.username,
-        role: req.session.role,
-        displayName: req.session.displayName,
-      }
-    : null;
+  if (req.session.userId) {
+    var u = db.prepare('SELECT company_name FROM users WHERE id = ?').get(req.session.userId);
+    res.locals.currentUser = {
+      id: req.session.userId,
+      username: req.session.username,
+      role: req.session.role,
+      displayName: req.session.displayName,
+      companyName: u ? u.company_name : null,
+    };
+  } else {
+    res.locals.currentUser = null;
+  }
   res.locals.flash = req.session.flash || null;
   delete req.session.flash;
 

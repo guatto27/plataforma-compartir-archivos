@@ -115,14 +115,22 @@ code {
 .usermenu > summary { list-style: none; cursor: pointer; }
 .usermenu > summary::-webkit-details-marker { display: none; }
 .usermenu > summary::marker { content: ""; }
-.nav .avatar {
-  width: 38px; height: 38px; border-radius: 50%;
+.avatar {
+  width: 38px; height: 38px; flex: 0 0 38px; border-radius: 50%;
   display: inline-flex; align-items: center; justify-content: center;
-  background: var(--bc-surface-2); border: 2px solid var(--bc-gold);
-  color: var(--bc-gold); font-weight: 800; font-size: 16px; line-height: 1;
+  background: var(--bc-gradient); color: #1c1c1f; font-weight: 800; font-size: 15px; line-height: 1;
   user-select: none;
 }
-.usermenu[open] > summary.avatar { box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.25); }
+.usermenu[open] .avatar { box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.30); }
+/* Tarjeta de usuario en la barra: nombre + empresa + avatar dorado */
+.usercard { display: flex; align-items: center; gap: 10px; cursor: pointer; list-style: none; padding: 4px 4px 4px 12px; border-radius: 999px; }
+.usercard::-webkit-details-marker { display: none; }
+.usercard::marker { content: ""; }
+.usercard:hover { background: var(--bc-surface-2); }
+.usercard-info { display: flex; flex-direction: column; line-height: 1.2; text-align: right; }
+.usercard-info strong { font-size: 13px; font-weight: 600; color: var(--bc-text); }
+.usercard-info small { font-size: 11px; color: var(--bc-muted); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 600px) { .usercard-info { display: none; } }
 .usermenu-pop {
   position: absolute; right: 0; top: calc(100% + 10px);
   background: var(--bc-surface); border: 1px solid var(--bc-border);

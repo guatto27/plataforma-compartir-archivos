@@ -176,7 +176,13 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           </button>
           <details class="usermenu">
-            <summary class="avatar" title="<%= currentUser.displayName %>"><%= (currentUser.displayName || '?').charAt(0).toUpperCase() %></summary>
+            <summary class="usercard" title="<%= currentUser.displayName %>">
+              <span class="usercard-info">
+                <strong><%= currentUser.displayName %></strong>
+                <small><%= currentUser.companyName || brand.name %></small>
+              </span>
+              <span class="avatar"><%= (currentUser.displayName || '?').charAt(0).toUpperCase() %></span>
+            </summary>
             <div class="usermenu-pop">
               <div class="usermenu-name"><%= currentUser.displayName %> · <%= roleLabel %></div>
               <button type="button" class="usermenu-item" data-dialog="dlg-perfil">
