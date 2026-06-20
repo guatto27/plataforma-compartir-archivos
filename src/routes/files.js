@@ -71,12 +71,13 @@ function makeFileRouter() {
     return res.download(abs, file.original_name);
   });
 
-  // Eliminar (solo quien lo subió)
+  // Eliminar (quien lo subió, o un administrador)
   router.post('/file/:id/delete', (req, res) => {
     const file = getAccessibleFile(req, req.params.id);
     if (!file) return notFound(res);
-    if (file.uploaded_by !== req.session.userId) {
-      req.session.flash = { type: 'error', text: 'Solo quien subió el archivo puede eliminarlo.' };
+    const isAdmin = req.session.role === 'admin';
+    if (!isAdmin && file.uploaded_by !== req.session.userId) {
+      req.session.flash = { type: 'error', text: 'Solo quien subió el archivo (o un administrador) puede eliminarlo.' };
       return res.redirect(req.baseUrl);
     }
     const abs = path.join(config.uploadsDir, file.stored_name);
