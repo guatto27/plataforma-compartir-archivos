@@ -95,11 +95,14 @@ app.use((req, res, next) => {
   next();
 });
 
+// Verificación pública (la abre el QR del PDF): de solo lectura, va antes del
+// CSRF para permitir la carga del archivo sin token de sesión.
+app.use('/verificar', require('./routes/verificar'));
+
 // Protección CSRF (expone csrfToken y valida POST)
 app.use(csrfProtection);
 
 // Rutas
-app.use('/verificar', require('./routes/verificar')); // pública (la abre el QR)
 app.use('/', require('./routes/auth'));
 app.use('/app', require('./routes/client'));
 app.use('/admin', require('./routes/admin'));

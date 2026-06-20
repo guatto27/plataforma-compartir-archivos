@@ -80,6 +80,60 @@ const fechaMX = () => new Date().toLocaleString('es-MX', {
   hour: '2-digit', minute: '2-digit', second: '2-digit',
 });
 
+// ── Sello criptográfico e integridad ─────────────────────────────────────────
+// Convierte el .cer (DER) a PEM para poder guardarlo y verificar el sello luego.
+function cerToPem(cerBuf) {
+  return '-----BEGIN CERTIFICATE-----\n' + cerBuf.toString('base64').match(/.{1,64}/g).join('\n') + '\n-----END CERTIFICATE-----';
+}
+
+const sha256Hex = (bytes) => {
+  const md = forge.md.sha256.create();
+  md.update(Buffer.from(bytes).toString('latin1'));
+  return md.digest().toHex();
+};
+
+// Sella los bytes finales del PDF: devuelve el hash SHA-256 (hex) y el sello
+// (firma RSA del hash con la llave privada del firmante), en base64.
+function sellarBytes(privKey, bytes) {
+  const mkMd = () => { const md = forge.md.sha256.create(); md.update(Buffer.from(bytes).toString('latin1')); return md; };
+  return { hashHex: mkMd().digest().toHex(), sello: forge.util.encode64(privKey.sign(mkMd())) };
+}
+
+// Verifica un sello: el certificado (PEM) prueba que el titular de la e.firma
+// selló exactamente ese hash. Devuelve true/false, o null si faltan datos.
+function verificarSello(hashHex, selloB64, certPem) {
+  if (!hashHex || !selloB64 || !certPem) return null;
+  try {
+    const cert = forge.pki.certificateFromPem(certPem);
+    return cert.publicKey.verify(forge.util.hexToBytes(hashHex), forge.util.decode64(selloB64));
+  } catch (_) { return false; }
+}
+
+// Verifica un PDF subido contra lo registrado para esa minuta.
+function verificarDocumento(m, uploadedBuf) {
+  const upHex = sha256Hex(uploadedBuf);
+  const authHash = m.firmada_cliente ? m.firma_cliente_hash : m.firma_hash;
+  let integrity = 'unknown';
+  if (authHash) integrity = (upHex === authHash) ? 'ok' : 'fail';
+
+  const signers = [];
+  if (m.firmada) signers.push({
+    rol: 'BusinessCool AI', nombre: m.firma_nombre, rfc: m.firma_rfc, serial: m.firma_serial,
+    fecha: m.firma_fecha, folio: m.firma_folio, email: m.firma_email,
+    selloValido: verificarSello(m.firma_hash, m.firma_sello, m.firma_cert),
+    coincideArchivo: m.firma_hash ? (upHex === m.firma_hash) : null,
+  });
+  if (m.firmada_cliente) signers.push({
+    rol: 'Cliente', nombre: m.firma_cliente_nombre, rfc: m.firma_cliente_rfc, serial: m.firma_cliente_serial,
+    fecha: m.firma_cliente_fecha, folio: m.firma_cliente_folio, email: m.firma_cliente_email,
+    selloValido: verificarSello(m.firma_cliente_hash, m.firma_cliente_sello, m.firma_cliente_cert),
+    coincideArchivo: m.firma_cliente_hash ? (upHex === m.firma_cliente_hash) : null,
+  });
+
+  return { integrity, uploadedHash: upHex, signers };
+}
+exports.verificarDocumento = verificarDocumento;
+
 // ── Detectar la posición de los firmantes ("Por ...") en el PDF ───────────────
 // Devuelve { admin: {pageIndex,x,y,label}, client: {...} } o null si no se hallan.
 async function detectSigners(pdfBytes) {
@@ -252,13 +306,18 @@ async function firmarPDF(minutaId, m, keyBuf, cerBuf, passphrase, actorUserId, i
   const signedFile  = path.basename(m.archivo_path, ext) + '_firmado' + ext;
   fs.writeFileSync(path.join(MINUTAS_DIR, signedFile), signedBytes);
 
+  // Sello criptográfico sobre los bytes finales del PDF
+  const { hashHex, sello } = sellarBytes(privKey, signedBytes);
+  const certPem = cerToPem(cerBuf);
+
   const extO       = path.extname(m.archivo_nombre || 'minuta.pdf');
   const signedName = path.basename(m.archivo_nombre || 'minuta.pdf', extO) + '_firmado' + extO;
-  const nowISO     = new Date().toISOString().replace('T', ' ').slice(0, 19);
 
   db.prepare(`UPDATE minutas SET firmada=1, firma_serial=?, firma_nombre=?, firma_fecha=?,
-              firma_folio=?, firma_email=?, firma_rfc=?, archivo_path=?, archivo_nombre=? WHERE id=?`)
-    .run(certData.serial, certData.nombre, fechaFirma, folio, certData.email, certData.rfc, signedFile, signedName, minutaId);
+              firma_folio=?, firma_email=?, firma_rfc=?, firma_hash=?, firma_sello=?, firma_cert=?,
+              archivo_path=?, archivo_nombre=? WHERE id=?`)
+    .run(certData.serial, certData.nombre, fechaFirma, folio, certData.email, certData.rfc,
+         hashHex, sello, certPem, signedFile, signedName, minutaId);
 
   if (actorUserId) logAction(actorUserId, 'minuta_pdf_signed', `${m.titulo} · ${certData.serial}`, ip);
   return { folio, clave, ...certData, fechaFirma };
@@ -316,14 +375,19 @@ async function firmarPDFCliente(minutaId, m, keyBuf, cerBuf, passphrase, actorUs
   const newFile     = base + '_cliente' + ext;
   fs.writeFileSync(path.join(MINUTAS_DIR, newFile), signedBytes);
 
+  // Sello criptográfico del cliente sobre los bytes finales (documento completo)
+  const { hashHex, sello } = sellarBytes(privKey, signedBytes);
+  const certPem = cerToPem(cerBuf);
+
   const extO    = path.extname(m.archivo_nombre || 'minuta.pdf');
   const newName = path.basename(m.archivo_nombre || 'minuta.pdf', extO).replace(/_cliente$/, '') + '_cliente' + extO;
 
   db.prepare(`UPDATE minutas SET firmada_cliente=1, firma_cliente_serial=?, firma_cliente_nombre=?,
               firma_cliente_fecha=?, firma_cliente_folio=?, firma_cliente_email=?, firma_cliente_rfc=?,
+              firma_cliente_hash=?, firma_cliente_sello=?, firma_cliente_cert=?,
               archivo_path=?, archivo_nombre=? WHERE id=?`)
     .run(certData.serial, certData.nombre, fechaFirma, clientFolio, certData.email, certData.rfc,
-         newFile, newName, minutaId);
+         hashHex, sello, certPem, newFile, newName, minutaId);
 
   if (actorUserId) logAction(actorUserId, 'minuta_cliente_firmada', `${m.titulo} · ${certData.serial}`, ip);
   return { folio: clientFolio, ...certData, fechaFirma };

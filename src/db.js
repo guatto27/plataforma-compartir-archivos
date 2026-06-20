@@ -183,6 +183,13 @@ if (!minutaHas('firma_cliente_fecha'))   db.exec('ALTER TABLE minutas ADD COLUMN
 if (!minutaHas('firma_cliente_folio'))   db.exec('ALTER TABLE minutas ADD COLUMN firma_cliente_folio TEXT');
 if (!minutaHas('firma_cliente_email'))   db.exec('ALTER TABLE minutas ADD COLUMN firma_cliente_email TEXT');
 if (!minutaHas('firma_cliente_rfc'))     db.exec('ALTER TABLE minutas ADD COLUMN firma_cliente_rfc TEXT');
+// Verificación criptográfica (sello + hash + certificado por firmante)
+if (!minutaHas('firma_hash'))            db.exec('ALTER TABLE minutas ADD COLUMN firma_hash TEXT');
+if (!minutaHas('firma_sello'))           db.exec('ALTER TABLE minutas ADD COLUMN firma_sello TEXT');
+if (!minutaHas('firma_cert'))            db.exec('ALTER TABLE minutas ADD COLUMN firma_cert TEXT');
+if (!minutaHas('firma_cliente_hash'))    db.exec('ALTER TABLE minutas ADD COLUMN firma_cliente_hash TEXT');
+if (!minutaHas('firma_cliente_sello'))   db.exec('ALTER TABLE minutas ADD COLUMN firma_cliente_sello TEXT');
+if (!minutaHas('firma_cliente_cert'))    db.exec('ALTER TABLE minutas ADD COLUMN firma_cliente_cert TEXT');
 
 // Bootstrap: crea un administrador inicial desde variables de entorno si aún
 // no existe. Útil en despliegues (Hostinger, etc.) donde la BD arranca vacía.
