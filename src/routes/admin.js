@@ -93,11 +93,6 @@ router.get('/inicio', (req, res) => {
   res.render('admin/inicio', { title: 'Inicio', active: 'inicio', stats });
 });
 
-// ¿Quiénes somos? (reusa el contenido informativo)
-router.get('/nosotros', (req, res) => {
-  res.render('client/nosotros', { title: '¿Quiénes somos?', active: 'nosotros', companyName: null });
-});
-
 // Proyectos: todos los proyectos de todas las empresas, con su avance
 router.get('/proyectos', (req, res) => {
   const rows = db.prepare(

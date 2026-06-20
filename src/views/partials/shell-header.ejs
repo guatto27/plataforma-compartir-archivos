@@ -40,7 +40,7 @@
       <!-- Menú superior dentro del cajón (solo celular) -->
       <nav class="sidebar-topnav">
         <a href="<%= topnavBase %>/inicio" class="<%= act === 'inicio' ? 'active' : '' %>">Inicio</a>
-        <a href="<%= topnavBase %>/nosotros" class="<%= act === 'nosotros' ? 'active' : '' %>">¿Quiénes somos?</a>
+        <% if (!isAdmin) { %><a href="<%= topnavBase %>/nosotros" class="<%= act === 'nosotros' ? 'active' : '' %>">¿Quiénes somos?</a><% } %>
         <a href="<%= topnavBase %>/proyectos" class="<%= act === 'proyectos' ? 'active' : '' %>">Proyectos</a>
       </nav>
     <% } %>
@@ -212,7 +212,7 @@
         <% if (showTopnav) { %>
           <nav class="topnav">
             <a href="<%= topnavBase %>/inicio" class="<%= act === 'inicio' ? 'active' : '' %>">Inicio</a>
-            <a href="<%= topnavBase %>/nosotros" class="<%= act === 'nosotros' ? 'active' : '' %>">¿Quiénes somos?</a>
+            <% if (!isAdmin) { %><a href="<%= topnavBase %>/nosotros" class="<%= act === 'nosotros' ? 'active' : '' %>">¿Quiénes somos?</a><% } %>
             <a href="<%= topnavBase %>/proyectos" class="<%= act === 'proyectos' ? 'active' : '' %>">Proyectos</a>
           </nav>
         <% } %>
