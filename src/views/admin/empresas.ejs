@@ -20,7 +20,7 @@
     <div class="table-wrap">
       <table class="table">
         <thead>
-          <tr><th>Empresa</th><th>Proyecto</th><th>Estatus</th><th class="ta-center">Logo</th><th class="ta-center">Nombre</th><th>Contacto</th><th class="ta-center">Usuarios</th><% if (canManage) { %><th class="ta-actions">Acciones</th><% } %></tr>
+          <tr><th>Empresa</th><th>Proyecto</th><th class="ta-center">Logo</th><th class="ta-center">Nombre</th><th>Contacto</th><th class="ta-center">Usuarios</th><th>Estatus</th><% if (canManage) { %><th class="ta-actions">Acciones</th><% } %></tr>
         </thead>
         <tbody>
           <% companies.forEach((c) => { %>
@@ -36,14 +36,14 @@
                 </div>
               </td>
               <td><%= c.project || '—' %></td>
-              <% var ps = c.project_status || 'Vigente';
-                 var psCls = ps === 'Finalizado' ? 'st-fin' : (ps === 'En pausa' ? 'st-pau' : 'st-vig'); %>
-              <td><span class="st-chip <%= psCls %>"><%= ps %></span></td>
               <% var chkOk = '<svg class="check-circle" viewBox="0 0 24 24" fill="none" stroke="#3fb950" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.4l2.6 2.6 5-5.6"/></svg>'; %>
               <td class="ta-center"><% if (c.logo_path) { %><%- chkOk %><% } else { %><span class="meta">—</span><% } %></td>
               <td class="ta-center"><% if (c.eslogan_path) { %><%- chkOk %><% } else { %><span class="meta">—</span><% } %></td>
               <td><%= c.contact || '—' %></td>
               <td class="ta-center"><%= c.user_count %></td>
+              <% var ps = c.project_status || 'Vigente';
+                 var psCls = ps === 'Finalizado' ? 'st-fin' : (ps === 'En pausa' ? 'st-pau' : 'st-vig'); %>
+              <td><span class="st-chip <%= psCls %>"><%= ps %></span></td>
               <% if (canManage) { %>
               <td class="ta-actions">
                 <button class="iconbtn" type="button" data-dialog="dlg-edit-company-<%= c.id %>" title="Editar" aria-label="Editar">
