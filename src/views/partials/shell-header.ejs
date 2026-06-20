@@ -34,6 +34,15 @@
     </a>
 
     <% if (role === 'cliente_responsable') { %>
+      <!-- Menú superior dentro del cajón (solo celular) -->
+      <nav class="sidebar-topnav">
+        <a href="/app/inicio" class="<%= act === 'inicio' ? 'active' : '' %>">Inicio</a>
+        <a href="/app/nosotros" class="<%= act === 'nosotros' ? 'active' : '' %>">¿Quiénes somos?</a>
+        <a href="/app/proyectos" class="<%= act === 'proyectos' ? 'active' : '' %>">Proyectos</a>
+      </nav>
+    <% } %>
+
+    <% if (role === 'cliente_responsable') { %>
       <!-- ────────── Menú CLIENTE RESPONSABLE (fases plegables) ────────── -->
       <%
         var caret = '<span class="tree-caret-btn" data-tree-toggle><svg class="tree-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>';
@@ -187,18 +196,24 @@
       </nav>
     <% } %>
   </aside>
+  <div class="sidebar-backdrop" data-sidebar-close></div>
 
   <div class="shell-main">
     <header class="topbar-2">
-      <% if (role === 'cliente_responsable') { %>
-        <nav class="topnav">
-          <a href="/app/inicio" class="<%= act === 'inicio' ? 'active' : '' %>">Inicio</a>
-          <a href="/app/nosotros" class="<%= act === 'nosotros' ? 'active' : '' %>">¿Quiénes somos?</a>
-          <a href="/app/proyectos" class="<%= act === 'proyectos' ? 'active' : '' %>">Proyectos</a>
-        </nav>
-      <% } else { %>
-        <div></div>
-      <% } %>
+      <div class="topbar-left">
+        <% if (currentUser) { %>
+          <button class="nav-toggle" type="button" data-sidebar-toggle aria-label="Abrir menú">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+        <% } %>
+        <% if (role === 'cliente_responsable') { %>
+          <nav class="topnav">
+            <a href="/app/inicio" class="<%= act === 'inicio' ? 'active' : '' %>">Inicio</a>
+            <a href="/app/nosotros" class="<%= act === 'nosotros' ? 'active' : '' %>">¿Quiénes somos?</a>
+            <a href="/app/proyectos" class="<%= act === 'proyectos' ? 'active' : '' %>">Proyectos</a>
+          </nav>
+        <% } %>
+      </div>
       <% if (currentUser) { %>
         <div class="topbar-actions">
           <div class="topbar-search" data-search-box>

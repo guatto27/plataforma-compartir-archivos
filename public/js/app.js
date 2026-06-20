@@ -81,6 +81,25 @@ document.addEventListener('click', function (e) {
   if (hideSvg) hideSvg.style.display = isHidden ? '' : 'none';
 });
 
+// Menú lateral móvil (cajón): abrir/cerrar con la hamburguesa y el fondo
+document.addEventListener('click', function (e) {
+  if (e.target.closest('[data-sidebar-toggle]')) {
+    document.body.classList.toggle('sidebar-open');
+    return;
+  }
+  if (e.target.closest('[data-sidebar-close]')) {
+    document.body.classList.remove('sidebar-open');
+    return;
+  }
+  // Al navegar desde un enlace del sidebar, cerrar el cajón
+  if (document.body.classList.contains('sidebar-open') && e.target.closest('.sidebar a[href]')) {
+    document.body.classList.remove('sidebar-open');
+  }
+});
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') document.body.classList.remove('sidebar-open');
+});
+
 // Árbol de fases: un summary con data-href navega al hacer clic en el título;
 // el caret (data-tree-toggle) sigue plegando/desplegando.
 document.addEventListener('click', function (e) {
