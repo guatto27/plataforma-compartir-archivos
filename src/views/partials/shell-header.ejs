@@ -278,28 +278,32 @@
           </div>
         <% } else { %>
           <div class="client-banner">
-            <div class="cb-grid">
-              <!-- Fila 1: logos -->
-              <div class="cb-logo-cell cb-pos-l1">
-                <img class="cb-icon" src="/static/img/logo-mark.png" alt="<%= brand.name %>" />
+            <div class="cb-row">
+              <!-- Empresa: BusinessCool -->
+              <div class="cb-company">
+                <div class="cb-logo-row">
+                  <img class="cb-icon" src="/static/img/logo-mark.png" alt="<%= brand.name %>" />
+                </div>
+                <div class="cb-name-row">
+                  <img class="cb-wordmark wm-dark" src="/static/img/logo-wordmark.png" alt="<%= brand.name %>" />
+                  <img class="cb-wordmark wm-light" src="/static/img/logo-wordmark-dark.png" alt="<%= brand.name %>" />
+                </div>
               </div>
               <span class="cb-divider"></span>
-              <div class="cb-logo-cell cb-pos-r1">
-                <% if (currentUser.companyHasLogo) { %>
-                  <img class="cb-comp-logo" src="/app/empresa/logo" alt="<%= currentUser.companyName %>" />
-                <% } %>
-              </div>
-              <!-- Fila 2: nombres -->
-              <div class="cb-name-cell cb-pos-l2">
-                <img class="cb-wordmark wm-dark" src="/static/img/logo-wordmark.png" alt="<%= brand.name %>" />
-                <img class="cb-wordmark wm-light" src="/static/img/logo-wordmark-dark.png" alt="<%= brand.name %>" />
-              </div>
-              <div class="cb-name-cell cb-pos-r2">
-                <% if (currentUser.companyHasEslogan) { %>
-                  <img class="cb-eslogan-img" src="/app/empresa/eslogan" alt="<%= currentUser.companyName %>" />
-                <% } else if (currentUser.companyName) { %>
-                  <span class="cb-comp-name"><%= currentUser.companyName %></span>
-                <% } %>
+              <!-- Empresa: cliente -->
+              <div class="cb-company">
+                <div class="cb-logo-row">
+                  <% if (currentUser.companyHasLogo) { %>
+                    <img class="cb-comp-logo" src="/app/empresa/logo" alt="<%= currentUser.companyName %>" />
+                  <% } %>
+                </div>
+                <div class="cb-name-row">
+                  <% if (currentUser.companyHasEslogan) { %>
+                    <img class="cb-eslogan-img" src="/app/empresa/eslogan" alt="<%= currentUser.companyName %>" />
+                  <% } else if (currentUser.companyName) { %>
+                    <span class="cb-comp-name"><%= currentUser.companyName %></span>
+                  <% } %>
+                </div>
               </div>
             </div>
             <% if (currentUser.companyProject && !hideProject) { %>
