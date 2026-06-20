@@ -892,9 +892,8 @@ body.has-sidebar { display: flex; min-height: 100vh; }
 /* Banner de alianza (BusinessCool + empresa atendida) en el portal del cliente */
 .client-banner {
   display: flex; flex-direction: column; align-items: center; gap: 10px;
-  padding: 16px 24px; margin: 0 0 22px;
-  background: var(--bc-surface); border: 1px solid var(--bc-border);
-  border-radius: 14px; box-shadow: var(--bc-shadow);
+  padding: 6px 24px 14px; margin: 0 0 16px;
+  background: transparent; border: none; box-shadow: none;
 }
 .client-banner .cb-row { display: flex; align-items: center; justify-content: center; gap: 30px; }
 .client-banner .cb-col { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 9px; min-width: 0; }
