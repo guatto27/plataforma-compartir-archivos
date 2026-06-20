@@ -854,6 +854,23 @@ body.has-sidebar { display: flex; height: 100vh; overflow: hidden; }
 
 /* ===== Iconos de la barra superior (info, notificaciones, asistencia) ===== */
 .topbar-actions { display: flex; align-items: center; gap: 8px; }
+/* Búsqueda en la barra superior: lupa + campo que se despliega a la izquierda */
+.topbar-search { display: flex; align-items: center; }
+.topbar-search-input {
+  width: 0; min-width: 0; opacity: 0; padding: 0; border: 1px solid transparent;
+  background: var(--bc-surface-2); color: var(--bc-text); border-radius: 999px;
+  font-size: 14px; outline: none; box-sizing: border-box; -webkit-appearance: none; appearance: none;
+  transition: width .22s ease, opacity .18s ease, padding .22s ease, margin .22s ease, border-color .15s ease;
+}
+.topbar-search.open .topbar-search-input {
+  width: 230px; opacity: 1; padding: 8px 14px; border-color: var(--bc-border-2); margin-right: 6px;
+}
+.topbar-search.open .topbar-search-input:focus { border-color: var(--bc-gold); }
+.topbar-search-input::placeholder { color: var(--bc-muted); }
+mark.bc-hl { background: var(--bc-gold); color: #0b0b0d; border-radius: 2px; padding: 0 1px; }
+@media (max-width: 640px) {
+  .topbar-search.open .topbar-search-input { width: 150px; }
+}
 .topbar-icon {
   width: 38px; height: 38px; border-radius: 50%; padding: 0;
   display: inline-flex; align-items: center; justify-content: center;

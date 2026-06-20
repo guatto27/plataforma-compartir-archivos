@@ -174,6 +174,12 @@
       <% } %>
       <% if (currentUser) { %>
         <div class="topbar-actions">
+          <div class="topbar-search" data-search-box>
+            <input type="search" class="topbar-search-input" placeholder="Buscar en esta página…" data-search-input aria-label="Buscar en la página" />
+            <button class="topbar-icon" type="button" data-search-toggle title="Buscar" aria-label="Buscar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </button>
+          </div>
           <button class="topbar-icon" type="button" data-dialog="dlg-info" title="Información" aria-label="Información">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
           </button>

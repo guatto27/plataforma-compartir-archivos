@@ -144,3 +144,104 @@ document.addEventListener('click', function (e) {
   bcUpdateThemeLabels();
 });
 document.addEventListener('DOMContentLoaded', bcUpdateThemeLabels);
+
+// --- Búsqueda dentro de la página (lupa de la barra superior) ---
+(function () {
+  function getItems() {
+    var items = [].slice.call(document.querySelectorAll('[data-search-item]'));
+    if (!items.length) items = [].slice.call(document.querySelectorAll('table.table tbody tr'));
+    return items;
+  }
+
+  function clearHighlights() {
+    var root = document.querySelector('.shell-content');
+    if (!root) return;
+    root.querySelectorAll('mark.bc-hl').forEach(function (m) {
+      var parent = m.parentNode;
+      if (!parent) return;
+      parent.replaceChild(document.createTextNode(m.textContent), m);
+      parent.normalize();
+    });
+  }
+
+  function highlight(query) {
+    clearHighlights();
+    var root = document.querySelector('.shell-content');
+    if (!root || !query) return;
+    var q = query.toLowerCase();
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: function (node) {
+        if (!node.nodeValue || !node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+        var tag = node.parentNode && node.parentNode.nodeName;
+        if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'MARK') return NodeFilter.FILTER_REJECT;
+        return node.nodeValue.toLowerCase().indexOf(q) !== -1 ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+      }
+    });
+    var nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    var first = null;
+    nodes.forEach(function (node) {
+      var text = node.nodeValue, lower = text.toLowerCase();
+      var frag = document.createDocumentFragment();
+      var idx = 0, pos;
+      while ((pos = lower.indexOf(q, idx)) !== -1) {
+        if (pos > idx) frag.appendChild(document.createTextNode(text.slice(idx, pos)));
+        var mark = document.createElement('mark');
+        mark.className = 'bc-hl';
+        mark.textContent = text.slice(pos, pos + q.length);
+        frag.appendChild(mark);
+        if (!first) first = mark;
+        idx = pos + q.length;
+      }
+      if (idx < text.length) frag.appendChild(document.createTextNode(text.slice(idx)));
+      if (node.parentNode) node.parentNode.replaceChild(frag, node);
+    });
+    if (first) first.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+
+  function runSearch(query) {
+    query = (query || '').trim().toLowerCase();
+    var items = getItems();
+    if (items.length) {
+      clearHighlights();
+      items.forEach(function (it) {
+        var match = !query || it.textContent.toLowerCase().indexOf(query) !== -1;
+        it.style.display = match ? '' : 'none';
+      });
+    } else {
+      highlight(query);
+    }
+  }
+
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-search-toggle]');
+    if (!btn) return;
+    var box = btn.closest('[data-search-box]');
+    if (!box) return;
+    var input = box.querySelector('[data-search-input]');
+    var willOpen = !box.classList.contains('open');
+    box.classList.toggle('open', willOpen);
+    if (willOpen) {
+      if (input) input.focus();
+    } else if (input) {
+      input.value = '';
+      runSearch('');
+    }
+  });
+
+  document.addEventListener('input', function (e) {
+    var input = e.target.closest('[data-search-input]');
+    if (!input) return;
+    runSearch(input.value);
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    var input = e.target.closest('[data-search-input]');
+    if (!input) return;
+    input.value = '';
+    runSearch('');
+    var box = input.closest('[data-search-box]');
+    if (box) box.classList.remove('open');
+  });
+})();
