@@ -842,6 +842,16 @@ body.has-sidebar { display: flex; height: 100vh; overflow: hidden; }
   .auth-hero-title { font-size: 24px; margin-top: 18px; }
   .auth-foot { display: none; }
 }
+/* Teléfonos: logo, anillos, nodos y nombre más pequeños */
+@media (max-width: 560px) {
+  .auth-hero { min-height: 30vh; padding: 10px 16px; }
+  .auth-logo-anim { width: 122px; height: 122px; }
+  .auth-logo-img, .auth-logo-shine { width: 56px; height: 56px; border-radius: 17px; }
+  .ring-2 { inset: 22px; }
+  .auth-hero-wordmark { width: min(160px, 50%); margin-top: 12px; }
+  .auth-hero-title { font-size: 18px; margin-top: 10px; }
+  .auth-hero-tag { font-size: 12px; }
+}
 @media (prefers-reduced-motion: reduce) {
   .auth-logo-core, .auth-logo-img, .auth-logo-shine::before, .ring-1, .ring-2,
   .auth-hero-bg, .auth-logo-anim::before, .auth-hero-wordmark, .auth-hero-tag, .auth-form-box { animation: none !important; }

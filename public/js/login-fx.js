@@ -10,7 +10,7 @@
   var DPR = Math.min(window.devicePixelRatio || 1, 2);
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  var nodes = [], pulses = [], W = 0, H = 0, N = 0, MAXD = 0, ring = null, energy = 0;
+  var nodes = [], pulses = [], W = 0, H = 0, N = 0, MAXD = 0, ring = null, energy = 0, SZ = 1;
 
   function spawnEdge() {
     var side = Math.floor(Math.random() * 4), x, y, vx, vy, s = 0.32 * DPR;
@@ -18,7 +18,7 @@
     else if (side === 1) { x = W;                 y = Math.random() * H; vx = -Math.random() * s; vy = (Math.random() - .5) * s; }
     else if (side === 2) { x = Math.random() * W; y = H;          vx = (Math.random() - .5) * s; vy = -Math.random() * s; }
     else                 { x = 0;                 y = Math.random() * H; vx =  Math.random() * s; vy = (Math.random() - .5) * s; }
-    return { x: x, y: y, vx: vx, vy: vy, r: (Math.random() * 1.6 + 0.7) * DPR };
+    return { x: x, y: y, vx: vx, vy: vy, r: (Math.random() * 1.6 + 0.7) * DPR * SZ };
   }
 
   function computeRing() {
@@ -36,8 +36,11 @@
     var r = canvas.getBoundingClientRect();
     W = canvas.width = Math.max(1, Math.floor(r.width * DPR));
     H = canvas.height = Math.max(1, Math.floor(r.height * DPR));
-    N = Math.max(28, Math.min(110, Math.floor((r.width * r.height) / 13000)));
-    MAXD = Math.min(W, 170 * DPR);
+    // En pantallas chicas (celular) los nodos y la red se reducen
+    var small = r.width < 560;
+    SZ = small ? 0.6 : 1;
+    N = Math.max(small ? 14 : 28, Math.min(110, Math.floor((r.width * r.height) / 13000)));
+    MAXD = Math.min(W, (small ? 120 : 170) * DPR);
     nodes = [];
     for (var i = 0; i < N; i++) {
       var n = spawnEdge();
