@@ -677,7 +677,8 @@ body.has-sidebar { display: flex; min-height: 100vh; }
   border-radius: 50%; background: var(--bc-gold); box-shadow: 0 0 12px 2px rgba(251,191,36,.8);
 }
 
-/* Texto de marca que sube en secuencia */
+/* Marca (wordmark) y tagline que suben en secuencia */
+.auth-hero-wordmark { display: block; width: min(270px, 66%); height: auto; margin-top: 24px; animation: bcRise .8s ease both .85s; }
 .auth-hero-title { animation: bcRise .8s ease both .85s; }
 .auth-hero-tag   { animation: bcRise .8s ease both 1.05s; }
 .auth-form-box   { animation: bcRise .7s ease both .2s; }
