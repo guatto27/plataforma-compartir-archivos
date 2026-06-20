@@ -1,13 +1,20 @@
 <%- include('../partials/shell-header') %>
 
 <div class="page-head">
-  <h1>Proyectos</h1>
-  <p class="muted">Todos los proyectos de todas las empresas, con su estatus y actividad.</p>
+  <div class="head-row">
+    <div>
+      <h1>Proyectos</h1>
+      <p class="muted">Todos los proyectos de todas las empresas, con su estatus y actividad.</p>
+    </div>
+    <% if (canManage) { %>
+      <button class="btn btn-primary" type="button" data-dialog="dlg-new-project">+ Nuevo proyecto</button>
+    <% } %>
+  </div>
 </div>
 
 <section class="card">
   <% if (!rows || !rows.length) { %>
-    <p class="empty">Aún no hay proyectos. Crea uno desde Empresas → Editar empresa.</p>
+    <p class="empty">Aún no hay proyectos. Usa “+ Nuevo proyecto” para dar de alta el primero (la empresa debe estar registrada antes).</p>
   <% } else { %>
     <div class="table-wrap">
       <table class="table">
@@ -19,6 +26,7 @@
             <th class="ta-center">Entregables</th>
             <th class="ta-center">Minutas</th>
             <th class="ta-center">Entrevistas</th>
+            <% if (canManage) { %><th class="ta-actions">Acciones</th><% } %>
           </tr>
         </thead>
         <tbody>
@@ -31,6 +39,20 @@
               <td class="ta-center"><%= r.files %></td>
               <td class="ta-center"><%= r.minutas %></td>
               <td class="ta-center"><%= r.interviews %></td>
+              <% if (canManage) { %>
+              <td class="ta-actions">
+                <button class="iconbtn" type="button" data-dialog="dlg-edit-proj-<%= r.id %>" title="Editar" aria-label="Editar">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+                </button>
+                <form method="post" action="/admin/proyectos/<%= r.id %>/delete" class="inline" data-confirm="¿Eliminar el proyecto “<%= r.name %>”? (Solo si no tiene minutas/entrevistas.)">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                  <input type="hidden" name="back" value="/admin/proyectos" />
+                  <button class="iconbtn danger" type="submit" title="Eliminar" aria-label="Eliminar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  </button>
+                </form>
+              </td>
+              <% } %>
             </tr>
           <% }) %>
         </tbody>
@@ -38,5 +60,60 @@
     </div>
   <% } %>
 </section>
+
+<% if (canManage) { %>
+  <!-- Alta de proyecto -->
+  <dialog id="dlg-new-project" class="modal" data-strict>
+    <h2>Nuevo proyecto</h2>
+    <form method="post" action="/admin/proyectos">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <label>Empresa
+        <select name="company_id" required>
+          <option value="">— Selecciona la empresa —</option>
+          <% companies.forEach(function (c) { %>
+            <option value="<%= c.id %>"><%= c.name %></option>
+          <% }) %>
+        </select>
+        <% if (!companies.length) { %><span class="meta" style="display:block;margin-top:4px">Primero registra una empresa en <a href="/admin/empresas">Empresas/Clientes</a>.</span><% } %>
+      </label>
+      <label>Nombre del proyecto
+        <input type="text" name="name" required maxlength="160" placeholder="ej. Validación de Franquicias" />
+      </label>
+      <label>Estatus
+        <select name="status">
+          <% PROJ_STATUSES.forEach(function (s) { %><option value="<%= s %>"><%= s %></option><% }) %>
+        </select>
+      </label>
+      <div class="modal-actions">
+        <button class="btn btn-primary" type="submit">Crear proyecto</button>
+        <button class="btn btn-ghost" type="button" data-close>Cancelar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Editar cada proyecto -->
+  <% rows.forEach(function (r) { %>
+    <dialog id="dlg-edit-proj-<%= r.id %>" class="modal" data-strict>
+      <h2>Editar proyecto</h2>
+      <p class="meta"><%= r.company %></p>
+      <form method="post" action="/admin/proyectos/<%= r.id %>/edit">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <input type="hidden" name="back" value="/admin/proyectos" />
+        <label>Nombre del proyecto
+          <input type="text" name="name" value="<%= r.name %>" required maxlength="160" />
+        </label>
+        <label>Estatus
+          <select name="status">
+            <% PROJ_STATUSES.forEach(function (s) { %><option value="<%= s %>" <%= r.status === s ? 'selected' : '' %>><%= s %></option><% }) %>
+          </select>
+        </label>
+        <div class="modal-actions">
+          <button class="btn btn-primary" type="submit">Guardar cambios</button>
+          <button class="btn btn-ghost" type="button" data-close>Cancelar</button>
+        </div>
+      </form>
+    </dialog>
+  <% }) %>
+<% } %>
 
 <%- include('../partials/shell-footer') %>
