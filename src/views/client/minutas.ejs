@@ -3,7 +3,7 @@
 <div class="page-head">
   <div class="head-row">
     <div>
-      <h1>Minutas semanales</h1>
+      <h1>Minutas</h1>
       <p class="muted"><%= companyName || brand.name %></p>
     </div>
   </div>
@@ -11,12 +11,13 @@
 
 <% if (minutas && minutas.length > 0) { %>
   <section class="card" style="overflow-x:auto">
-    <table class="table">
+    <table class="table minutas-table">
       <thead>
         <tr>
           <th>Minuta</th>
           <th>Fecha</th>
-          <th>Firmas</th>
+          <th>BusinessCool AI</th>
+          <th>Cliente</th>
           <th class="ta-actions">Acciones</th>
         </tr>
       </thead>
@@ -32,30 +33,22 @@
               <% if (m.formato) { %><div class="meta" style="font-size:11px"><%= m.formato %></div><% } %>
             </td>
             <td class="nowrap meta"><%= m.fecha %></td>
-            <td style="min-width:220px">
-              <!-- Firma BusinessCool AI -->
+            <td>
               <% if (m.firmada) { %>
-                <div style="margin-bottom:8px">
-                  <span class="st aprob">BusinessCool AI ✓</span>
-                  <div class="meta" style="font-size:11px;margin-top:3px;line-height:1.5">
-                    <%= m.firma_nombre || '' %><% if (m.firma_fecha) { %> · <%= m.firma_fecha %><% } %>
-                    <% if (m.firma_folio) { %><br><span style="opacity:.8">Folio:</span> <code style="font-size:10px"><%= m.firma_folio %></code><% } %>
-                  </div>
-                </div>
+                <span class="firmante"><%= m.firma_nombre || '—' %></span>
+                <span class="firma-ok" title="Firmado">✓</span>
               <% } else { %>
-                <div style="margin-bottom:8px"><span class="st pend">Pendiente BusinessCool</span></div>
+                <span class="meta">Pendiente</span>
               <% } %>
-              <!-- Firma del cliente -->
+            </td>
+            <td>
               <% if (m.firmada_cliente) { %>
-                <div>
-                  <span class="st aprob">Cliente ✓</span>
-                  <div class="meta" style="font-size:11px;margin-top:3px;line-height:1.5">
-                    <%= m.firma_cliente_nombre || '' %><% if (m.firma_cliente_fecha) { %> · <%= m.firma_cliente_fecha %><% } %>
-                    <% if (m.firma_cliente_folio) { %><br><span style="opacity:.8">Folio:</span> <code style="font-size:10px"><%= m.firma_cliente_folio %></code><% } %>
-                  </div>
-                </div>
+                <span class="firmante"><%= m.firma_cliente_nombre || '—' %></span>
+                <span class="firma-ok" title="Firmado">✓</span>
               <% } else if (puedeFirmar) { %>
-                <div><span class="st rev">Pendiente de tu firma</span></div>
+                <span class="meta">Pendiente de firma</span>
+              <% } else { %>
+                <span class="meta">—</span>
               <% } %>
             </td>
             <td class="ta-actions">
