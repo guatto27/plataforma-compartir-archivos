@@ -92,6 +92,15 @@ app.use((req, res, next) => {
     const [Y, M, D] = d.split('-');
     return `${D}/${M}/${Y} ${(t || '').slice(0, 5)}`;
   };
+  // Nombre propio: "JORGE SANCHEZ LEON" -> "Jorge Sanchez Leon" (respeta partículas)
+  res.locals.titleCase = (s) => {
+    if (!s) return '';
+    const minus = new Set(['de', 'del', 'la', 'las', 'los', 'y', 'e', 'da', 'do', 'das', 'dos', 'van', 'von']);
+    return String(s).trim().toLowerCase().split(/\s+/).map((w, i) => {
+      if (i > 0 && minus.has(w)) return w;
+      return w.replace(/^([\wáéíóúñü])/i, (c) => c.toUpperCase());
+    }).join(' ');
+  };
   next();
 });
 

@@ -35,10 +35,10 @@
             </td>
             <td class="nowrap meta"><%= m.fecha %></td>
             <td>
-              <% if (m.firmada) { %><span class="firmante"><%= m.firma_nombre || '—' %></span><% } else { %><span class="meta">—</span><% } %>
+              <% if (m.firmada) { %><span class="firmante"><%= titleCase(m.firma_nombre) || '—' %></span><% } else { %><span class="meta">—</span><% } %>
             </td>
             <td>
-              <% if (m.firmada_cliente) { %><span class="firmante"><%= m.firma_cliente_nombre || '—' %></span><% } else { %><span class="meta">—</span><% } %>
+              <% if (m.firmada_cliente) { %><span class="firmante"><%= titleCase(m.firma_cliente_nombre) || '—' %></span><% } else { %><span class="meta">—</span><% } %>
             </td>
             <td>
               <div class="firma-status">
