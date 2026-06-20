@@ -13,6 +13,7 @@ const { upload } = require('../lib/upload');
 const { makeFileRouter } = require('./files');
 const { makeInterviewActionsRouter, getAccessibleInterview } = require('./interviews');
 const { sendWelcomeEmail } = require('../lib/mailer');
+const { removeLogoBackground } = require('../lib/logo-bg');
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const {
@@ -232,7 +233,7 @@ router.get('/empresas', (req, res) => {
   res.render('admin/empresas', { title: 'Empresas', active: 'empresas', companies, canManage: req.session.role === 'admin' });
 });
 
-router.post('/empresas', requireAdmin, logoUpload.single('logo'), (req, res) => {
+router.post('/empresas', requireAdmin, logoUpload.single('logo'), async (req, res) => {
   if (!verifyCsrf(req)) return denyCsrf(res);
   const name = String(req.body.name || '').trim().slice(0, 160);
   const contact = String(req.body.contact || '').trim().slice(0, 160);
@@ -243,14 +244,18 @@ router.post('/empresas', requireAdmin, logoUpload.single('logo'), (req, res) => 
     return res.redirect('/admin/empresas');
   }
   const project = String(req.body.project || '').trim().slice(0, 160);
-  const logoPath = req.file ? req.file.filename : null;
+  let logoPath = null;
+  if (req.file) {
+    try { logoPath = path.basename(await removeLogoBackground(req.file.path)); }
+    catch (_) { logoPath = req.file.filename; }
+  }
   db.prepare(`INSERT INTO companies (name, contact, notes, project, logo_path) VALUES (?, ?, ?, ?, ?)`).run(name, contact, notes, project, logoPath);
   logAction(req.session.userId, 'company_create', name, req.ip);
   req.session.flash = { type: 'success', text: 'Empresa registrada.' };
   res.redirect('/admin/empresas');
 });
 
-router.post('/empresas/:id/edit', requireAdmin, logoUpload.single('logo'), (req, res) => {
+router.post('/empresas/:id/edit', requireAdmin, logoUpload.single('logo'), async (req, res) => {
   if (!verifyCsrf(req)) return denyCsrf(res);
   const company = db.prepare('SELECT * FROM companies WHERE id = ?').get(req.params.id);
   if (!company) {
@@ -269,7 +274,8 @@ router.post('/empresas/:id/edit', requireAdmin, logoUpload.single('logo'), (req,
   let logoPath = company.logo_path;
   if (req.file) {
     if (company.logo_path) { try { fs.unlinkSync(path.join(LOGOS_DIR, company.logo_path)); } catch (_) {} }
-    logoPath = req.file.filename;
+    try { logoPath = path.basename(await removeLogoBackground(req.file.path)); }
+    catch (_) { logoPath = req.file.filename; }
   }
   db.prepare('UPDATE companies SET name = ?, contact = ?, notes = ?, project = ?, logo_path = ? WHERE id = ?').run(name, contact, notes, project, logoPath, company.id);
   logAction(req.session.userId, 'company_edit', name, req.ip);

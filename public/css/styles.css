@@ -891,19 +891,19 @@ body.has-sidebar { display: flex; min-height: 100vh; }
 
 /* Banner de alianza (BusinessCool + empresa atendida) en el portal del cliente */
 .client-banner {
-  display: flex; flex-direction: column; align-items: center; gap: 14px;
-  padding: 22px 26px; margin: 0 0 24px;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 16px 24px; margin: 0 0 22px;
   background: var(--bc-surface); border: 1px solid var(--bc-border);
   border-radius: 14px; box-shadow: var(--bc-shadow);
 }
-.client-banner .cb-row { display: flex; align-items: center; justify-content: center; gap: 38px; }
-.client-banner .cb-col { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; min-width: 0; }
-.client-banner .cb-icon { width: 62px; height: 62px; border-radius: 14px; display: block; }
-.client-banner .cb-wordmark { height: 21px; width: auto; display: block; }
-.client-banner .cb-comp-logo { max-height: 104px; max-width: 230px; width: auto; object-fit: contain; display: block; }
-.client-banner .cb-name { font-size: 22px; font-weight: 800; color: var(--bc-text); white-space: nowrap; }
-.client-banner .cb-divider { width: 2px; height: 96px; background: var(--bc-border-2); border-radius: 2px; flex: 0 0 auto; }
-.client-banner .cb-project { font-size: 15px; color: var(--bc-text); }
+.client-banner .cb-row { display: flex; align-items: center; justify-content: center; gap: 30px; }
+.client-banner .cb-col { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 9px; min-width: 0; }
+.client-banner .cb-icon { width: 44px; height: 44px; border-radius: 11px; display: block; }
+.client-banner .cb-wordmark { height: 16px; width: auto; display: block; }
+.client-banner .cb-comp-logo { max-height: 64px; max-width: 160px; width: auto; object-fit: contain; display: block; }
+.client-banner .cb-name { font-size: 18px; font-weight: 800; color: var(--bc-text); white-space: nowrap; }
+.client-banner .cb-divider { width: 1px; height: 62px; background: var(--bc-border-2); border-radius: 2px; flex: 0 0 auto; }
+.client-banner .cb-project { font-size: 13px; color: var(--bc-text); }
 .client-banner .cb-project strong { font-weight: 700; }
 /* Intercambio del wordmark del banner según el tema */
 .client-banner .cb-wordmark.wm-light { display: none; }
