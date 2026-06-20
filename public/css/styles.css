@@ -634,6 +634,7 @@ body.has-sidebar { display: flex; min-height: 100vh; }
     radial-gradient(closest-side, rgba(217,119,6,.10), transparent 70%) 80% 75% / 55% 55% no-repeat;
   animation: bcDrift 18s ease-in-out infinite alternate;
 }
+.auth-hero-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; display: block; }
 .auth-hero-inner { position: relative; z-index: 2; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .auth-hero-title {
   margin: 26px 0 0; font-size: 30px; font-weight: 800; letter-spacing: .2px;

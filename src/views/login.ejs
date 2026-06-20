@@ -8,38 +8,50 @@
   <link rel="icon" type="image/png" href="/static/img/logo-mark.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/static/css/styles.css" />
 </head>
-<body class="auth2-body">
-  <div class="auth2">
+<body class="auth-body">
+  <div class="auth-split">
 
-    <!-- ── Panel izquierdo: red neuronal dorada ── -->
-    <section class="auth2-hero">
-      <canvas id="netfx" class="auth2-canvas"></canvas>
-      <div class="auth2-hero-vignette"></div>
-      <div class="auth2-hero-content">
-        <h1 class="auth2-wordmark">BusinessCool<span>&nbsp;AI</span></h1>
-        <p class="auth2-tagline"><%= brand.tagline %></p>
+    <!-- ── Panel izquierdo: nodos en movimiento + logo animado + marca ── -->
+    <aside class="auth-hero">
+      <div class="auth-hero-bg"></div>
+      <canvas id="netfx" class="auth-hero-canvas"></canvas>
+      <div class="auth-hero-inner">
+        <div class="auth-logo-anim">
+          <span class="ring ring-1"></span>
+          <span class="ring ring-2"></span>
+          <span class="ring ring-dot"></span>
+          <span class="auth-logo-core">
+            <img class="auth-logo-img" src="/static/img/logo-mark.png" alt="<%= brand.name %>" />
+            <span class="auth-logo-shine"></span>
+          </span>
+        </div>
+        <img class="auth-hero-wordmark" src="/static/img/logo-wordmark.png" alt="<%= brand.name %>" />
+        <p class="auth-hero-tag"><%= brand.tagline %></p>
       </div>
-      <div class="auth2-live">
-        <span class="dot"></span> Conexiones de IA activas: <strong id="live-count">1,245,678</strong>
-      </div>
-    </section>
+    </aside>
 
     <!-- ── Panel derecho: formulario ── -->
-    <section class="auth2-form">
-      <div class="auth2-card">
-        <h2 class="auth2-title">Acceso a la plataforma</h2>
+    <main class="auth-form-panel">
+      <div class="auth-form-box">
+        <a class="auth-brand-mini" href="/">
+          <img src="/static/img/logo-mark.png" alt="<%= brand.name %>" width="34" height="34" />
+          <span><%= brand.name %></span>
+        </a>
 
-        <% if (error) { %><div class="flash flash-error" style="margin-bottom:18px"><%= error %></div><% } %>
+        <h1>Acceso a la plataforma</h1>
+        <p class="muted">Ingresa con el usuario y la contraseña que te proporcionó <%= brand.name %>.</p>
+
+        <% if (error) { %><div class="flash flash-error" style="margin-bottom:16px"><%= error %></div><% } %>
 
         <form method="post" action="/login" autocomplete="off">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-          <label class="auth2-label">Usuario
+          <label class="auth-label">Usuario
             <input type="text" name="username" required autofocus maxlength="40" />
           </label>
-          <label class="auth2-label">Contraseña
+          <label class="auth-label">Contraseña
             <div class="pw-wrap">
               <input type="password" id="pw-input" name="password" required maxlength="200" />
               <button type="button" class="pw-eye" aria-label="Mostrar contraseña" data-pw-toggle="pw-input">
@@ -48,19 +60,16 @@
               </button>
             </div>
           </label>
-          <button class="btn-gold" type="submit">Entrar</button>
-          <p class="auth2-forgot"><a href="/forgot-password">¿Olvidaste tu contraseña?</a></p>
+          <button class="btn btn-primary btn-block" type="submit" style="margin-top:6px">Entrar</button>
         </form>
+
+        <p class="auth-forgot"><a href="/forgot-password">¿Olvidaste tu contraseña?</a></p>
       </div>
 
-      <svg class="auth2-spark" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M12 1 L14.2 9.8 L23 12 L14.2 14.2 L12 23 L9.8 14.2 L1 12 L9.8 9.8 Z" fill="currentColor"/>
-      </svg>
-      <footer class="auth2-foot">© <%= new Date().getFullYear() %> <%= brand.name %> — <%= brand.tagline %> — Todos los derechos reservados</footer>
-    </section>
+      <footer class="auth-foot">© <%= new Date().getFullYear() %> <%= brand.name %> — <%= brand.tagline %></footer>
+    </main>
 
   </div>
-
   <script src="/static/js/app.js"></script>
   <script src="/static/js/login-fx.js"></script>
 </body>
