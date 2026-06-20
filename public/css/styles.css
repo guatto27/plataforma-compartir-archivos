@@ -613,3 +613,82 @@ body.has-sidebar { display: flex; min-height: 100vh; }
   font-size: 12px; color: var(--bc-muted); margin: 0 0 10px;
   padding: 8px 12px; background: #fdf6e3; border: 1px solid #e4d090; border-radius: 8px;
 }
+
+/* ============================================================
+   Login — pantalla dividida con logo animado (dinámico)
+   ============================================================ */
+.auth-body { min-height: 100vh; background: var(--bc-bg); }
+.auth-split { display: grid; grid-template-columns: 1.05fr 0.95fr; min-height: 100vh; }
+
+/* ── Panel izquierdo (hero) ── */
+.auth-hero {
+  position: relative; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(circle at 32% 28%, #1a1710 0%, #0c0b09 55%, #09090b 100%);
+  border-right: 1px solid var(--bc-border);
+}
+.auth-hero-bg {
+  position: absolute; inset: -30%;
+  background:
+    radial-gradient(closest-side, rgba(251,191,36,.10), transparent 70%) 20% 25% / 60% 60% no-repeat,
+    radial-gradient(closest-side, rgba(217,119,6,.10), transparent 70%) 80% 75% / 55% 55% no-repeat;
+  animation: bcDrift 18s ease-in-out infinite alternate;
+}
+.auth-hero-inner { position: relative; z-index: 2; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.auth-hero-title {
+  margin: 26px 0 0; font-size: 30px; font-weight: 800; letter-spacing: .2px;
+  background: linear-gradient(120deg, var(--bc-gold), var(--bc-gold-2));
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+.auth-hero-tag { margin: 2px 0 0; color: var(--bc-muted); font-size: 14px; letter-spacing: .4px; }
+
+/* ── Logo animado ── */
+.auth-logo-anim { position: relative; width: 240px; height: 240px; display: grid; place-items: center; }
+.auth-logo-anim::before {
+  content: ""; position: absolute; inset: 14px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(251,191,36,.30), transparent 62%);
+  filter: blur(10px); animation: bcPulse 4.2s ease-in-out infinite;
+}
+.auth-logo-img {
+  position: relative; z-index: 3; width: 104px; height: 104px; border-radius: 26px;
+  box-shadow: 0 14px 44px rgba(251,191,36,.35), 0 4px 14px rgba(0,0,0,.5);
+  animation: bcFloat 4.6s ease-in-out infinite;
+}
+.auth-logo-anim .ring { position: absolute; border-radius: 50%; pointer-events: none; }
+.ring-1 { inset: 0; border: 2px dashed rgba(251,191,36,.45); animation: bcSpin 16s linear infinite; }
+.ring-2 { inset: 30px; border: 1.5px solid rgba(217,119,6,.22); border-top-color: var(--bc-gold); animation: bcSpinR 9s linear infinite; }
+.ring-dot { inset: 0; animation: bcSpin 7s linear infinite; }
+.ring-dot::after {
+  content: ""; position: absolute; top: -5px; left: 50%; width: 9px; height: 9px; margin-left: -4.5px;
+  border-radius: 50%; background: var(--bc-gold); box-shadow: 0 0 12px 2px rgba(251,191,36,.8);
+}
+
+@keyframes bcFloat { 0%, 100% { transform: translateY(-7px); } 50% { transform: translateY(7px); } }
+@keyframes bcSpin { to { transform: rotate(360deg); } }
+@keyframes bcSpinR { to { transform: rotate(-360deg); } }
+@keyframes bcPulse { 0%, 100% { opacity: .55; transform: scale(.95); } 50% { opacity: 1; transform: scale(1.06); } }
+@keyframes bcDrift { from { transform: translate(-3%, -2%) rotate(0deg); } to { transform: translate(3%, 2%) rotate(8deg); } }
+
+/* ── Panel derecho (formulario) ── */
+.auth-form-panel { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 28px; }
+.auth-form-box { width: min(380px, 100%); }
+.auth-brand-mini { display: none; align-items: center; gap: 10px; color: var(--bc-text); font-weight: 700; margin-bottom: 22px; }
+.auth-brand-mini img { border-radius: 9px; }
+.auth-form-box h1 { margin: 0 0 8px; font-size: 24px; }
+.auth-form-box .muted { margin: 0 0 22px; }
+.auth-label { display: block; margin-bottom: 14px; font-size: 13px; font-weight: 600; color: var(--bc-text); }
+.auth-label input { margin-top: 6px; }
+.auth-foot { position: absolute; bottom: 18px; font-size: 12px; color: var(--bc-muted); }
+
+/* ── Responsive: apila el hero arriba ── */
+@media (max-width: 860px) {
+  .auth-split { grid-template-columns: 1fr; }
+  .auth-hero { min-height: 38vh; border-right: none; border-bottom: 1px solid var(--bc-border); }
+  .auth-logo-anim { width: 180px; height: 180px; }
+  .auth-logo-img { width: 84px; height: 84px; }
+  .auth-hero-title { font-size: 24px; margin-top: 18px; }
+  .auth-foot { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-logo-img, .ring-1, .ring-2, .ring-dot, .auth-hero-bg, .auth-logo-anim::before { animation: none !important; }
+}
