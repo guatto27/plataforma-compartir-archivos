@@ -50,6 +50,14 @@
           <noscript><button type="submit" class="btn btn-ghost btn-sm">Ver</button></noscript>
         </form>
       <% } %>
+      <nav class="sidebar-nav" style="margin-top:6px">
+        <a href="/app/minutas" class="<%= act === 'minutas' ? 'active' : '' %>">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </span>
+          Gestión de Minutas
+        </a>
+      </nav>
       <div class="sidebar-section">Fases del proyecto</div>
       <nav class="sidebar-nav sidebar-tree">
 
@@ -88,7 +96,6 @@
           </div>
         </details>
 
-        <a href="/app/minutas" class="tree-top <%= act === 'minutas' ? 'active' : '' %>" title="Minutas">Minutas</a>
       </nav>
 
     <% } else if (role === 'client') { %>
