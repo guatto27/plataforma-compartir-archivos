@@ -422,11 +422,11 @@ dialog.firma-modal { width: min(1000px, 96vw); max-height: 94vh; overflow: auto;
 /* =====================================================================
    Panel lateral del cliente (portal de proyectos)
    ===================================================================== */
-body.has-sidebar { display: flex; min-height: 100vh; }
+body.has-sidebar { display: flex; height: 100vh; overflow: hidden; }
 .sidebar {
   width: 250px; flex: 0 0 250px; background: var(--bc-bg-2);
   border-right: 1px solid var(--bc-border); display: flex; flex-direction: column;
-  position: sticky; top: 0; height: 100vh;
+  height: 100vh; overflow-y: auto;
 }
 .sidebar-brand { display: flex; align-items: center; gap: 10px; padding: 18px 18px; border-bottom: 1px solid var(--bc-border); height: 70px; box-sizing: border-box; }
 .sidebar-brand .brand-mark, .sidebar-brand img { width: 34px; height: 34px; border-radius: 9px; }
@@ -469,11 +469,12 @@ body.has-sidebar { display: flex; min-height: 100vh; }
 .cuenta-chip .dot-admin { background: #a78bfa; }
 .cuenta-chip .dot-colab { background: #34d399; }
 
-.shell-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+.shell-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; height: 100vh; overflow-y: auto; }
 .topbar-2 {
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
   padding: 14px 28px; border-bottom: 1px solid var(--bc-border); background: var(--bc-bg-2);
   height: 70px; box-sizing: border-box;
+  position: sticky; top: 0; z-index: 20;
 }
 .cuenta-chip {
   display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px;
@@ -484,10 +485,12 @@ body.has-sidebar { display: flex; min-height: 100vh; }
 .shell-content { padding: 28px; max-width: 1280px; width: 100%; flex: 1 0 auto; }
 
 @media (max-width: 820px) {
-  body.has-sidebar { flex-direction: column; }
-  .sidebar { width: 100%; flex-basis: auto; height: auto; position: static; flex-direction: row; flex-wrap: wrap; align-items: center; }
+  body.has-sidebar { flex-direction: column; height: auto; min-height: 100vh; overflow: visible; }
+  .sidebar { width: 100%; flex-basis: auto; height: auto; overflow: visible; position: static; flex-direction: row; flex-wrap: wrap; align-items: center; }
   .sidebar-nav { flex-direction: row; flex-wrap: wrap; }
   .sidebar-section { display: none; }
+  .shell-main { height: auto; overflow: visible; }
+  .topbar-2 { position: static; }
 }
 
 /* ---------- Pipeline (línea de tiempo) ---------- */
