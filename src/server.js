@@ -71,11 +71,13 @@ app.use((req, res, next) => {
   if (req.session.userId) {
     var u = db.prepare('SELECT display_name, company_id, company_name FROM users WHERE id = ?').get(req.session.userId);
     var companyHasLogo = false;
+    var companyHasEslogan = false;
     var companyProject = null;
     var companyEslogan = null;
     if (u && u.company_id) {
-      var c = db.prepare('SELECT logo_path, project, eslogan FROM companies WHERE id = ?').get(u.company_id);
+      var c = db.prepare('SELECT logo_path, eslogan_path, project, eslogan FROM companies WHERE id = ?').get(u.company_id);
       companyHasLogo = !!(c && c.logo_path);
+      companyHasEslogan = !!(c && c.eslogan_path);
       companyProject = c ? c.project : null;
       companyEslogan = c ? c.eslogan : null;
     }
@@ -87,6 +89,7 @@ app.use((req, res, next) => {
       companyName: u ? u.company_name : null,
       companyId: u ? u.company_id : null,
       companyHasLogo: companyHasLogo,
+      companyHasEslogan: companyHasEslogan,
       companyProject: companyProject,
       companyEslogan: companyEslogan,
     };

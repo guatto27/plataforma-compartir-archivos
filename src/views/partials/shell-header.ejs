@@ -269,7 +269,9 @@
               <% } else if (currentUser.companyName) { %>
                 <span class="cb-name"><%= currentUser.companyName %></span>
               <% } %>
-              <% if (currentUser.companyEslogan) { %>
+              <% if (currentUser.companyHasEslogan) { %>
+                <img class="cb-eslogan-img" src="/app/empresa/eslogan" alt="<%= currentUser.companyEslogan || currentUser.companyName %>" />
+              <% } else if (currentUser.companyEslogan) { %>
                 <span class="cb-eslogan"><%= currentUser.companyEslogan %></span>
               <% } %>
             </div>

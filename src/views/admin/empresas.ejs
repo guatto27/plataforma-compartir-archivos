@@ -73,8 +73,14 @@
       <label>Proyecto (opcional)
         <input type="text" name="project" value="<%= c.project || '' %>" maxlength="160" placeholder="ej. Validación de Franquicias" />
       </label>
-      <label>Eslogan (opcional)
+      <label>Eslogan — texto (opcional)
         <input type="text" name="eslogan" value="<%= c.eslogan || '' %>" maxlength="160" placeholder="ej. Calidad que se saborea" />
+      </label>
+      <label>Eslogan — imagen <%= c.eslogan_path ? '(reemplazar)' : '(opcional)' %>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:6px">
+          <% if (c.eslogan_path) { %><img src="/admin/empresas/<%= c.id %>/eslogan" alt="" class="empresa-logo" /><% } %>
+          <input type="file" name="eslogan_img" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif" />
+        </div>
       </label>
       <label>Notas (opcional)
         <input type="text" name="notes" value="<%= c.notes || '' %>" maxlength="500" />
@@ -106,8 +112,11 @@
     <label>Proyecto (opcional)
       <input type="text" name="project" maxlength="160" placeholder="ej. Validación de Franquicias" />
     </label>
-    <label>Eslogan (opcional)
+    <label>Eslogan — texto (opcional)
       <input type="text" name="eslogan" maxlength="160" placeholder="ej. Calidad que se saborea" />
+    </label>
+    <label>Eslogan — imagen (opcional)
+      <input type="file" name="eslogan_img" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif" style="margin-top:6px" />
     </label>
     <label>Notas (opcional)
       <input type="text" name="notes" maxlength="500" />

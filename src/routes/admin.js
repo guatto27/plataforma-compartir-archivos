@@ -210,17 +210,28 @@ const logoUpload = multer({
   }),
   limits: { fileSize: 3 * 1024 * 1024 },
   fileFilter: (req, file, cb) => cb(null, LOGO_EXT.includes(path.extname(file.originalname).toLowerCase())),
-});
+}).fields([{ name: 'logo', maxCount: 1 }, { name: 'eslogan_img', maxCount: 1 }]);
 
-// Sirve el logo de una empresa (área de equipo)
-router.get('/empresas/:id/logo', (req, res) => {
-  const c = db.prepare('SELECT logo_path FROM companies WHERE id = ?').get(req.params.id);
-  if (!c || !c.logo_path) return res.status(404).send('Sin logo');
-  const filePath = path.join(LOGOS_DIR, c.logo_path);
-  if (!fs.existsSync(filePath)) return res.status(404).send('Logo no encontrado');
-  res.setHeader('Cache-Control', 'private, max-age=120');
-  res.sendFile(filePath);
-});
+// Procesa un archivo subido (quita el fondo) y devuelve su nombre, o null.
+async function processCompanyImage(file) {
+  if (!file) return null;
+  try { return path.basename(await removeLogoBackground(file.path)); }
+  catch (_) { return file.filename; }
+}
+
+// Sirve el logo o el eslogan (imagen) de una empresa (área de equipo)
+function serveCompanyImage(col) {
+  return (req, res) => {
+    const c = db.prepare(`SELECT ${col} AS p FROM companies WHERE id = ?`).get(req.params.id);
+    if (!c || !c.p) return res.status(404).send('Sin imagen');
+    const filePath = path.join(LOGOS_DIR, c.p);
+    if (!fs.existsSync(filePath)) return res.status(404).send('No encontrado');
+    res.setHeader('Cache-Control', 'private, max-age=120');
+    res.sendFile(filePath);
+  };
+}
+router.get('/empresas/:id/logo', serveCompanyImage('logo_path'));
+router.get('/empresas/:id/eslogan', serveCompanyImage('eslogan_path'));
 
 router.get('/empresas', (req, res) => {
   const companies = db
@@ -233,53 +244,61 @@ router.get('/empresas', (req, res) => {
   res.render('admin/empresas', { title: 'Empresas', active: 'empresas', companies, canManage: req.session.role === 'admin' });
 });
 
-router.post('/empresas', requireAdmin, logoUpload.single('logo'), async (req, res) => {
+router.post('/empresas', requireAdmin, logoUpload, async (req, res) => {
   if (!verifyCsrf(req)) return denyCsrf(res);
+  const logoFile = req.files && req.files.logo && req.files.logo[0];
+  const esloFile = req.files && req.files.eslogan_img && req.files.eslogan_img[0];
   const name = String(req.body.name || '').trim().slice(0, 160);
   const contact = String(req.body.contact || '').trim().slice(0, 160);
   const notes = String(req.body.notes || '').trim().slice(0, 500);
   if (!name) {
-    if (req.file) fs.unlink(req.file.path, () => {});
+    if (logoFile) fs.unlink(logoFile.path, () => {});
+    if (esloFile) fs.unlink(esloFile.path, () => {});
     req.session.flash = { type: 'error', text: 'El nombre de la empresa es obligatorio.' };
     return res.redirect('/admin/empresas');
   }
   const project = String(req.body.project || '').trim().slice(0, 160);
   const eslogan = String(req.body.eslogan || '').trim().slice(0, 160);
-  let logoPath = null;
-  if (req.file) {
-    try { logoPath = path.basename(await removeLogoBackground(req.file.path)); }
-    catch (_) { logoPath = req.file.filename; }
-  }
-  db.prepare(`INSERT INTO companies (name, contact, notes, project, eslogan, logo_path) VALUES (?, ?, ?, ?, ?, ?)`).run(name, contact, notes, project, eslogan, logoPath);
+  const logoPath = await processCompanyImage(logoFile);
+  const esloPath = await processCompanyImage(esloFile);
+  db.prepare(`INSERT INTO companies (name, contact, notes, project, eslogan, logo_path, eslogan_path) VALUES (?, ?, ?, ?, ?, ?, ?)`).run(name, contact, notes, project, eslogan, logoPath, esloPath);
   logAction(req.session.userId, 'company_create', name, req.ip);
   req.session.flash = { type: 'success', text: 'Empresa registrada.' };
   res.redirect('/admin/empresas');
 });
 
-router.post('/empresas/:id/edit', requireAdmin, logoUpload.single('logo'), async (req, res) => {
+router.post('/empresas/:id/edit', requireAdmin, logoUpload, async (req, res) => {
   if (!verifyCsrf(req)) return denyCsrf(res);
+  const logoFile = req.files && req.files.logo && req.files.logo[0];
+  const esloFile = req.files && req.files.eslogan_img && req.files.eslogan_img[0];
   const company = db.prepare('SELECT * FROM companies WHERE id = ?').get(req.params.id);
   if (!company) {
-    if (req.file) fs.unlink(req.file.path, () => {});
+    if (logoFile) fs.unlink(logoFile.path, () => {});
+    if (esloFile) fs.unlink(esloFile.path, () => {});
     return res.status(404).render('error', { title: 'No encontrado', message: 'Empresa no encontrada.' });
   }
   const name = String(req.body.name || '').trim().slice(0, 160);
   const contact = String(req.body.contact || '').trim().slice(0, 160);
   const notes = String(req.body.notes || '').trim().slice(0, 500);
   if (!name) {
-    if (req.file) fs.unlink(req.file.path, () => {});
+    if (logoFile) fs.unlink(logoFile.path, () => {});
+    if (esloFile) fs.unlink(esloFile.path, () => {});
     req.session.flash = { type: 'error', text: 'El nombre de la empresa es obligatorio.' };
     return res.redirect('/admin/empresas');
   }
   const project = String(req.body.project || '').trim().slice(0, 160);
   const eslogan = String(req.body.eslogan || '').trim().slice(0, 160);
   let logoPath = company.logo_path;
-  if (req.file) {
+  if (logoFile) {
     if (company.logo_path) { try { fs.unlinkSync(path.join(LOGOS_DIR, company.logo_path)); } catch (_) {} }
-    try { logoPath = path.basename(await removeLogoBackground(req.file.path)); }
-    catch (_) { logoPath = req.file.filename; }
+    logoPath = await processCompanyImage(logoFile);
   }
-  db.prepare('UPDATE companies SET name = ?, contact = ?, notes = ?, project = ?, eslogan = ?, logo_path = ? WHERE id = ?').run(name, contact, notes, project, eslogan, logoPath, company.id);
+  let esloPath = company.eslogan_path;
+  if (esloFile) {
+    if (company.eslogan_path) { try { fs.unlinkSync(path.join(LOGOS_DIR, company.eslogan_path)); } catch (_) {} }
+    esloPath = await processCompanyImage(esloFile);
+  }
+  db.prepare('UPDATE companies SET name = ?, contact = ?, notes = ?, project = ?, eslogan = ?, logo_path = ?, eslogan_path = ? WHERE id = ?').run(name, contact, notes, project, eslogan, logoPath, esloPath, company.id);
   logAction(req.session.userId, 'company_edit', name, req.ip);
   req.session.flash = { type: 'success', text: 'Empresa actualizada.' };
   res.redirect('/admin/empresas');
@@ -299,6 +318,7 @@ router.post('/empresas/:id/delete', requireAdmin, (req, res) => {
     return res.redirect('/admin/empresas');
   }
   if (company.logo_path) { try { fs.unlinkSync(path.join(LOGOS_DIR, company.logo_path)); } catch (_) {} }
+  if (company.eslogan_path) { try { fs.unlinkSync(path.join(LOGOS_DIR, company.eslogan_path)); } catch (_) {} }
   db.prepare('DELETE FROM companies WHERE id = ?').run(company.id);
   logAction(req.session.userId, 'company_delete', company.name, req.ip);
   req.session.flash = { type: 'success', text: `Empresa "${company.name}" eliminada.` };

@@ -157,19 +157,23 @@ router.get('/entregables', (req, res) => {
   });
 });
 
-// Logo de la empresa del usuario (para el encabezado del portal)
-router.get('/empresa/logo', (req, res) => {
-  const me = db.prepare('SELECT company_id FROM users WHERE id = ?').get(req.session.userId);
-  if (!me || !me.company_id) return res.status(404).send('Sin logo');
-  const c = db.prepare('SELECT logo_path FROM companies WHERE id = ?').get(me.company_id);
-  if (!c || !c.logo_path) return res.status(404).send('Sin logo');
-  const path = require('path');
-  const fs   = require('fs');
-  const filePath = path.join(require('../config').uploadsDir, 'logos', c.logo_path);
-  if (!fs.existsSync(filePath)) return res.status(404).send('Logo no encontrado.');
-  res.setHeader('Cache-Control', 'private, max-age=120');
-  res.sendFile(filePath);
-});
+// Logo / eslogan (imagen) de la empresa del usuario (para el encabezado del portal)
+function serveCompanyAsset(col) {
+  return (req, res) => {
+    const me = db.prepare('SELECT company_id FROM users WHERE id = ?').get(req.session.userId);
+    if (!me || !me.company_id) return res.status(404).send('Sin imagen');
+    const c = db.prepare(`SELECT ${col} AS p FROM companies WHERE id = ?`).get(me.company_id);
+    if (!c || !c.p) return res.status(404).send('Sin imagen');
+    const path = require('path');
+    const fs   = require('fs');
+    const filePath = path.join(require('../config').uploadsDir, 'logos', c.p);
+    if (!fs.existsSync(filePath)) return res.status(404).send('No encontrado.');
+    res.setHeader('Cache-Control', 'private, max-age=120');
+    res.sendFile(filePath);
+  };
+}
+router.get('/empresa/logo', serveCompanyAsset('logo_path'));
+router.get('/empresa/eslogan', serveCompanyAsset('eslogan_path'));
 
 // Descargar archivo adjunto de una minuta publicada
 router.get('/minutas/:id/descargar', (req, res) => {
