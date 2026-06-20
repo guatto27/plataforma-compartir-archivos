@@ -44,22 +44,6 @@
   </a>
 </div>
 
-<!-- Cómo trabajamos (metodología) -->
-<section class="card">
-  <h2>Cómo avanza tu proyecto</h2>
-  <p class="muted" style="margin-top:0">El proyecto se desarrolla en cuatro fases; cada una cierra con un entregable formal.</p>
-  <div class="home-phases">
-    <% phases.forEach(function (ph, i) { %>
-      <div class="home-phase <%= ph.state %>">
-        <span class="home-phase-num"><%= i + 1 %></span>
-        <span class="ph-state <%= ph.state %>"><%= ph.label %></span>
-        <h3><%= ph.name %></h3>
-        <p class="muted"><%= ph.sub %></p>
-      </div>
-    <% }) %>
-  </div>
-</section>
-
 <!-- Accesos directos -->
 <section class="card">
   <h2>Accesos directos</h2>

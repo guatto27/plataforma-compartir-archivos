@@ -52,23 +52,6 @@
     </div>
   </section>
 
-  <section class="card">
-    <h2>Avance por fases</h2>
-    <div class="home-phases">
-      <% phases.forEach(function (ph, i) { %>
-        <div class="home-phase <%= ph.state %>">
-          <span class="home-phase-num"><%= i + 1 %></span>
-          <span class="ph-state <%= ph.state %>"><%= ph.label %></span>
-          <h3><%= ph.name %></h3>
-          <p class="muted"><%= ph.sub %></p>
-          <% if (ph.entregable) { %>
-            <p class="phase-entregable"><span class="muted">Entregable:</span> <%= ph.entregable %></p>
-          <% } %>
-        </div>
-      <% }) %>
-    </div>
-  </section>
-
 <% } %>
 
 <%- include('../partials/shell-footer') %>
