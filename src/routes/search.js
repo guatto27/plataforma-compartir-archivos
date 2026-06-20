@@ -31,7 +31,7 @@ function pagesFor(role) {
     return [
       { label: 'Clientes / Levantamiento', kw: 'clientes levantamiento entrevistas inicio', url: '/admin' },
       { label: 'Archivos', kw: 'archivos documentos files', url: '/admin/archivos' },
-      { label: 'Minutas', kw: 'minutas actas firmas', url: '/admin/minutas' },
+      { label: 'Gestión de Minutas', kw: 'minutas actas firmas gestion', url: '/admin/minutas' },
       { label: 'Empresas / Clientes', kw: 'empresas clientes companias proyectos', url: '/admin/empresas' },
       { label: 'Gestión de Usuarios', kw: 'usuarios accesos cuentas gestion', url: '/admin/usuarios' },
     ];
