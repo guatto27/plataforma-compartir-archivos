@@ -342,7 +342,11 @@ dialog.firma-modal { width: min(1000px, 96vw); max-height: 94vh; overflow: auto;
 /* Tabla de minutas del cliente: celdas centradas verticalmente y firmas */
 .minutas-table td { vertical-align: middle; }
 .minutas-table .firmante { font-weight: 600; color: var(--bc-text); }
-.minutas-table .firma-ok { color: #3fb950; font-weight: 800; margin-left: 5px; }
+.firma-status { display: flex; flex-direction: column; gap: 5px; font-size: 12px; white-space: nowrap; }
+.firma-status .fs-ok { color: #3fb950; font-weight: 700; }
+.firma-status .fs-pend { color: var(--bc-muted); }
+.minutas-table th.acciones-th, .minutas-table td.acciones-cell { text-align: center; }
+.minutas-table td.acciones-cell { white-space: nowrap; }
 
 /* ---------- Flash / mensajes ---------- */
 .flash { padding: 12px 16px; border-radius: 8px; margin-bottom: 18px; font-size: 14px; border: 1px solid transparent; }

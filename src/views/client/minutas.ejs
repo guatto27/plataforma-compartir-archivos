@@ -18,7 +18,8 @@
           <th>Fecha</th>
           <th>BusinessCool AI</th>
           <th>Cliente</th>
-          <th class="ta-actions">Acciones</th>
+          <th>Estatus de firma</th>
+          <th class="acciones-th">Acciones</th>
         </tr>
       </thead>
       <tbody>
@@ -34,25 +35,19 @@
             </td>
             <td class="nowrap meta"><%= m.fecha %></td>
             <td>
-              <% if (m.firmada) { %>
-                <span class="firmante"><%= m.firma_nombre || '—' %></span>
-                <span class="firma-ok" title="Firmado">✓</span>
-              <% } else { %>
-                <span class="meta">Pendiente</span>
-              <% } %>
+              <% if (m.firmada) { %><span class="firmante"><%= m.firma_nombre || '—' %></span><% } else { %><span class="meta">—</span><% } %>
             </td>
             <td>
-              <% if (m.firmada_cliente) { %>
-                <span class="firmante"><%= m.firma_cliente_nombre || '—' %></span>
-                <span class="firma-ok" title="Firmado">✓</span>
-              <% } else if (puedeFirmar) { %>
-                <span class="meta">Pendiente de firma</span>
-              <% } else { %>
-                <span class="meta">—</span>
-              <% } %>
+              <% if (m.firmada_cliente) { %><span class="firmante"><%= m.firma_cliente_nombre || '—' %></span><% } else { %><span class="meta">—</span><% } %>
             </td>
-            <td class="ta-actions">
-              <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
+            <td>
+              <div class="firma-status">
+                <span class="<%= m.firmada ? 'fs-ok' : 'fs-pend' %>"><%= m.firmada ? '✓' : '○' %> BusinessCool</span>
+                <span class="<%= m.firmada_cliente ? 'fs-ok' : 'fs-pend' %>"><%= m.firmada_cliente ? '✓' : '○' %> Cliente</span>
+              </div>
+            </td>
+            <td class="acciones-cell">
+              <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
                 <% if (esPdf) { %>
                   <a class="btn btn-ghost" href="/app/minutas/<%= m.id %>/ver-pdf" target="_blank" rel="noopener"
                      style="padding:7px 12px;font-size:12px;margin:0;display:inline-flex;align-items:center;gap:5px">
