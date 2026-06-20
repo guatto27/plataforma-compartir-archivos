@@ -164,18 +164,6 @@
   <div class="shell-main">
     <header class="topbar-2">
       <div></div>
-      <% if (isClient && currentUser) { %>
-        <div class="topbar-logos" title="<%= brand.name %> · <%= currentUser.companyName || '' %>">
-          <img class="tb-logo" src="/static/img/logo-mark.png" alt="<%= brand.name %>" />
-          <span class="tb-logo-name"><%= brand.name %></span>
-          <span class="tb-div"></span>
-          <% if (currentUser.companyHasLogo) { %>
-            <img class="tb-logo" src="/app/empresa/logo" alt="<%= currentUser.companyName %>" />
-          <% } else if (currentUser.companyName) { %>
-            <span class="tb-comp-name"><%= currentUser.companyName %></span>
-          <% } %>
-        </div>
-      <% } %>
       <% if (currentUser) { %>
         <div class="topbar-actions">
           <button class="topbar-icon" type="button" data-dialog="dlg-info" title="Información" aria-label="Información">
@@ -266,4 +254,20 @@
       </dialog>
     <% } %>
     <main class="shell-content">
+      <% if (isClient && currentUser) { %>
+        <div class="client-banner">
+          <div class="cb-side">
+            <img class="cb-logo" src="/static/img/logo-mark.png" alt="<%= brand.name %>" />
+            <span class="cb-name cb-bc"><%= brand.name %></span>
+          </div>
+          <span class="cb-divider"></span>
+          <div class="cb-side">
+            <% if (currentUser.companyHasLogo) { %>
+              <img class="cb-logo cb-logo-comp" src="/app/empresa/logo" alt="<%= currentUser.companyName %>" />
+            <% } else if (currentUser.companyName) { %>
+              <span class="cb-name"><%= currentUser.companyName %></span>
+            <% } %>
+          </div>
+        </div>
+      <% } %>
       <%- include('flash') %>
