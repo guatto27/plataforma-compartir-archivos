@@ -22,6 +22,8 @@ document.addEventListener('click', function (e) {
       // Carga la vista previa del PDF solo al abrir (lazy)
       var obj = dlg.querySelector('object[data-pdf-src]');
       if (obj && !obj.getAttribute('data')) obj.setAttribute('data', obj.getAttribute('data-pdf-src'));
+      // Cierra el menú de usuario si el diálogo se abrió desde ahí
+      document.querySelectorAll('details.usermenu[open]').forEach(function (d) { d.removeAttribute('open'); });
     }
     return;
   }
@@ -120,3 +122,25 @@ document.addEventListener('click', function (e) {
     });
   }
 });
+
+// --- Tema claro / oscuro ---
+function bcCurrentTheme() {
+  return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+}
+function bcUpdateThemeLabels() {
+  var t = bcCurrentTheme();
+  document.querySelectorAll('[data-theme-label]').forEach(function (el) {
+    el.textContent = t === 'light' ? 'Claro' : 'Oscuro';
+  });
+}
+document.addEventListener('click', function (e) {
+  var b = e.target.closest('[data-theme-toggle]');
+  if (!b) return;
+  e.preventDefault();
+  var next = bcCurrentTheme() === 'light' ? 'dark' : 'light';
+  if (next === 'light') document.documentElement.setAttribute('data-theme', 'light');
+  else document.documentElement.removeAttribute('data-theme');
+  try { localStorage.setItem('bc-theme', next); } catch (_) {}
+  bcUpdateThemeLabels();
+});
+document.addEventListener('DOMContentLoaded', bcUpdateThemeLabels);

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex, nofollow" />
   <title><%= title %> · <%= brand.name %></title>
+  <script src="/static/js/theme.js"></script>
   <link rel="icon" type="image/png" href="/static/img/logo-mark.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -19,13 +20,15 @@
   var isStaff  = isAdmin || isColab;
   var homeBase = isStaff ? '/admin' : '/app';
   var act = (typeof active !== 'undefined') ? active : '';
+  var roleLabel = isAdmin ? 'Administrador' : (isColab ? 'Colaborador' : (role === 'cliente_responsable' ? 'Cliente responsable' : 'Parte interesada'));
 %>
 <body class="has-sidebar">
   <aside class="sidebar">
     <a class="sidebar-brand" href="<%= homeBase %>">
       <img src="/static/img/logo-mark.png" alt="<%= brand.name %>" width="34" height="34" />
       <span>
-        <img class="sidebar-wordmark" src="/static/img/logo-wordmark.png" alt="<%= brand.name %>" />
+        <img class="sidebar-wordmark wm-dark" src="/static/img/logo-wordmark.png" alt="<%= brand.name %>" />
+        <img class="sidebar-wordmark wm-light" src="/static/img/logo-wordmark-dark.png" alt="<%= brand.name %>" />
         <small><%= brand.tagline %></small>
       </span>
     </a>
@@ -162,22 +165,87 @@
     <header class="topbar-2">
       <div></div>
       <% if (currentUser) { %>
-        <nav class="nav">
+        <div class="topbar-actions">
+          <button class="topbar-icon" type="button" data-dialog="dlg-info" title="Información" aria-label="Información">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          </button>
+          <button class="topbar-icon" type="button" data-dialog="dlg-notif" title="Notificaciones" aria-label="Notificaciones">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          </button>
+          <button class="topbar-icon" type="button" data-dialog="dlg-ayuda" title="Asistencia" aria-label="Asistencia">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </button>
           <details class="usermenu">
             <summary class="avatar" title="<%= currentUser.displayName %>"><%= (currentUser.displayName || '?').charAt(0).toUpperCase() %></summary>
             <div class="usermenu-pop">
-              <div class="usermenu-name"><%= currentUser.displayName %></div>
+              <div class="usermenu-name"><%= currentUser.displayName %> · <%= roleLabel %></div>
+              <button type="button" class="usermenu-item" data-dialog="dlg-perfil">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                Perfil
+              </button>
+              <form method="post" action="/logout">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                <button type="submit" class="usermenu-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                  Cambiar cuenta
+                </button>
+              </form>
+              <button type="button" class="usermenu-item is-toggle" data-theme-toggle>
+                <span style="display:flex;align-items:center;gap:8px">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.39 5.39 0 0 1-4.4 2.26 5.38 5.38 0 0 1-3.95-9.06A9.1 9.1 0 0 0 12 3z"/></svg>
+                  Tema
+                </span>
+                <span class="theme-state" data-theme-label>Oscuro</span>
+              </button>
+              <div class="usermenu-sep"></div>
               <form method="post" action="/logout">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
                 <button type="submit" class="usermenu-item">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                  Salir
+                  Cerrar sesión
                 </button>
               </form>
             </div>
           </details>
-        </nav>
+        </div>
       <% } %>
     </header>
+
+    <% if (currentUser) { %>
+      <dialog id="dlg-info" class="modal">
+        <h2>Acerca de la plataforma</h2>
+        <p class="muted" style="margin-top:4px">Plataforma de <%= brand.name %> para el levantamiento, la gestión de archivos y las minutas de tus proyectos de IA.</p>
+        <dl class="dlg-info-row">
+          <dt>Plataforma</dt><dd><%= brand.name %></dd>
+          <dt>Sitio</dt><dd><a href="<%= brand.website %>" target="_blank" rel="noopener"><%= brand.website %></a></dd>
+        </dl>
+        <div class="modal-actions"><button class="btn btn-ghost" type="button" data-close>Cerrar</button></div>
+      </dialog>
+
+      <dialog id="dlg-notif" class="modal">
+        <h2>Notificaciones</h2>
+        <div class="dlg-empty">No tienes notificaciones nuevas.</div>
+        <div class="modal-actions"><button class="btn btn-ghost" type="button" data-close>Cerrar</button></div>
+      </dialog>
+
+      <dialog id="dlg-ayuda" class="modal">
+        <h2>Asistencia</h2>
+        <p class="muted" style="margin-top:4px">¿Necesitas ayuda? Contacta a tu equipo de <%= brand.name %>.</p>
+        <dl class="dlg-info-row">
+          <dt>Sitio</dt><dd><a href="<%= brand.website %>" target="_blank" rel="noopener"><%= brand.website %></a></dd>
+        </dl>
+        <div class="modal-actions"><button class="btn btn-ghost" type="button" data-close>Cerrar</button></div>
+      </dialog>
+
+      <dialog id="dlg-perfil" class="modal">
+        <h2>Mi perfil</h2>
+        <dl class="dlg-info-row">
+          <dt>Nombre</dt><dd><%= currentUser.displayName %></dd>
+          <dt>Usuario</dt><dd><%= currentUser.username %></dd>
+          <dt>Rol</dt><dd><%= roleLabel %></dd>
+        </dl>
+        <div class="modal-actions"><button class="btn btn-ghost" type="button" data-close>Cerrar</button></div>
+      </dialog>
+    <% } %>
     <main class="shell-content">
       <%- include('flash') %>

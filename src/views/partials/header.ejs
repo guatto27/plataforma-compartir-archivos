@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex, nofollow" />
   <title><%= title %> · <%= brand.name %></title>
+  <script src="/static/js/theme.js"></script>
   <link rel="icon" type="image/png" href="/static/img/logo-mark.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -17,7 +18,8 @@
       <a class="brand" href="/">
         <img class="brand-mark" src="/static/img/logo-mark.png" alt="<%= brand.name %>" width="40" height="40" />
         <span class="brand-text">
-          <img class="brand-wordmark" src="/static/img/logo-wordmark.png" alt="<%= brand.name %>" />
+          <img class="brand-wordmark wm-dark" src="/static/img/logo-wordmark.png" alt="<%= brand.name %>" />
+          <img class="brand-wordmark wm-light" src="/static/img/logo-wordmark-dark.png" alt="<%= brand.name %>" />
           <small><%= brand.tagline %></small>
         </span>
       </a>

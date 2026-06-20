@@ -20,6 +20,29 @@
   --bc-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 8px 30px rgba(0, 0, 0, 0.35);
 }
 
+/* ===== Tema claro ===== */
+:root[data-theme="light"] {
+  --bc-bg: #f3f3f4;
+  --bc-bg-2: #ffffff;
+  --bc-surface: #ffffff;
+  --bc-surface-2: #f1f1f3;
+  --bc-text: #1c1c1f;
+  --bc-muted: #5f5f68;
+  --bc-border: #e4e4e7;
+  --bc-border-2: #d4d4d8;
+  --bc-gold: #c2780a;
+  --bc-gold-2: #a85f08;
+  --bc-gradient: linear-gradient(to right, #e29209, #c2780a);
+  --bc-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 8px 30px rgba(0, 0, 0, 0.07);
+}
+/* Intercambio del wordmark según el tema (letras blancas / oscuras) */
+.sidebar-brand .sidebar-wordmark.wm-light,
+.brand-text .brand-wordmark.wm-light { display: none; }
+:root[data-theme="light"] .sidebar-brand .sidebar-wordmark.wm-dark,
+:root[data-theme="light"] .brand-text .brand-wordmark.wm-dark { display: none; }
+:root[data-theme="light"] .sidebar-brand .sidebar-wordmark.wm-light,
+:root[data-theme="light"] .brand-text .brand-wordmark.wm-light { display: block; }
+
 * { box-sizing: border-box; }
 
 body {
@@ -817,3 +840,35 @@ body.has-sidebar { display: flex; min-height: 100vh; }
 @media (prefers-reduced-motion: reduce) {
   .auth2-wordmark, .auth2-tagline, .auth2-card, .auth2-live .dot, .auth2-spark { animation: none !important; }
 }
+
+/* ===== Iconos de la barra superior (info, notificaciones, asistencia) ===== */
+.topbar-actions { display: flex; align-items: center; gap: 8px; }
+.topbar-icon {
+  width: 38px; height: 38px; border-radius: 50%; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--bc-surface-2); border: 1px solid var(--bc-border); color: var(--bc-muted);
+  cursor: pointer; position: relative; transition: color .15s ease, border-color .15s ease;
+}
+.topbar-icon:hover { color: var(--bc-text); border-color: var(--bc-gold); }
+.topbar-icon svg { width: 18px; height: 18px; }
+.topbar-icon .notif-badge {
+  position: absolute; top: 6px; right: 7px; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--bc-gold); border: 2px solid var(--bc-bg-2);
+}
+.usermenu-pop { min-width: 232px; }
+.usermenu-item.is-toggle { justify-content: space-between; }
+.usermenu-item .theme-state { color: var(--bc-muted); font-size: 12px; }
+.usermenu-sep { height: 1px; background: var(--bc-border); margin: 5px 0; }
+.dlg-info-row { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 14px; margin: 4px 0; }
+.dlg-info-row dt { color: var(--bc-muted); }
+.dlg-info-row dd { margin: 0; }
+.dlg-empty { text-align: center; color: var(--bc-muted); padding: 22px 6px; font-size: 14px; }
+
+/* Tema claro: asegurar buen contraste del dorado en elementos activos/acentos */
+:root[data-theme="light"] .sidebar-nav a.active,
+:root[data-theme="light"] .sidebar-subnav a.active { color: #a85f08; }
+:root[data-theme="light"] .sidebar-nav a.active { background: rgba(194,120,10,.10); border-color: rgba(194,120,10,.35); }
+:root[data-theme="light"] .sidebar-subnav a.active { background: rgba(194,120,10,.08); border-color: #a85f08; }
+:root[data-theme="light"] .status-pct,
+:root[data-theme="light"] .stat.warn .stat-num { color: #a85f08; }
+:root[data-theme="light"] code { color: #a85f08; }
