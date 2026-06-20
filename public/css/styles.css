@@ -404,7 +404,10 @@ body.has-sidebar { display: flex; min-height: 100vh; }
   background: var(--bc-gradient); -webkit-background-clip: text; background-clip: text;
   -webkit-text-fill-color: transparent; color: transparent;
 }
-.sidebar-brand small { color: var(--bc-muted); font-size: 11px; }
+.sidebar-brand small { color: var(--bc-muted); font-size: 11px; display: block; }
+/* Wordmark (letras) en lugar del texto, en barra/sidebar */
+.sidebar-brand .sidebar-wordmark { width: auto; height: 15px; border-radius: 0; display: block; margin-bottom: 3px; }
+.brand-text .brand-wordmark { width: auto; height: 17px; display: block; margin-bottom: 2px; }
 .sidebar-section { padding: 16px 18px 6px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #71717a; }
 .sidebar-nav { display: flex; flex-direction: column; gap: 2px; padding: 0 10px; }
 .sidebar-nav a {
