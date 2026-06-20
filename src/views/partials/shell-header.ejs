@@ -269,6 +269,9 @@
               <% } else if (currentUser.companyName) { %>
                 <span class="cb-name"><%= currentUser.companyName %></span>
               <% } %>
+              <% if (currentUser.companyEslogan) { %>
+                <span class="cb-eslogan"><%= currentUser.companyEslogan %></span>
+              <% } %>
             </div>
           </div>
           <% if (currentUser.companyProject) { %>

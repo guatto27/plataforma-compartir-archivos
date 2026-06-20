@@ -902,6 +902,7 @@ body.has-sidebar { display: flex; min-height: 100vh; }
 .client-banner .cb-wordmark { height: 16px; width: auto; display: block; }
 .client-banner .cb-comp-logo { max-height: 64px; max-width: 160px; width: auto; object-fit: contain; display: block; }
 .client-banner .cb-name { font-size: 18px; font-weight: 800; color: var(--bc-text); white-space: nowrap; }
+.client-banner .cb-eslogan { font-size: 12px; color: var(--bc-muted); font-style: italic; text-align: center; }
 .client-banner .cb-divider { width: 1px; height: 62px; background: var(--bc-border-2); border-radius: 2px; flex: 0 0 auto; }
 .client-banner .cb-project { font-size: 13px; color: var(--bc-text); }
 .client-banner .cb-project strong { font-weight: 700; }
