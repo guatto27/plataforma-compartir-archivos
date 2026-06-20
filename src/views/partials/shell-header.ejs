@@ -262,35 +262,50 @@
       </dialog>
     <% } %>
     <main class="shell-content">
+      <%
+        var menuPages = ['inicio', 'proyectos', 'nosotros'];
+        var hideProject = menuPages.indexOf(act) !== -1;   // sin "Proyecto:" en el menú superior
+        var brandOnly = act === 'nosotros';                // solo BusinessCool, centrado
+      %>
       <% if (isClient && currentUser) { %>
-        <div class="client-banner">
-          <div class="cb-grid">
-            <!-- Fila 1: logos -->
-            <div class="cb-logo-cell cb-pos-l1">
+        <% if (brandOnly) { %>
+          <div class="client-banner">
+            <div class="cb-brand-only">
               <img class="cb-icon" src="/static/img/logo-mark.png" alt="<%= brand.name %>" />
-            </div>
-            <span class="cb-divider"></span>
-            <div class="cb-logo-cell cb-pos-r1">
-              <% if (currentUser.companyHasLogo) { %>
-                <img class="cb-comp-logo" src="/app/empresa/logo" alt="<%= currentUser.companyName %>" />
-              <% } %>
-            </div>
-            <!-- Fila 2: nombres -->
-            <div class="cb-name-cell cb-pos-l2">
               <img class="cb-wordmark wm-dark" src="/static/img/logo-wordmark.png" alt="<%= brand.name %>" />
               <img class="cb-wordmark wm-light" src="/static/img/logo-wordmark-dark.png" alt="<%= brand.name %>" />
             </div>
-            <div class="cb-name-cell cb-pos-r2">
-              <% if (currentUser.companyHasEslogan) { %>
-                <img class="cb-eslogan-img" src="/app/empresa/eslogan" alt="<%= currentUser.companyName %>" />
-              <% } else if (currentUser.companyName) { %>
-                <span class="cb-comp-name"><%= currentUser.companyName %></span>
-              <% } %>
-            </div>
           </div>
-          <% if (currentUser.companyProject) { %>
-            <div class="cb-project"><strong>Proyecto:</strong> <%= currentUser.companyProject %></div>
-          <% } %>
-        </div>
+        <% } else { %>
+          <div class="client-banner">
+            <div class="cb-grid">
+              <!-- Fila 1: logos -->
+              <div class="cb-logo-cell cb-pos-l1">
+                <img class="cb-icon" src="/static/img/logo-mark.png" alt="<%= brand.name %>" />
+              </div>
+              <span class="cb-divider"></span>
+              <div class="cb-logo-cell cb-pos-r1">
+                <% if (currentUser.companyHasLogo) { %>
+                  <img class="cb-comp-logo" src="/app/empresa/logo" alt="<%= currentUser.companyName %>" />
+                <% } %>
+              </div>
+              <!-- Fila 2: nombres -->
+              <div class="cb-name-cell cb-pos-l2">
+                <img class="cb-wordmark wm-dark" src="/static/img/logo-wordmark.png" alt="<%= brand.name %>" />
+                <img class="cb-wordmark wm-light" src="/static/img/logo-wordmark-dark.png" alt="<%= brand.name %>" />
+              </div>
+              <div class="cb-name-cell cb-pos-r2">
+                <% if (currentUser.companyHasEslogan) { %>
+                  <img class="cb-eslogan-img" src="/app/empresa/eslogan" alt="<%= currentUser.companyName %>" />
+                <% } else if (currentUser.companyName) { %>
+                  <span class="cb-comp-name"><%= currentUser.companyName %></span>
+                <% } %>
+              </div>
+            </div>
+            <% if (currentUser.companyProject && !hideProject) { %>
+              <div class="cb-project"><strong>Proyecto:</strong> <%= currentUser.companyProject %></div>
+            <% } %>
+          </div>
+        <% } %>
       <% } %>
       <%- include('flash') %>
