@@ -642,27 +642,55 @@ body.has-sidebar { display: flex; min-height: 100vh; }
 }
 .auth-hero-tag { margin: 2px 0 0; color: var(--bc-muted); font-size: 14px; letter-spacing: .4px; }
 
-/* ── Logo animado ── */
-.auth-logo-anim { position: relative; width: 240px; height: 240px; display: grid; place-items: center; }
+/* ── Logo animado: revelado 3D (intro) + ambiente ── */
+.auth-logo-anim { position: relative; width: 240px; height: 240px; display: grid; place-items: center; perspective: 800px; }
 .auth-logo-anim::before {
   content: ""; position: absolute; inset: 14px; border-radius: 50%;
   background: radial-gradient(circle, rgba(251,191,36,.30), transparent 62%);
-  filter: blur(10px); animation: bcPulse 4.2s ease-in-out infinite;
+  filter: blur(10px); animation: bcPulse 4.2s ease-in-out infinite, bcFadeIn 1s ease .5s both;
+}
+/* Núcleo que flota (ambiente) y contiene el logo + destello */
+.auth-logo-core {
+  position: relative; z-index: 3; display: grid; place-items: center;
+  animation: bcFloat 4.6s ease-in-out 1.15s infinite;
 }
 .auth-logo-img {
-  position: relative; z-index: 3; width: 104px; height: 104px; border-radius: 26px;
-  box-shadow: 0 14px 44px rgba(251,191,36,.35), 0 4px 14px rgba(0,0,0,.5);
-  animation: bcFloat 4.6s ease-in-out infinite;
+  display: block; width: 104px; height: 104px; border-radius: 26px;
+  box-shadow: 0 14px 44px rgba(251,191,36,.40), 0 6px 16px rgba(0,0,0,.55), inset 0 2px 6px rgba(255,255,255,.25);
+  transform-origin: center;
+  animation: bcReveal 1.15s cubic-bezier(.18,.7,.2,1.25) both;
 }
-.auth-logo-anim .ring { position: absolute; border-radius: 50%; pointer-events: none; }
-.ring-1 { inset: 0; border: 2px dashed rgba(251,191,36,.45); animation: bcSpin 16s linear infinite; }
-.ring-2 { inset: 30px; border: 1.5px solid rgba(217,119,6,.22); border-top-color: var(--bc-gold); animation: bcSpinR 9s linear infinite; }
-.ring-dot { inset: 0; animation: bcSpin 7s linear infinite; }
+/* Destello que barre el logo */
+.auth-logo-shine { position: absolute; inset: 0; width: 104px; height: 104px; border-radius: 26px; overflow: hidden; pointer-events: none; }
+.auth-logo-shine::before {
+  content: ""; position: absolute; top: -50%; left: -130%; width: 55%; height: 200%;
+  background: linear-gradient(100deg, transparent 0%, rgba(255,255,255,.65) 50%, transparent 100%);
+  transform: rotate(16deg);
+  animation: bcSweep 4.2s ease-in-out 1.3s infinite;
+}
+.auth-logo-anim .ring { position: absolute; border-radius: 50%; pointer-events: none; animation-fill-mode: both; }
+.ring-1 { inset: 0; border: 2px dashed rgba(251,191,36,.45); animation: bcSpin 16s linear infinite, bcFadeIn .8s ease .6s both; }
+.ring-2 { inset: 30px; border: 1.5px solid rgba(217,119,6,.22); border-top-color: var(--bc-gold); animation: bcSpinR 9s linear infinite, bcFadeIn .8s ease .7s both; }
+.ring-dot { inset: 0; animation: bcSpin 7s linear infinite, bcFadeIn .8s ease .8s both; }
 .ring-dot::after {
   content: ""; position: absolute; top: -5px; left: 50%; width: 9px; height: 9px; margin-left: -4.5px;
   border-radius: 50%; background: var(--bc-gold); box-shadow: 0 0 12px 2px rgba(251,191,36,.8);
 }
 
+/* Texto de marca que sube en secuencia */
+.auth-hero-title { animation: bcRise .8s ease both .85s; }
+.auth-hero-tag   { animation: bcRise .8s ease both 1.05s; }
+.auth-form-box   { animation: bcRise .7s ease both .2s; }
+
+@keyframes bcReveal {
+  0%   { opacity: 0; transform: rotateY(-115deg) scale(.35); }
+  55%  { opacity: 1; transform: rotateY(14deg) scale(1.10); }
+  75%  { transform: rotateY(-5deg) scale(.98); }
+  100% { opacity: 1; transform: rotateY(0deg) scale(1); }
+}
+@keyframes bcSweep { 0% { left: -130%; } 38%, 100% { left: 170%; } }
+@keyframes bcRise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes bcFadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes bcFloat { 0%, 100% { transform: translateY(-7px); } 50% { transform: translateY(7px); } }
 @keyframes bcSpin { to { transform: rotate(360deg); } }
 @keyframes bcSpinR { to { transform: rotate(-360deg); } }
@@ -685,10 +713,11 @@ body.has-sidebar { display: flex; min-height: 100vh; }
   .auth-split { grid-template-columns: 1fr; }
   .auth-hero { min-height: 38vh; border-right: none; border-bottom: 1px solid var(--bc-border); }
   .auth-logo-anim { width: 180px; height: 180px; }
-  .auth-logo-img { width: 84px; height: 84px; }
+  .auth-logo-img, .auth-logo-shine { width: 84px; height: 84px; }
   .auth-hero-title { font-size: 24px; margin-top: 18px; }
   .auth-foot { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .auth-logo-img, .ring-1, .ring-2, .ring-dot, .auth-hero-bg, .auth-logo-anim::before { animation: none !important; }
+  .auth-logo-core, .auth-logo-img, .auth-logo-shine::before, .ring-1, .ring-2, .ring-dot,
+  .auth-hero-bg, .auth-logo-anim::before, .auth-hero-title, .auth-hero-tag, .auth-form-box { animation: none !important; }
 }
