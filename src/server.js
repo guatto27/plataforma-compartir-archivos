@@ -134,6 +134,7 @@ app.use(csrfProtection);
 
 // Rutas
 app.use('/', require('./routes/auth'));
+app.use('/buscar', require('./routes/search'));
 app.use('/app', require('./routes/client'));
 app.use('/admin', require('./routes/admin'));
 app.use('/admin/minutas', require('./routes/admin-minutas'));
