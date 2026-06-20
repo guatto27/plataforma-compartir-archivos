@@ -17,7 +17,12 @@ document.addEventListener('click', function (e) {
   var opener = e.target.closest('[data-dialog]');
   if (opener) {
     var dlg = document.getElementById(opener.getAttribute('data-dialog'));
-    if (dlg && typeof dlg.showModal === 'function') dlg.showModal();
+    if (dlg && typeof dlg.showModal === 'function') {
+      dlg.showModal();
+      // Carga la vista previa del PDF solo al abrir (lazy)
+      var obj = dlg.querySelector('object[data-pdf-src]');
+      if (obj && !obj.getAttribute('data')) obj.setAttribute('data', obj.getAttribute('data-pdf-src'));
+    }
     return;
   }
   var closer = e.target.closest('[data-close]');

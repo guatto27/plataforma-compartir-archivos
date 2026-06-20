@@ -96,9 +96,11 @@
   <% minutas.forEach(function (m) { %>
     <% var puedeFirmar = m.archivo_path && m.archivo_path.toLowerCase().endsWith('.pdf') && m.firmada && !m.firmada_cliente; %>
     <% if (puedeFirmar) { %>
-      <dialog id="firmar-<%= m.id %>" class="modal">
+      <dialog id="firmar-<%= m.id %>" class="modal firma-modal">
         <h2>Firmar “<%= m.titulo %>”</h2>
-        <p class="muted" style="font-size:13px;margin-top:4px">
+        <div class="firma-modal-grid">
+          <div>
+        <p class="muted" style="font-size:13px;margin-top:0">
           Tu firma se coloca <strong>automáticamente</strong> sobre el apartado del cliente, alineada con la de BusinessCool AI.
           Los archivos <strong>.key</strong> y <strong>.cer</strong> <strong>nunca se almacenan</strong> en el servidor.
         </p>
@@ -131,6 +133,9 @@
             <button type="submit" class="btn btn-primary">Firmar minuta</button>
           </div>
         </form>
+          </div>
+          <object class="firma-modal-pdf" data-pdf-src="/app/minutas/<%= m.id %>/ver-pdf" type="application/pdf" aria-label="Vista previa del documento"></object>
+        </div>
       </dialog>
     <% } else if (!m.archivo_path && m.contenido) { %>
       <dialog id="ver-<%= m.id %>" class="modal" style="width:min(720px,94vw)">

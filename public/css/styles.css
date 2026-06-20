@@ -314,6 +314,18 @@ dialog.modal h2 { margin-top: 0; }
 .modal-actions { display: flex; gap: 10px; margin-top: 18px; }
 .modal-actions .btn { margin-top: 0; }
 
+/* Modal de firma con vista previa del documento (form izq. + PDF der.) */
+dialog.firma-modal { width: min(1000px, 96vw); max-height: 94vh; overflow: auto; }
+.firma-modal-grid { display: grid; grid-template-columns: 320px 1fr; gap: 20px; align-items: stretch; }
+.firma-modal-pdf {
+  width: 100%; min-height: 64vh; border: none; display: block;
+  background: #525659; border-radius: 10px;
+}
+@media (max-width: 820px) {
+  .firma-modal-grid { grid-template-columns: 1fr; }
+  .firma-modal-pdf { min-height: 42vh; }
+}
+
 /* ---------- Listas y tablas ---------- */
 .list { list-style: none; padding: 0; margin: 12px 0 0; }
 .list li {
