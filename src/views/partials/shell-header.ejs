@@ -272,7 +272,7 @@
       <%
         var menuPages = ['inicio', 'proyectos', 'nosotros'];
         var hideProject = menuPages.indexOf(act) !== -1;   // sin "Proyecto:" en el menú superior
-        var brandOnly = act === 'nosotros';                // solo BusinessCool, centrado
+        var brandOnly = act === 'nosotros' || act === 'inicio'; // solo BusinessCool, centrado
       %>
       <% if (isClient && currentUser) { %>
         <% if (brandOnly) { %>
