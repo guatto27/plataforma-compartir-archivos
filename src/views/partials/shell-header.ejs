@@ -164,6 +164,18 @@
   <div class="shell-main">
     <header class="topbar-2">
       <div></div>
+      <% if (isClient && currentUser) { %>
+        <div class="topbar-logos" title="<%= brand.name %> · <%= currentUser.companyName || '' %>">
+          <img class="tb-logo" src="/static/img/logo-mark.png" alt="<%= brand.name %>" />
+          <span class="tb-logo-name"><%= brand.name %></span>
+          <span class="tb-div"></span>
+          <% if (currentUser.companyHasLogo) { %>
+            <img class="tb-logo" src="/app/empresa/logo" alt="<%= currentUser.companyName %>" />
+          <% } else if (currentUser.companyName) { %>
+            <span class="tb-comp-name"><%= currentUser.companyName %></span>
+          <% } %>
+        </div>
+      <% } %>
       <% if (currentUser) { %>
         <div class="topbar-actions">
           <button class="topbar-icon" type="button" data-dialog="dlg-info" title="Información" aria-label="Información">

@@ -888,3 +888,19 @@ body.has-sidebar { display: flex; min-height: 100vh; }
   display: inline-flex; align-items: center; justify-content: center;
 }
 .empresa-logo-ph { color: var(--bc-gold); font-weight: 800; font-size: 16px; }
+
+/* Logos en el centro de la barra (BusinessCool + empresa atendida) */
+.topbar-2 { position: relative; }
+.topbar-logos {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  display: flex; align-items: center; gap: 14px; pointer-events: none; white-space: nowrap;
+}
+.topbar-logos .tb-logo { height: 30px; width: auto; max-width: 140px; object-fit: contain; display: block; border-radius: 6px; }
+.topbar-logos .tb-logo-name {
+  font-weight: 800; font-size: 14px;
+  background: var(--bc-gradient); -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+}
+.topbar-logos .tb-div { width: 1px; height: 26px; background: var(--bc-border-2); }
+.topbar-logos .tb-comp-name { font-weight: 700; font-size: 15px; color: var(--bc-text); letter-spacing: .3px; }
+@media (max-width: 1150px) { .topbar-logos { display: none; } }

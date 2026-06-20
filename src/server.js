@@ -69,13 +69,20 @@ app.use(
 app.use((req, res, next) => {
   res.locals.brand = config.brand;
   if (req.session.userId) {
-    var u = db.prepare('SELECT display_name, company_name FROM users WHERE id = ?').get(req.session.userId);
+    var u = db.prepare('SELECT display_name, company_id, company_name FROM users WHERE id = ?').get(req.session.userId);
+    var companyHasLogo = false;
+    if (u && u.company_id) {
+      var c = db.prepare('SELECT logo_path FROM companies WHERE id = ?').get(u.company_id);
+      companyHasLogo = !!(c && c.logo_path);
+    }
     res.locals.currentUser = {
       id: req.session.userId,
       username: req.session.username,
       role: req.session.role,
       displayName: (u && u.display_name) || req.session.displayName || req.session.username,
       companyName: u ? u.company_name : null,
+      companyId: u ? u.company_id : null,
+      companyHasLogo: companyHasLogo,
     };
   } else {
     res.locals.currentUser = null;

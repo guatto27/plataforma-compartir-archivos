@@ -157,6 +157,20 @@ router.get('/entregables', (req, res) => {
   });
 });
 
+// Logo de la empresa del usuario (para el encabezado del portal)
+router.get('/empresa/logo', (req, res) => {
+  const me = db.prepare('SELECT company_id FROM users WHERE id = ?').get(req.session.userId);
+  if (!me || !me.company_id) return res.status(404).send('Sin logo');
+  const c = db.prepare('SELECT logo_path FROM companies WHERE id = ?').get(me.company_id);
+  if (!c || !c.logo_path) return res.status(404).send('Sin logo');
+  const path = require('path');
+  const fs   = require('fs');
+  const filePath = path.join(require('../config').uploadsDir, 'logos', c.logo_path);
+  if (!fs.existsSync(filePath)) return res.status(404).send('Logo no encontrado.');
+  res.setHeader('Cache-Control', 'private, max-age=120');
+  res.sendFile(filePath);
+});
+
 // Descargar archivo adjunto de una minuta publicada
 router.get('/minutas/:id/descargar', (req, res) => {
   if (req.session.role === 'client') return res.redirect('/app/agente');
