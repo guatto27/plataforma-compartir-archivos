@@ -8,6 +8,8 @@
     </div>
     <% if (!locals.readonly) { %>
       <button class="btn btn-primary" type="button" data-dialog="dlg-add-file">+ Agregar archivo</button>
+    <% } else { %>
+      <a class="btn btn-ghost" href="/app/agente">← Volver a Entrevistas</a>
     <% } %>
   </div>
 </div>
