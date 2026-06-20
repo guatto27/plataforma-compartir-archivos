@@ -672,14 +672,11 @@ body.has-sidebar { display: flex; min-height: 100vh; }
 .auth-logo-anim .ring { position: absolute; border-radius: 50%; pointer-events: none; animation-fill-mode: both; }
 .ring-1 { inset: 0; border: 2px dashed rgba(251,191,36,.45); animation: bcSpin 16s linear infinite, bcFadeIn .8s ease .6s both; }
 .ring-2 { inset: 30px; border: 1.5px solid rgba(217,119,6,.22); border-top-color: var(--bc-gold); animation: bcSpinR 9s linear infinite, bcFadeIn .8s ease .7s both; }
-.ring-dot { inset: 0; animation: bcSpin 7s linear infinite, bcFadeIn .8s ease .8s both; }
-.ring-dot::after {
-  content: ""; position: absolute; top: -5px; left: 50%; width: 9px; height: 9px; margin-left: -4.5px;
-  border-radius: 50%; background: var(--bc-gold); box-shadow: 0 0 12px 2px rgba(251,191,36,.8);
+/* Marca (wordmark) y tagline que suben en secuencia; el wordmark respira con un brillo dorado sutil */
+.auth-hero-wordmark {
+  display: block; width: min(270px, 66%); height: auto; margin-top: 24px;
+  animation: bcRise .8s ease both .85s, bcWordGlow 4s ease-in-out 1.7s infinite;
 }
-
-/* Marca (wordmark) y tagline que suben en secuencia */
-.auth-hero-wordmark { display: block; width: min(270px, 66%); height: auto; margin-top: 24px; animation: bcRise .8s ease both .85s; }
 .auth-hero-title { animation: bcRise .8s ease both .85s; }
 .auth-hero-tag   { animation: bcRise .8s ease both 1.05s; }
 .auth-form-box   { animation: bcRise .7s ease both .2s; }
@@ -698,6 +695,10 @@ body.has-sidebar { display: flex; min-height: 100vh; }
 @keyframes bcSpinR { to { transform: rotate(-360deg); } }
 @keyframes bcPulse { 0%, 100% { opacity: .55; transform: scale(.95); } 50% { opacity: 1; transform: scale(1.06); } }
 @keyframes bcDrift { from { transform: translate(-3%, -2%) rotate(0deg); } to { transform: translate(3%, 2%) rotate(8deg); } }
+@keyframes bcWordGlow {
+  0%, 100% { filter: drop-shadow(0 0 0 rgba(251,191,36,0)); }
+  50%      { filter: drop-shadow(0 0 13px rgba(251,191,36,.55)); }
+}
 
 /* ── Panel derecho (formulario) ── */
 .auth-form-panel { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 28px; }
@@ -720,8 +721,8 @@ body.has-sidebar { display: flex; min-height: 100vh; }
   .auth-foot { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .auth-logo-core, .auth-logo-img, .auth-logo-shine::before, .ring-1, .ring-2, .ring-dot,
-  .auth-hero-bg, .auth-logo-anim::before, .auth-hero-title, .auth-hero-tag, .auth-form-box { animation: none !important; }
+  .auth-logo-core, .auth-logo-img, .auth-logo-shine::before, .ring-1, .ring-2,
+  .auth-hero-bg, .auth-logo-anim::before, .auth-hero-wordmark, .auth-hero-tag, .auth-form-box { animation: none !important; }
 }
 
 /* ============================================================
