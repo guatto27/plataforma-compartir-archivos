@@ -929,5 +929,5 @@ body.has-sidebar { display: flex; min-height: 100vh; }
 }
 
 /* Indicadores de recursos cargados en la tabla de empresas */
-.empresa-flags { display: flex; gap: 10px; margin-top: 4px; flex-wrap: wrap; }
-.flag-ok { font-size: 11px; color: #3fb950; font-weight: 600; display: inline-flex; align-items: center; gap: 3px; }
+.table th.ta-center, .table td.ta-center { text-align: center; }
+.check-circle { width: 24px; height: 24px; vertical-align: middle; display: inline-block; }

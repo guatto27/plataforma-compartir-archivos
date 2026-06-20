@@ -20,7 +20,7 @@
     <div class="table-wrap">
       <table class="table">
         <thead>
-          <tr><th>Empresa</th><th>Proyecto</th><th>Contacto</th><th>Usuarios</th><% if (canManage) { %><th class="ta-actions">Acciones</th><% } %></tr>
+          <tr><th>Empresa</th><th>Proyecto</th><th class="ta-center">Logo</th><th class="ta-center">Nombre</th><th>Contacto</th><th>Usuarios</th><% if (canManage) { %><th class="ta-actions">Acciones</th><% } %></tr>
         </thead>
         <tbody>
           <% companies.forEach((c) => { %>
@@ -32,16 +32,13 @@
                   <% } else { %>
                     <span class="empresa-logo empresa-logo-ph"><%= (c.name || '?').charAt(0).toUpperCase() %></span>
                   <% } %>
-                  <span>
-                    <%= c.name %>
-                    <div class="empresa-flags">
-                      <% if (c.logo_path) { %><span class="flag-ok">✓ Logo</span><% } %>
-                      <% if (c.eslogan_path) { %><span class="flag-ok">✓ Nombre</span><% } %>
-                    </div>
-                  </span>
+                  <span><%= c.name %></span>
                 </div>
               </td>
               <td><%= c.project || '—' %></td>
+              <% var chkOk = '<svg class="check-circle" viewBox="0 0 24 24" fill="none" stroke="#3fb950" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.4l2.6 2.6 5-5.6"/></svg>'; %>
+              <td class="ta-center"><% if (c.logo_path) { %><%- chkOk %><% } else { %><span class="meta">—</span><% } %></td>
+              <td class="ta-center"><% if (c.eslogan_path) { %><%- chkOk %><% } else { %><span class="meta">—</span><% } %></td>
               <td><%= c.contact || '—' %></td>
               <td><%= c.user_count %></td>
               <% if (canManage) { %>
