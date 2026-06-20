@@ -1,0 +1,59 @@
+<%- include('../partials/shell-header') %>
+
+<div class="page-head">
+  <p class="muted" style="margin:0 0 2px"><%= brand.name %></p>
+  <h1>Inicio</h1>
+  <p class="muted">Resumen general de la plataforma: empresas, proyectos y actividad.</p>
+</div>
+
+<section class="card home-hero">
+  <h2>Panel de administración</h2>
+  <p>Desde aquí gestionas a los clientes de <%= brand.name %>: el levantamiento, los proyectos por empresa,
+     las minutas firmadas y los accesos de los usuarios.</p>
+</section>
+
+<div class="home-grid">
+  <a class="card home-stat home-link" href="/admin/empresas">
+    <span class="home-stat-label">Empresas</span>
+    <strong class="home-stat-value"><%= stats.empresas %></strong>
+    <span class="muted">Ver empresas →</span>
+  </a>
+  <a class="card home-stat home-link" href="/admin/proyectos">
+    <span class="home-stat-label">Proyectos</span>
+    <strong class="home-stat-value"><%= stats.proyectos %></strong>
+    <span class="muted">Ver proyectos →</span>
+  </a>
+  <a class="card home-stat home-link" href="/admin/minutas">
+    <span class="home-stat-label">Minutas publicadas</span>
+    <strong class="home-stat-value"><%= stats.minutas %></strong>
+    <span class="muted">Gestión de minutas →</span>
+  </a>
+  <a class="card home-stat home-link" href="/admin/usuarios">
+    <span class="home-stat-label">Usuarios cliente</span>
+    <strong class="home-stat-value"><%= stats.usuarios %></strong>
+    <span class="muted">Gestión de usuarios →</span>
+  </a>
+  <a class="card home-stat home-link" href="/admin">
+    <span class="home-stat-label">Entrevistas</span>
+    <strong class="home-stat-value"><%= stats.entrevistas %></strong>
+    <span class="muted">Ir al levantamiento →</span>
+  </a>
+  <a class="card home-stat home-link" href="/admin/archivos">
+    <span class="home-stat-label">Archivos</span>
+    <strong class="home-stat-value"><%= stats.archivos %></strong>
+    <span class="muted">Ver archivos →</span>
+  </a>
+</div>
+
+<section class="card">
+  <h2>Accesos directos</h2>
+  <div class="home-shortcuts">
+    <a class="btn btn-ghost" href="/admin/empresas">Empresas / Clientes</a>
+    <a class="btn btn-ghost" href="/admin/proyectos">Proyectos</a>
+    <a class="btn btn-ghost" href="/admin/minutas">Gestión de Minutas</a>
+    <a class="btn btn-ghost" href="/admin/usuarios">Gestión de Usuarios</a>
+    <a class="btn btn-ghost" href="/admin/nosotros">¿Quiénes somos?</a>
+  </div>
+</section>
+
+<%- include('../partials/shell-footer') %>

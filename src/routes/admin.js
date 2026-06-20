@@ -14,6 +14,7 @@ const { makeFileRouter } = require('./files');
 const { makeInterviewActionsRouter, getAccessibleInterview } = require('./interviews');
 const { sendWelcomeEmail } = require('../lib/mailer');
 const { removeLogoBackground } = require('../lib/logo-bg');
+const projectsLib = require('../lib/projects');
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const {
@@ -74,6 +75,41 @@ router.get('/', (req, res) => {
     .all();
 
   res.render('admin/interviews', { title: 'Entrevistas', active: 'entrevistas', interviews, clients: activeClients() });
+});
+
+// ───────── Menú superior del admin: Inicio · ¿Quiénes somos? · Proyectos ─────────
+
+// Inicio: resumen global de la plataforma
+router.get('/inicio', (req, res) => {
+  const n = (sql, ...p) => db.prepare(sql).get(...p).n;
+  const stats = {
+    empresas: n('SELECT COUNT(*) AS n FROM companies'),
+    proyectos: n('SELECT COUNT(*) AS n FROM projects'),
+    minutas: n('SELECT COUNT(*) AS n FROM minutas WHERE publicada = 1'),
+    usuarios: n("SELECT COUNT(*) AS n FROM users WHERE role IN ('client','cliente_responsable')"),
+    entrevistas: n('SELECT COUNT(*) AS n FROM interviews'),
+    archivos: n('SELECT COUNT(*) AS n FROM files'),
+  };
+  res.render('admin/inicio', { title: 'Inicio', active: 'inicio', stats });
+});
+
+// ¿Quiénes somos? (reusa el contenido informativo)
+router.get('/nosotros', (req, res) => {
+  res.render('client/nosotros', { title: '¿Quiénes somos?', active: 'nosotros', companyName: null });
+});
+
+// Proyectos: todos los proyectos de todas las empresas, con su avance
+router.get('/proyectos', (req, res) => {
+  const rows = db.prepare(
+    `SELECT p.id, p.name, p.status, p.company_id, c.name AS company_name
+     FROM projects p JOIN companies c ON c.id = p.company_id
+     ORDER BY c.name, p.created_at, p.id`
+  ).all().map((p) => {
+    const cnt = projectsLib.counts(p.id);
+    return { id: p.id, name: p.name, status: p.status, company: p.company_name,
+             files: cnt.files, minutas: cnt.minutas, interviews: cnt.interviews };
+  });
+  res.render('admin/proyectos', { title: 'Proyectos', active: 'proyectos', rows });
 });
 
 // Crear una entrevista (admin elige el usuario)

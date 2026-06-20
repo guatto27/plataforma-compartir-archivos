@@ -1,0 +1,42 @@
+<%- include('../partials/shell-header') %>
+
+<div class="page-head">
+  <h1>Proyectos</h1>
+  <p class="muted">Todos los proyectos de todas las empresas, con su estatus y actividad.</p>
+</div>
+
+<section class="card">
+  <% if (!rows || !rows.length) { %>
+    <p class="empty">Aún no hay proyectos. Crea uno desde Empresas → Editar empresa.</p>
+  <% } else { %>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Proyecto</th>
+            <th>Empresa</th>
+            <th class="ta-center">Estatus</th>
+            <th class="ta-center">Entregables</th>
+            <th class="ta-center">Minutas</th>
+            <th class="ta-center">Entrevistas</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% rows.forEach(function (r) { %>
+            <% var stCls = r.status === 'Finalizado' ? 'st-fin' : (r.status === 'En pausa' ? 'st-pau' : 'st-vig'); %>
+            <tr>
+              <td class="fname"><strong><%= r.name %></strong></td>
+              <td><%= r.company %></td>
+              <td class="ta-center"><span class="st-chip <%= stCls %>"><%= r.status %></span></td>
+              <td class="ta-center"><%= r.files %></td>
+              <td class="ta-center"><%= r.minutas %></td>
+              <td class="ta-center"><%= r.interviews %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</section>
+
+<%- include('../partials/shell-footer') %>
