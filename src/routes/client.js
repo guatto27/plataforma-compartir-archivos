@@ -105,12 +105,63 @@ const SAMPLE_MINUTA = {
   ],
 };
 
+// Contexto de la empresa del cliente responsable (datos + conteos reales, acotados a SU empresa)
+function companyContext(req) {
+  const me = db.prepare('SELECT company_id, company_name FROM users WHERE id = ?').get(req.session.userId);
+  let company = null;
+  if (me && me.company_id) {
+    company = db.prepare('SELECT id, name, project, project_status, contact, notes FROM companies WHERE id = ?').get(me.company_id);
+  }
+  const cid = me && me.company_id;
+  const cname = me && me.company_name;
+  const subq = cid ? 'SELECT id FROM users WHERE company_id = ? AND active = 1'
+                   : 'SELECT id FROM users WHERE company_name = ? AND active = 1';
+  const param = cid || cname;
+  const minutasCount = db.prepare(
+    'SELECT COUNT(*) AS n FROM minutas WHERE publicada = 1 AND (company_id = ? OR (company_id IS NULL AND company_name = ?))'
+  ).get(cid || -1, cname || '').n;
+  const filesCount = param ? db.prepare(`SELECT COUNT(*) AS n FROM files WHERE client_id IN (${subq})`).get(param).n : 0;
+  const interviewsCount = param ? db.prepare(`SELECT COUNT(*) AS n FROM interviews WHERE client_id IN (${subq})`).get(param).n : 0;
+  return {
+    company,
+    companyName: me ? me.company_name : null,
+    projectName: (company && company.project) || null,
+    projectStatus: (company && company.project_status) || 'Vigente',
+    minutasCount, filesCount, interviewsCount,
+    phases: PIPELINE,
+  };
+}
+
 // Mi proyecto (pipeline) — solo cliente_responsable; client va a entrevistas
 router.get('/', (req, res) => {
   if (req.session.role === 'client') return res.redirect('/app/agente');
   res.render('client/proyecto', {
     title: 'Mi proyecto', active: 'proyecto', companyName: companyOf(req),
     phase: PIPELINE[0],
+  });
+});
+
+// ───────── Menú superior (solo cliente_responsable): Inicio · Proyectos · Nosotros ─────────
+
+// Inicio — portada/dashboard del portal
+router.get('/inicio', (req, res) => {
+  if (req.session.role !== 'cliente_responsable') return res.redirect('/app/agente');
+  const ctx = companyContext(req);
+  res.render('client/inicio', Object.assign({ title: 'Inicio', active: 'inicio' }, ctx));
+});
+
+// Proyectos — listado de proyectos de SU empresa (avance y estatus)
+router.get('/proyectos', (req, res) => {
+  if (req.session.role !== 'cliente_responsable') return res.redirect('/app/agente');
+  const ctx = companyContext(req);
+  res.render('client/proyectos', Object.assign({ title: 'Proyectos', active: 'proyectos' }, ctx));
+});
+
+// Nosotros — quiénes somos
+router.get('/nosotros', (req, res) => {
+  if (req.session.role !== 'cliente_responsable') return res.redirect('/app/agente');
+  res.render('client/nosotros', {
+    title: 'Nosotros', active: 'nosotros', companyName: companyOf(req),
   });
 });
 

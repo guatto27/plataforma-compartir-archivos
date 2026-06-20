@@ -1,0 +1,74 @@
+<%- include('../partials/shell-header') %>
+
+<%
+  var stCls = projectStatus === 'Finalizado' ? 'st-fin' : (projectStatus === 'En pausa' ? 'st-pau' : 'st-vig');
+  // Avance estimado a partir de las fases (current = en curso)
+  var total = phases.length;
+  var doneCount = 0;
+  phases.forEach(function (p) { if (p.state === 'done') doneCount++; });
+  var hasCurrent = phases.some(function (p) { return p.state === 'current'; });
+  var pct = total ? Math.round(((doneCount + (hasCurrent ? 0.5 : 0)) / total) * 100) : 0;
+%>
+
+<div class="page-head">
+  <p class="muted" style="margin:0 0 2px"><%= companyName || brand.name %></p>
+  <h1>Proyectos</h1>
+  <p class="muted">Listado de proyectos de tu empresa con su estatus y avance. Aquí ves todo el panorama de lo que trabajamos contigo.</p>
+</div>
+
+<% if (!projectName) { %>
+  <section class="card">
+    <p class="empty">Aún no hay un proyecto asignado a tu empresa. En cuanto se registre, aparecerá aquí con su avance.</p>
+  </section>
+<% } else { %>
+
+  <section class="card project-card">
+    <div class="project-card-head">
+      <div>
+        <h2 style="margin:0"><%= projectName %></h2>
+        <p class="muted" style="margin:4px 0 0"><%= companyName %></p>
+      </div>
+      <span class="st-chip <%= stCls %>"><%= projectStatus %></span>
+    </div>
+
+    <div class="project-progress">
+      <div class="project-progress-top">
+        <span class="muted">Avance del proyecto</span>
+        <strong><%= pct %>%</strong>
+      </div>
+      <div class="progress-bar"><span style="width:<%= pct %>%"></span></div>
+    </div>
+
+    <div class="project-metrics">
+      <div><strong><%= filesCount %></strong><span class="muted">Entregables / archivos</span></div>
+      <div><strong><%= minutasCount %></strong><span class="muted">Minutas publicadas</span></div>
+      <div><strong><%= interviewsCount %></strong><span class="muted">Entrevistas</span></div>
+    </div>
+
+    <div class="home-shortcuts" style="margin-top:18px">
+      <a class="btn btn-ghost" href="/app">Ver pipeline</a>
+      <a class="btn btn-ghost" href="/app/entregables">Entregables</a>
+      <a class="btn btn-ghost" href="/app/minutas">Minutas</a>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Avance por fases</h2>
+    <div class="home-phases">
+      <% phases.forEach(function (ph, i) { %>
+        <div class="home-phase <%= ph.state %>">
+          <span class="home-phase-num"><%= i + 1 %></span>
+          <span class="ph-state <%= ph.state %>"><%= ph.label %></span>
+          <h3><%= ph.name %></h3>
+          <p class="muted"><%= ph.sub %></p>
+          <% if (ph.entregable) { %>
+            <p class="phase-entregable"><span class="muted">Entregable:</span> <%= ph.entregable %></p>
+          <% } %>
+        </div>
+      <% }) %>
+    </div>
+  </section>
+
+<% } %>
+
+<%- include('../partials/shell-footer') %>

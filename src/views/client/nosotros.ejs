@@ -1,0 +1,76 @@
+<%- include('../partials/shell-header') %>
+
+<div class="page-head">
+  <p class="muted" style="margin:0 0 2px"><%= brand.name %></p>
+  <h1>Quiénes somos</h1>
+  <p class="muted">Consultoría estratégica especializada en Inteligencia Artificial.</p>
+</div>
+
+<!-- NOTA: contenido editable. Ajusta estos textos con la información oficial de businesscool.ai -->
+
+<section class="card">
+  <h2>Sobre <%= brand.name %></h2>
+  <p>Somos una consultoría estratégica que ayuda a las organizaciones a aprovechar la Inteligencia Artificial
+     de forma práctica y rentable. Acompañamos a nuestros clientes desde el diagnóstico de su operación hasta
+     la implementación de soluciones a la medida, traduciendo la tecnología en resultados de negocio concretos.</p>
+  <p class="muted">No vendemos tecnología por moda: primero entendemos tu operación, detectamos dónde la IA genera
+     más valor y construimos soluciones que tu equipo realmente usa.</p>
+</section>
+
+<div class="about-grid">
+  <section class="card about-block">
+    <h3>Misión</h3>
+    <p>Impulsar la competitividad de las empresas integrando Inteligencia Artificial en sus procesos,
+       con soluciones claras, medibles y sostenibles en el tiempo.</p>
+  </section>
+  <section class="card about-block">
+    <h3>Visión</h3>
+    <p>Ser el aliado estratégico de referencia para la adopción de IA en las organizaciones,
+       reconocido por generar impacto real y duradero.</p>
+  </section>
+</div>
+
+<section class="card">
+  <h2>Nuestros valores</h2>
+  <ul class="about-values">
+    <li><strong>Transparencia.</strong> Cada avance, entregable y acuerdo queda documentado y verificable.</li>
+    <li><strong>Cercanía.</strong> Trabajamos hombro a hombro con tu equipo, en tu lenguaje y a tu ritmo.</li>
+    <li><strong>Resultados.</strong> Nos enfocamos en el impacto de negocio, no en la tecnología por sí misma.</li>
+    <li><strong>Rigor.</strong> Metodología clara por fases, con entregables formales en cada etapa.</li>
+  </ul>
+</section>
+
+<section class="card">
+  <h2>Qué hacemos</h2>
+  <p class="muted" style="margin-top:0">Acompañamos tu proyecto de IA en cuatro fases, cada una con un entregable formal.</p>
+  <div class="about-services">
+    <div class="about-service">
+      <span class="about-service-num">1</span>
+      <h3>Diagnóstico y Levantamiento</h3>
+      <p>Entendemos tu operación actual (As-Is), mapeamos procesos y detectamos las oportunidades de mejora con IA.</p>
+    </div>
+    <div class="about-service">
+      <span class="about-service-num">2</span>
+      <h3>Rediseño To-Be</h3>
+      <p>Diseñamos cómo debería operar tu organización con IA integrada: procesos optimizados y automatizables.</p>
+    </div>
+    <div class="about-service">
+      <span class="about-service-num">3</span>
+      <h3>Desarrollo a la medida</h3>
+      <p>Construimos y desplegamos la solución de IA, integrándola con tus sistemas y tu forma de trabajar.</p>
+    </div>
+    <div class="about-service">
+      <span class="about-service-num">4</span>
+      <h3>Implementación y cierre</h3>
+      <p>Realizamos pruebas, capacitamos a tu equipo y entregamos la solución lista para operar.</p>
+    </div>
+  </div>
+</section>
+
+<section class="card about-cta">
+  <h2>¿Hablamos?</h2>
+  <p class="muted" style="margin-top:0">Conoce más sobre nosotros y nuestros servicios en nuestro sitio.</p>
+  <a class="btn btn-primary" href="<%= brand.website %>" target="_blank" rel="noopener">Visitar <%= brand.website.replace(/^https?:\/\//, '') %></a>
+</section>
+
+<%- include('../partials/shell-footer') %>

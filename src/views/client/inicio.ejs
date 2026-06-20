@@ -1,0 +1,75 @@
+<%- include('../partials/shell-header') %>
+
+<%
+  var stCls = projectStatus === 'Finalizado' ? 'st-fin' : (projectStatus === 'En pausa' ? 'st-pau' : 'st-vig');
+%>
+
+<div class="page-head">
+  <p class="muted" style="margin:0 0 2px"><%= companyName || brand.name %></p>
+  <h1>Bienvenido a tu portal</h1>
+  <p class="muted">Tu espacio central para dar seguimiento al proyecto de transformación con Inteligencia Artificial junto a <%= brand.name %>.</p>
+</div>
+
+<!-- Objetivo de la plataforma -->
+<section class="card home-hero">
+  <h2>El objetivo de esta plataforma</h2>
+  <p>Acompañarte de principio a fin en tu proyecto de IA con total transparencia. Aquí encuentras, en un solo lugar
+     y de forma segura, <strong>todo lo necesario para llevar el proyecto a cabo</strong>: el avance por fases,
+     los entregables formales, las minutas firmadas de cada sesión y el levantamiento de información de tu operación.</p>
+  <p class="muted">Cada fase del proyecto concluye con un entregable formal, y cada acuerdo queda documentado en minutas
+     con validez verificable. Así tú y tu equipo siempre saben en qué punto va el proyecto y qué sigue.</p>
+</section>
+
+<!-- Estado del proyecto -->
+<div class="home-grid">
+  <div class="card home-stat">
+    <span class="home-stat-label">Proyecto</span>
+    <strong class="home-stat-value"><%= projectName || 'Por definir' %></strong>
+    <span class="st-chip <%= stCls %>" style="margin-top:8px"><%= projectStatus %></span>
+  </div>
+  <a class="card home-stat home-link" href="/app/entregables">
+    <span class="home-stat-label">Entregables / archivos</span>
+    <strong class="home-stat-value"><%= filesCount %></strong>
+    <span class="muted">Ver entregables →</span>
+  </a>
+  <a class="card home-stat home-link" href="/app/minutas">
+    <span class="home-stat-label">Minutas publicadas</span>
+    <strong class="home-stat-value"><%= minutasCount %></strong>
+    <span class="muted">Ver minutas →</span>
+  </a>
+  <a class="card home-stat home-link" href="/app/agente">
+    <span class="home-stat-label">Entrevistas de levantamiento</span>
+    <strong class="home-stat-value"><%= interviewsCount %></strong>
+    <span class="muted">Ir al levantamiento →</span>
+  </a>
+</div>
+
+<!-- Cómo trabajamos (metodología) -->
+<section class="card">
+  <h2>Cómo avanza tu proyecto</h2>
+  <p class="muted" style="margin-top:0">El proyecto se desarrolla en cuatro fases; cada una cierra con un entregable formal.</p>
+  <div class="home-phases">
+    <% phases.forEach(function (ph, i) { %>
+      <div class="home-phase <%= ph.state %>">
+        <span class="home-phase-num"><%= i + 1 %></span>
+        <span class="ph-state <%= ph.state %>"><%= ph.label %></span>
+        <h3><%= ph.name %></h3>
+        <p class="muted"><%= ph.sub %></p>
+      </div>
+    <% }) %>
+  </div>
+</section>
+
+<!-- Accesos directos -->
+<section class="card">
+  <h2>Accesos directos</h2>
+  <div class="home-shortcuts">
+    <a class="btn btn-ghost" href="/app/proyectos">Ver mis proyectos</a>
+    <a class="btn btn-ghost" href="/app">Pipeline del proyecto</a>
+    <a class="btn btn-ghost" href="/app/entregables">Entregables</a>
+    <a class="btn btn-ghost" href="/app/minutas">Minutas</a>
+    <a class="btn btn-ghost" href="/app/nosotros">Conócenos</a>
+  </div>
+</section>
+
+<%- include('../partials/shell-footer') %>

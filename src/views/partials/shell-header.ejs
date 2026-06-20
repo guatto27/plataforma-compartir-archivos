@@ -163,7 +163,15 @@
 
   <div class="shell-main">
     <header class="topbar-2">
-      <div></div>
+      <% if (role === 'cliente_responsable') { %>
+        <nav class="topnav">
+          <a href="/app/inicio" class="<%= act === 'inicio' ? 'active' : '' %>">Inicio</a>
+          <a href="/app/proyectos" class="<%= act === 'proyectos' ? 'active' : '' %>">Proyectos</a>
+          <a href="/app/nosotros" class="<%= act === 'nosotros' ? 'active' : '' %>">Nosotros</a>
+        </nav>
+      <% } else { %>
+        <div></div>
+      <% } %>
       <% if (currentUser) { %>
         <div class="topbar-actions">
           <button class="topbar-icon" type="button" data-dialog="dlg-info" title="Información" aria-label="Información">
