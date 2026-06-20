@@ -168,6 +168,12 @@ if (usersSql && usersSql.sql && !usersSql.sql.includes("'cliente_responsable'"))
   console.log('[migración] tabla users actualizada para admitir el rol "colaborador".');
 }
 
+// Migración: logo de la empresa
+const companyCols = db.prepare('PRAGMA table_info(companies)').all();
+if (!companyCols.some((c) => c.name === 'logo_path')) {
+  db.exec('ALTER TABLE companies ADD COLUMN logo_path TEXT');
+}
+
 // Migración: columnas de archivo adjunto y firma en minutas
 const minutaCols = db.prepare('PRAGMA table_info(minutas)').all();
 const minutaHas = (col) => minutaCols.some((c) => c.name === col);

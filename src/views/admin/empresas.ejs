@@ -25,7 +25,16 @@
         <tbody>
           <% companies.forEach((c) => { %>
             <tr>
-              <td class="fname"><%= c.name %><% if (c.notes) { %><div class="meta"><%= c.notes %></div><% } %></td>
+              <td class="fname">
+                <div style="display:flex;align-items:center;gap:12px">
+                  <% if (c.logo_path) { %>
+                    <img src="/admin/empresas/<%= c.id %>/logo" alt="<%= c.name %>" class="empresa-logo" />
+                  <% } else { %>
+                    <span class="empresa-logo empresa-logo-ph"><%= (c.name || '?').charAt(0).toUpperCase() %></span>
+                  <% } %>
+                  <span><%= c.name %><% if (c.notes) { %><div class="meta"><%= c.notes %></div><% } %></span>
+                </div>
+              </td>
               <td><%= c.contact || '—' %></td>
               <td><%= c.user_count %></td>
               <% if (canManage) { %>
@@ -53,7 +62,7 @@
 <% companies.forEach((c) => { %>
   <dialog id="dlg-edit-company-<%= c.id %>" class="modal" data-strict>
     <h2>Editar empresa</h2>
-    <form method="post" action="/admin/empresas/<%= c.id %>/edit">
+    <form method="post" action="/admin/empresas/<%= c.id %>/edit" enctype="multipart/form-data">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <label>Nombre de la empresa
         <input type="text" name="name" value="<%= c.name %>" required maxlength="160" />
@@ -63,6 +72,12 @@
       </label>
       <label>Notas (opcional)
         <input type="text" name="notes" value="<%= c.notes || '' %>" maxlength="500" />
+      </label>
+      <label>Logo de la empresa <%= c.logo_path ? '(reemplazar)' : '(opcional)' %>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:6px">
+          <% if (c.logo_path) { %><img src="/admin/empresas/<%= c.id %>/logo" alt="" class="empresa-logo" /><% } %>
+          <input type="file" name="logo" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif" />
+        </div>
       </label>
       <div class="modal-actions">
         <button class="btn btn-primary" type="submit">Guardar cambios</button>
@@ -74,7 +89,7 @@
 
 <dialog id="dlg-new-company" class="modal" data-strict>
   <h2>Nueva empresa</h2>
-  <form method="post" action="/admin/empresas">
+  <form method="post" action="/admin/empresas" enctype="multipart/form-data">
     <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
     <label>Nombre de la empresa
       <input type="text" name="name" required maxlength="160" placeholder="ej. ACME S.A. de C.V." />
@@ -84,6 +99,9 @@
     </label>
     <label>Notas (opcional)
       <input type="text" name="notes" maxlength="500" />
+    </label>
+    <label>Logo de la empresa (opcional)
+      <input type="file" name="logo" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif" style="margin-top:6px" />
     </label>
     <div class="modal-actions">
       <button class="btn btn-primary" type="submit">Registrar empresa</button>

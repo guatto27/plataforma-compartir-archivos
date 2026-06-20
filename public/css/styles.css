@@ -880,3 +880,11 @@ body.has-sidebar { display: flex; min-height: 100vh; }
 :root[data-theme="light"] .status-pct,
 :root[data-theme="light"] .stat.warn .stat-num { color: #a85f08; }
 :root[data-theme="light"] code { color: #a85f08; }
+
+/* Logo de empresa (miniatura en lista/formulario) */
+.empresa-logo {
+  width: 40px; height: 40px; border-radius: 9px; object-fit: contain;
+  background: var(--bc-surface-2); border: 1px solid var(--bc-border); flex: 0 0 40px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.empresa-logo-ph { color: var(--bc-gold); font-weight: 800; font-size: 16px; }
