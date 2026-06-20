@@ -10,106 +10,137 @@
 </div>
 
 <% if (minutas && minutas.length > 0) { %>
-  <% minutas.forEach(function (m) { %>
-    <section class="card minuta-summary" style="margin-bottom:20px">
-      <div class="head-row">
-        <div>
-          <h2 style="margin:0"><%= m.titulo %></h2>
-          <span class="meta"><%= m.fecha %></span>
-          <% if (m.firmada) { %><span class="st aprob" style="margin-left:8px">Firmada por BusinessCool AI</span><% } %>
-          <% if (m.firmada_cliente) { %><span class="st aprob" style="margin-left:6px">Firmada por el cliente</span><% } %>
-        </div>
-        <% if (m.archivo_path) { %>
-          <% const esPdf = m.archivo_path.toLowerCase().endsWith('.pdf'); %>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-            <% if (esPdf) { %>
-              <a href="/app/minutas/<%= m.id %>/ver-pdf" target="_blank" rel="noopener" class="btn btn-ghost" style="display:inline-flex;align-items:center;gap:6px">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                Visualizar
-              </a>
-            <% } %>
-            <a href="/app/minutas/<%= m.id %>/descargar" class="btn btn-ghost" style="display:inline-flex;align-items:center;gap:6px">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Descargar
-            </a>
-          </div>
-        <% } %>
-      </div>
-
-      <% if (m.firmada && m.firma_nombre) { %>
-        <div style="margin-top:12px;padding:10px 14px;background:var(--bc-surface-2,#f4f4f6);border-radius:8px;font-size:12px;color:var(--bc-muted)">
-          Firmado electrónicamente por <strong style="color:var(--bc-text)"><%= m.firma_nombre %></strong>
-          <% if (m.firma_fecha) { %> · <%= m.firma_fecha %><% } %>
-          <% if (m.firma_folio) { %><br>Folio BusinessCool AI: <code style="font-size:11px"><%= m.firma_folio %></code><% } %>
-        </div>
-      <% } %>
-
-      <% if (m.firmada_cliente && m.firma_cliente_nombre) { %>
-        <div style="margin-top:8px;padding:10px 14px;background:var(--bc-surface-2,#f4f4f6);border-radius:8px;font-size:12px;color:var(--bc-muted)">
-          Firmado por el cliente: <strong style="color:var(--bc-text)"><%= m.firma_cliente_nombre %></strong>
-          <% if (m.firma_cliente_fecha) { %> · <%= m.firma_cliente_fecha %><% } %>
-          <% if (m.firma_cliente_folio) { %><br>Folio cliente: <code style="font-size:11px"><%= m.firma_cliente_folio %></code><% } %>
-        </div>
-      <% } %>
-
-      <% if (m.contenido) { %>
-        <div class="minuta-preview" style="margin-top:14px"><%= m.contenido %></div>
-      <% } %>
-
-      <%
-        /* Mostrar opción de firma solo si: PDF adjunto, firmado por admin, y el cliente aún no firmó */
-        const puedeFirmar = m.archivo_path && m.archivo_path.toLowerCase().endsWith('.pdf')
-                            && m.firmada && !m.firmada_cliente;
-      %>
-      <% if (puedeFirmar) { %>
-        <details style="margin-top:14px">
-          <summary style="cursor:pointer;font-size:13px;font-weight:600;color:var(--bc-primary,#2563eb);padding:8px 0;list-style:none;display:flex;align-items:center;gap:6px">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            Firmar con mi e.firma (FIEL)
-          </summary>
-          <div style="margin-top:14px;padding:16px;background:var(--bc-surface-2,#f4f4f6);border-radius:10px">
-            <p style="margin:0 0 14px;font-size:13px;color:var(--bc-muted)">
-              Carga tu e.firma del SAT y firma. Tu firma se coloca <strong>automáticamente</strong> sobre el apartado del cliente, alineada con la de BusinessCool AI. Los archivos <strong>.key</strong> y <strong>.cer</strong> <strong>nunca se almacenan</strong> en el servidor.
-            </p>
-
-            <div class="minuta-firma-grid">
-            <form method="post" action="/app/minutas/<%= m.id %>/firmar" enctype="multipart/form-data" id="firma-cli-<%= m.id %>">
-              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-
-              <label style="display:block;margin-bottom:12px">
-                <span style="font-size:12px;font-weight:600;color:var(--bc-muted);display:block;margin-bottom:4px">Archivo .key — Llave privada</span>
-                <input type="file" name="key_file" accept=".key" required />
-              </label>
-
-              <label style="display:block;margin-bottom:12px">
-                <span style="font-size:12px;font-weight:600;color:var(--bc-muted);display:block;margin-bottom:4px">Archivo .cer — Certificado</span>
-                <input type="file" name="cer_file" accept=".cer" required />
-              </label>
-
-              <label style="display:block;margin-bottom:16px">
-                <span style="font-size:12px;font-weight:600;color:var(--bc-muted);display:block;margin-bottom:4px">Contraseña de e.firma</span>
-                <div class="pw-wrap">
-                  <input type="password" id="efirma-pw-<%= m.id %>" name="passphrase" required maxlength="100" placeholder="Contraseña del SAT" />
-                  <button type="button" class="pw-eye" aria-label="Mostrar" data-pw-toggle="efirma-pw-<%= m.id %>">
-                    <svg class="eye-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                    <svg class="eye-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                  </button>
+  <section class="card" style="overflow-x:auto">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Minuta</th>
+          <th>Fecha</th>
+          <th>Firmas</th>
+          <th class="ta-actions">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% minutas.forEach(function (m) { %>
+          <%
+            var esPdf = m.archivo_path && m.archivo_path.toLowerCase().endsWith('.pdf');
+            var puedeFirmar = esPdf && m.firmada && !m.firmada_cliente;
+          %>
+          <tr>
+            <td>
+              <strong><%= m.titulo %></strong>
+              <% if (m.formato) { %><div class="meta" style="font-size:11px"><%= m.formato %></div><% } %>
+            </td>
+            <td class="nowrap meta"><%= m.fecha %></td>
+            <td style="min-width:220px">
+              <!-- Firma BusinessCool AI -->
+              <% if (m.firmada) { %>
+                <div style="margin-bottom:8px">
+                  <span class="st aprob">BusinessCool AI ✓</span>
+                  <div class="meta" style="font-size:11px;margin-top:3px;line-height:1.5">
+                    <%= m.firma_nombre || '' %><% if (m.firma_fecha) { %> · <%= m.firma_fecha %><% } %>
+                    <% if (m.firma_folio) { %><br><span style="opacity:.8">Folio:</span> <code style="font-size:10px"><%= m.firma_folio %></code><% } %>
+                  </div>
                 </div>
-              </label>
+              <% } else { %>
+                <div style="margin-bottom:8px"><span class="st pend">Pendiente BusinessCool</span></div>
+              <% } %>
+              <!-- Firma del cliente -->
+              <% if (m.firmada_cliente) { %>
+                <div>
+                  <span class="st aprob">Cliente ✓</span>
+                  <div class="meta" style="font-size:11px;margin-top:3px;line-height:1.5">
+                    <%= m.firma_cliente_nombre || '' %><% if (m.firma_cliente_fecha) { %> · <%= m.firma_cliente_fecha %><% } %>
+                    <% if (m.firma_cliente_folio) { %><br><span style="opacity:.8">Folio:</span> <code style="font-size:10px"><%= m.firma_cliente_folio %></code><% } %>
+                  </div>
+                </div>
+              <% } else if (puedeFirmar) { %>
+                <div><span class="st rev">Pendiente de tu firma</span></div>
+              <% } %>
+            </td>
+            <td class="ta-actions">
+              <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
+                <% if (esPdf) { %>
+                  <a class="btn btn-ghost" href="/app/minutas/<%= m.id %>/ver-pdf" target="_blank" rel="noopener"
+                     style="padding:7px 12px;font-size:12px;margin:0;display:inline-flex;align-items:center;gap:5px">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    Visualizar
+                  </a>
+                <% } else if (m.contenido) { %>
+                  <button class="btn btn-ghost" data-dialog="ver-<%= m.id %>"
+                          style="padding:7px 12px;font-size:12px;margin:0">Ver contenido</button>
+                <% } %>
+                <% if (m.archivo_path) { %>
+                  <a class="btn btn-ghost" href="/app/minutas/<%= m.id %>/descargar"
+                     style="padding:7px 12px;font-size:12px;margin:0;display:inline-flex;align-items:center;gap:5px">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Descargar
+                  </a>
+                <% } %>
+                <% if (puedeFirmar) { %>
+                  <button class="btn btn-primary" data-dialog="firmar-<%= m.id %>"
+                          style="padding:7px 12px;font-size:12px;margin:0;display:inline-flex;align-items:center;gap:5px">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    Firmar
+                  </button>
+                <% } %>
+              </div>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </section>
 
-              <button class="btn btn-primary" type="submit" style="width:100%;justify-content:center">Firmar minuta con mi e.firma</button>
-            </form>
+  <!-- Modales: firmar / ver contenido -->
+  <% minutas.forEach(function (m) { %>
+    <% var puedeFirmar = m.archivo_path && m.archivo_path.toLowerCase().endsWith('.pdf') && m.firmada && !m.firmada_cliente; %>
+    <% if (puedeFirmar) { %>
+      <dialog id="firmar-<%= m.id %>" class="modal">
+        <h2>Firmar “<%= m.titulo %>”</h2>
+        <p class="muted" style="font-size:13px;margin-top:4px">
+          Tu firma se coloca <strong>automáticamente</strong> sobre el apartado del cliente, alineada con la de BusinessCool AI.
+          Los archivos <strong>.key</strong> y <strong>.cer</strong> <strong>nunca se almacenan</strong> en el servidor.
+        </p>
+        <form method="post" action="/app/minutas/<%= m.id %>/firmar" enctype="multipart/form-data">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
 
-            <section style="padding:0;overflow:hidden;border-radius:12px;background:#525659">
-              <object data="/app/minutas/<%= m.id %>/ver-pdf" type="application/pdf" style="width:100%;height:620px;border:none;display:block">
-                <embed src="/app/minutas/<%= m.id %>/ver-pdf" type="application/pdf" style="width:100%;height:620px;border:none;display:block" />
-              </object>
-            </section>
+          <label style="display:block;margin-bottom:12px">
+            <span style="font-size:12px;font-weight:600;color:var(--bc-muted);display:block;margin-bottom:4px">Archivo .key — Llave privada</span>
+            <input type="file" name="key_file" accept=".key" required />
+          </label>
+
+          <label style="display:block;margin-bottom:12px">
+            <span style="font-size:12px;font-weight:600;color:var(--bc-muted);display:block;margin-bottom:4px">Archivo .cer — Certificado</span>
+            <input type="file" name="cer_file" accept=".cer" required />
+          </label>
+
+          <label style="display:block;margin-bottom:4px">
+            <span style="font-size:12px;font-weight:600;color:var(--bc-muted);display:block;margin-bottom:4px">Contraseña de e.firma</span>
+            <div class="pw-wrap">
+              <input type="password" id="efirma-pw-<%= m.id %>" name="passphrase" required maxlength="100" placeholder="Contraseña del SAT" />
+              <button type="button" class="pw-eye" aria-label="Mostrar" data-pw-toggle="efirma-pw-<%= m.id %>">
+                <svg class="eye-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg class="eye-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              </button>
             </div>
+          </label>
+
+          <div class="modal-actions">
+            <button type="button" class="btn btn-ghost" data-close>Cancelar</button>
+            <button type="submit" class="btn btn-primary">Firmar minuta</button>
           </div>
-        </details>
-      <% } %>
-    </section>
+        </form>
+      </dialog>
+    <% } else if (!m.archivo_path && m.contenido) { %>
+      <dialog id="ver-<%= m.id %>" class="modal" style="width:min(720px,94vw)">
+        <h2><%= m.titulo %></h2>
+        <div class="minuta-preview" style="max-height:60vh;overflow:auto"><%= m.contenido %></div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" data-close>Cerrar</button>
+        </div>
+      </dialog>
+    <% } %>
   <% }) %>
 <% } else { %>
   <div class="empty-state">
