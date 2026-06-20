@@ -81,6 +81,12 @@ document.addEventListener('click', function (e) {
   if (hideSvg) hideSvg.style.display = isHidden ? '' : 'none';
 });
 
+// Selector que envía su formulario al cambiar (p. ej. selector de proyecto)
+document.addEventListener('change', function (e) {
+  var sel = e.target.closest('select[data-autosubmit]');
+  if (sel && sel.form) sel.form.submit();
+});
+
 // Toggle de paneles con radio buttons (data-toggle-target / data-toggle-group)
 document.addEventListener('change', function (e) {
   var radio = e.target.closest('input[type=radio][data-toggle-target]');

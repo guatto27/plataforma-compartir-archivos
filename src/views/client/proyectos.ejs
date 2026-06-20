@@ -1,15 +1,5 @@
 <%- include('../partials/shell-header') %>
 
-<%
-  var stCls = projectStatus === 'Finalizado' ? 'st-fin' : (projectStatus === 'En pausa' ? 'st-pau' : 'st-vig');
-  // Avance estimado a partir de las fases (current = en curso)
-  var total = phases.length;
-  var doneCount = 0;
-  phases.forEach(function (p) { if (p.state === 'done') doneCount++; });
-  var hasCurrent = phases.some(function (p) { return p.state === 'current'; });
-  var pct = total ? Math.round(((doneCount + (hasCurrent ? 0.5 : 0)) / total) * 100) : 0;
-%>
-
 <div class="page-head">
   <p class="muted" style="margin:0 0 2px"><%= companyName || brand.name %></p>
   <h1>Proyectos</h1>
@@ -17,8 +7,8 @@
 </div>
 
 <section class="card">
-  <% if (!projectName) { %>
-    <p class="empty">Aún no hay un proyecto asignado a tu empresa. En cuanto se registre, aparecerá aquí con su avance.</p>
+  <% if (!rows || !rows.length) { %>
+    <p class="empty">Aún no hay proyectos registrados para tu empresa. En cuanto se registren, aparecerán aquí con su avance.</p>
   <% } else { %>
     <div class="table-wrap">
       <table class="table">
@@ -34,27 +24,28 @@
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td class="fname">
-              <strong><%= projectName %></strong>
-              <span class="meta" style="display:block"><%= companyName %></span>
-            </td>
-            <td class="ta-center"><span class="st-chip <%= stCls %>"><%= projectStatus %></span></td>
-            <td class="ta-center"><%= filesCount %></td>
-            <td class="ta-center"><%= minutasCount %></td>
-            <td class="ta-center"><%= interviewsCount %></td>
-            <td>
-              <div class="table-progress">
-                <div class="progress-bar"><span style="width:<%= pct %>%"></span></div>
-                <span class="table-progress-pct"><%= pct %>%</span>
-              </div>
-            </td>
-            <td class="ta-actions">
-              <a class="btn btn-ghost btn-sm" href="/app">Ver pipeline</a>
-              <a class="btn btn-ghost btn-sm" href="/app/entregables">Entregables</a>
-              <a class="btn btn-ghost btn-sm" href="/app/minutas">Minutas</a>
-            </td>
-          </tr>
+          <% rows.forEach(function (r) { %>
+            <% var stCls = r.status === 'Finalizado' ? 'st-fin' : (r.status === 'En pausa' ? 'st-pau' : 'st-vig'); %>
+            <tr<%= activeProject && r.id === activeProject.id ? ' class="row-active"' : '' %>>
+              <td class="fname">
+                <strong><%= r.name %></strong>
+                <% if (activeProject && r.id === activeProject.id) { %><span class="meta" style="display:block">Proyecto en vista</span><% } %>
+              </td>
+              <td class="ta-center"><span class="st-chip <%= stCls %>"><%= r.status %></span></td>
+              <td class="ta-center"><%= r.files %></td>
+              <td class="ta-center"><%= r.minutas %></td>
+              <td class="ta-center"><%= r.interviews %></td>
+              <td>
+                <div class="table-progress">
+                  <div class="progress-bar"><span style="width:<%= r.pct %>%"></span></div>
+                  <span class="table-progress-pct"><%= r.pct %>%</span>
+                </div>
+              </td>
+              <td class="ta-actions">
+                <a class="btn btn-ghost btn-sm" href="/app/seleccionar?id=<%= r.id %>">Ver</a>
+              </td>
+            </tr>
+          <% }) %>
         </tbody>
       </table>
     </div>

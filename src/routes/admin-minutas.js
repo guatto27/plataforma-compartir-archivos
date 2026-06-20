@@ -55,9 +55,17 @@ router.get('/', (req, res) => {
 });
 
 // ── Nueva minuta ────────────────────────────────────────────────────────────
+function allProjects() {
+  return db.prepare(
+    `SELECT p.id, p.name, p.company_id, c.name AS company_name
+     FROM projects p JOIN companies c ON c.id = p.company_id
+     ORDER BY c.name, p.created_at, p.id`
+  ).all();
+}
+
 router.get('/nueva', (req, res) => {
   const empresas = db.prepare('SELECT id, name FROM companies ORDER BY name').all();
-  res.render('admin/minuta-form', { title: 'Nueva minuta', active: 'minutas', minuta: null, empresas, FORMATOS, error: null });
+  res.render('admin/minuta-form', { title: 'Nueva minuta', active: 'minutas', minuta: null, empresas, proyectos: allProjects(), FORMATOS, error: null });
 });
 
 router.post('/nueva', minutaUpload.single('archivo'), async (req, res) => {
@@ -67,21 +75,32 @@ router.post('/nueva', minutaUpload.single('archivo'), async (req, res) => {
     if (req.file) fs.unlink(req.file.path, () => {});
     const empresas = db.prepare('SELECT id, name FROM companies ORDER BY name').all();
     return res.status(400).render('admin/minuta-form', {
-      title: 'Nueva minuta', active: 'minutas', minuta: null, empresas, FORMATOS, error: 'Título y fecha son obligatorios.',
+      title: 'Nueva minuta', active: 'minutas', minuta: null, empresas, proyectos: allProjects(), FORMATOS, error: 'Título y fecha son obligatorios.',
     });
   }
-  const cName = company_id
+
+  // Multi-proyecto: si se eligió un proyecto, de él se derivan empresa y company_name
+  let projectId = parseInt(req.body.project_id, 10) || null;
+  let companyId = company_id || null;
+  let cName = company_id
     ? (db.prepare('SELECT name FROM companies WHERE id = ?').get(company_id) || {}).name || company_name
     : company_name;
+  if (projectId) {
+    const p = db.prepare(
+      'SELECT p.id, p.company_id, c.name AS company_name FROM projects p JOIN companies c ON c.id = p.company_id WHERE p.id = ?'
+    ).get(projectId);
+    if (p) { companyId = p.company_id; cName = p.company_name; }
+    else projectId = null;
+  }
 
   const archivoPath   = req.file ? req.file.filename : null;
   const archivoNombre = req.file ? req.file.originalname : null;
 
   const result = db.prepare(
-    `INSERT INTO minutas (titulo, fecha, company_id, company_name, formato, transcripcion, archivo_path, archivo_nombre, created_by)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(titulo, fecha, company_id || null, cName || null, formato || 'ejecutiva',
-        transcripcion || null, archivoPath, archivoNombre, req.session.userId);
+    `INSERT INTO minutas (titulo, fecha, company_id, company_name, formato, transcripcion, archivo_path, archivo_nombre, created_by, project_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(titulo, fecha, companyId || null, cName || null, formato || 'ejecutiva',
+        transcripcion || null, archivoPath, archivoNombre, req.session.userId, projectId);
   const id = result.lastInsertRowid;
   logAction(req.session.userId, 'minuta_created', titulo, req.ip);
 

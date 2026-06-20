@@ -93,8 +93,20 @@ app.use((req, res, next) => {
       companyProject: companyProject,
       companyEslogan: companyEslogan,
     };
+
+    // Selector de proyecto del sidebar (solo cliente responsable)
+    res.locals.sidebarProjects = [];
+    res.locals.activeProjectId = null;
+    if (req.session.role === 'cliente_responsable' && u && u.company_id) {
+      const projectsLib = require('./lib/projects');
+      const active = projectsLib.activeFor(req, u.company_id);
+      res.locals.sidebarProjects = projectsLib.listByCompany(u.company_id);
+      res.locals.activeProjectId = active ? active.id : null;
+    }
   } else {
     res.locals.currentUser = null;
+    res.locals.sidebarProjects = [];
+    res.locals.activeProjectId = null;
   }
   res.locals.flash = req.session.flash || null;
   delete req.session.flash;

@@ -4,6 +4,7 @@ const express = require('express');
 
 const config = require('../config');
 const { db, logAction } = require('../db');
+const projectsLib = require('../lib/projects');
 const { upload } = require('../lib/upload');
 const { makeFileRouter } = require('./files');
 const { makeInterviewActionsRouter, getAccessibleInterview } = require('./interviews');
@@ -105,32 +106,47 @@ const SAMPLE_MINUTA = {
   ],
 };
 
-// Contexto de la empresa del cliente responsable (datos + conteos reales, acotados a SU empresa)
-function companyContext(req) {
-  const me = db.prepare('SELECT company_id, company_name FROM users WHERE id = ?').get(req.session.userId);
-  let company = null;
-  if (me && me.company_id) {
-    company = db.prepare('SELECT id, name, project, project_status, contact, notes FROM companies WHERE id = ?').get(me.company_id);
-  }
-  const cid = me && me.company_id;
-  const cname = me && me.company_name;
-  const subq = cid ? 'SELECT id FROM users WHERE company_id = ? AND active = 1'
-                   : 'SELECT id FROM users WHERE company_name = ? AND active = 1';
-  const param = cid || cname;
-  const minutasCount = db.prepare(
-    'SELECT COUNT(*) AS n FROM minutas WHERE publicada = 1 AND (company_id = ? OR (company_id IS NULL AND company_name = ?))'
-  ).get(cid || -1, cname || '').n;
-  const filesCount = param ? db.prepare(`SELECT COUNT(*) AS n FROM files WHERE client_id IN (${subq})`).get(param).n : 0;
-  const interviewsCount = param ? db.prepare(`SELECT COUNT(*) AS n FROM interviews WHERE client_id IN (${subq})`).get(param).n : 0;
+// Empresa + proyecto activo del usuario
+function meCompany(req) {
+  return db.prepare('SELECT company_id, company_name FROM users WHERE id = ?').get(req.session.userId);
+}
+function activeProject(req) {
+  const me = meCompany(req);
+  return me && me.company_id ? projectsLib.activeFor(req, me.company_id) : null;
+}
+
+// Contexto del PROYECTO ACTIVO (conteos reales acotados al proyecto seleccionado)
+function projectContext(req) {
+  const me = meCompany(req);
+  const companyId = me && me.company_id;
+  const projects = projectsLib.listByCompany(companyId);
+  const active = projectsLib.activeFor(req, companyId);
+  const cnt = active ? projectsLib.counts(active.id) : { minutas: 0, files: 0, interviews: 0 };
   return {
-    company,
     companyName: me ? me.company_name : null,
-    projectName: (company && company.project) || null,
-    projectStatus: (company && company.project_status) || 'Vigente',
-    minutasCount, filesCount, interviewsCount,
+    projects,                                  // todos los proyectos de la empresa
+    activeProject: active,
+    projectName: active ? active.name : null,
+    projectStatus: active ? active.status : 'Vigente',
+    minutasCount: cnt.minutas,
+    filesCount: cnt.files,
+    interviewsCount: cnt.interviews,
     phases: PIPELINE,
   };
 }
+
+// Cambiar el proyecto activo (lo guarda en la sesión)
+router.get('/seleccionar', (req, res) => {
+  if (req.session.role !== 'cliente_responsable') return res.redirect('/app/agente');
+  const me = meCompany(req);
+  const id = parseInt(req.query.id, 10);
+  if (me && me.company_id && id) {
+    const ok = projectsLib.listByCompany(me.company_id).some((p) => p.id === id);
+    if (ok) req.session.activeProjectId = id;
+  }
+  const back = req.get('referer') || '/app/inicio';
+  res.redirect(back);
+});
 
 // Mi proyecto (pipeline) — solo cliente_responsable; client va a entrevistas
 router.get('/', (req, res) => {
@@ -143,18 +159,26 @@ router.get('/', (req, res) => {
 
 // ───────── Menú superior (solo cliente_responsable): Inicio · Proyectos · Nosotros ─────────
 
-// Inicio — portada/dashboard del portal
+// Inicio — portada/dashboard del portal (acotado al proyecto activo)
 router.get('/inicio', (req, res) => {
   if (req.session.role !== 'cliente_responsable') return res.redirect('/app/agente');
-  const ctx = companyContext(req);
+  const ctx = projectContext(req);
   res.render('client/inicio', Object.assign({ title: 'Inicio', active: 'inicio' }, ctx));
 });
 
-// Proyectos — listado de proyectos de SU empresa (avance y estatus)
+// Proyectos — listado de TODOS los proyectos de la empresa, cada uno con su avance
 router.get('/proyectos', (req, res) => {
   if (req.session.role !== 'cliente_responsable') return res.redirect('/app/agente');
-  const ctx = companyContext(req);
-  res.render('client/proyectos', Object.assign({ title: 'Proyectos', active: 'proyectos' }, ctx));
+  const ctx = projectContext(req);
+  const total = PIPELINE.length;
+  const done = PIPELINE.filter((p) => p.state === 'done').length;
+  const hasCurrent = PIPELINE.some((p) => p.state === 'current');
+  const pct = total ? Math.round(((done + (hasCurrent ? 0.5 : 0)) / total) * 100) : 0;
+  const rows = ctx.projects.map((p) => {
+    const c = projectsLib.counts(p.id);
+    return { id: p.id, name: p.name, status: p.status, files: c.files, minutas: c.minutas, interviews: c.interviews, pct };
+  });
+  res.render('client/proyectos', Object.assign({ title: 'Proyectos', active: 'proyectos', rows }, ctx));
 });
 
 // Nosotros — quiénes somos
@@ -270,17 +294,17 @@ router.get('/minutas/:id/ver-pdf', (req, res) => {
 // Minutas — solo cliente_responsable (lee minutas publicadas de su empresa)
 router.get('/minutas', (req, res) => {
   if (req.session.role === 'client') return res.redirect('/app/agente');
-  const me = db.prepare('SELECT company_id, company_name FROM users WHERE id = ?').get(req.session.userId);
-  const minutas = me
+  const active = activeProject(req);
+  const minutas = active
     ? db.prepare(
         `SELECT * FROM minutas
-         WHERE publicada = 1
-           AND (company_id = ? OR (company_id IS NULL AND company_name = ?))
+         WHERE publicada = 1 AND project_id = ?
          ORDER BY fecha DESC`
-      ).all(me.company_id || -1, me.company_name || '')
+      ).all(active.id)
     : [];
   res.render('client/minutas', {
     title: 'Minutas', active: 'minutas', companyName: companyOf(req), minutas,
+    projectName: active ? active.name : null,
   });
 });
 
@@ -335,20 +359,16 @@ router.post('/minutas/:id/firmar', memUploadClient.fields([{ name: 'key_file', m
 router.get('/agente', (req, res) => {
   let interviews;
   if (req.session.role === 'cliente_responsable') {
-    const me = db.prepare('SELECT company_id, company_name FROM users WHERE id = ?').get(req.session.userId);
-    const subq = me && me.company_id
-      ? 'SELECT id FROM users WHERE company_id = ? AND active = 1'
-      : 'SELECT id FROM users WHERE company_name = ? AND active = 1';
-    const param = me && (me.company_id || me.company_name);
-    interviews = param
+    const active = activeProject(req);
+    interviews = active
       ? db.prepare(
           `SELECT iv.*, u.display_name AS client_name,
                   (SELECT COUNT(*) FROM files f WHERE f.interview_id = iv.id) AS file_count
            FROM interviews iv
            LEFT JOIN users u ON u.id = iv.client_id
-           WHERE iv.client_id IN (${subq})
+           WHERE iv.project_id = ?
            ORDER BY iv.created_at DESC`
-        ).all(param)
+        ).all(active.id)
       : [];
   } else {
     interviews = db
@@ -367,12 +387,8 @@ router.get('/agente', (req, res) => {
 // Archivos de empresa (solo cliente_responsable — lee todos los archivos de su empresa)
 router.get('/archivos', (req, res) => {
   if (req.session.role !== 'cliente_responsable') return res.redirect('/app/agente');
-  const me = db.prepare('SELECT company_id, company_name FROM users WHERE id = ?').get(req.session.userId);
-  const subq = me && me.company_id
-    ? 'SELECT id FROM users WHERE company_id = ? AND active = 1'
-    : 'SELECT id FROM users WHERE company_name = ? AND active = 1';
-  const param = me && (me.company_id || me.company_name);
-  const files = param
+  const active = activeProject(req);
+  const files = active
     ? db.prepare(
         `SELECT f.*,
                 u.username AS owner_username, u.display_name AS owner_name, u.role AS owner_role,
@@ -381,9 +397,9 @@ router.get('/archivos', (req, res) => {
          FROM files f
          LEFT JOIN users u ON u.id = f.uploaded_by
          LEFT JOIN interviews iv ON iv.id = f.interview_id
-         WHERE f.client_id IN (${subq})
+         WHERE f.interview_id IN (SELECT id FROM interviews WHERE project_id = ?)
          ORDER BY f.created_at DESC`
-      ).all(param)
+      ).all(active.id)
     : [];
   res.render('client/archivos', {
     title: 'Archivos', active: 'archivos-empresa', companyName: companyOf(req),

@@ -20,7 +20,7 @@
     <div class="table-wrap">
       <table class="table">
         <thead>
-          <tr><th>Empresa</th><th>Proyecto</th><th class="ta-center">Logo</th><th class="ta-center">Nombre</th><th>Contacto</th><th class="ta-center">Usuarios</th><th>Estatus</th><% if (canManage) { %><th class="ta-actions">Acciones</th><% } %></tr>
+          <tr><th>Empresa</th><th>Proyectos</th><th class="ta-center">Logo</th><th class="ta-center">Nombre</th><th>Contacto</th><th class="ta-center">Usuarios</th><th class="ta-center"># Proy.</th><% if (canManage) { %><th class="ta-actions">Acciones</th><% } %></tr>
         </thead>
         <tbody>
           <% companies.forEach((c) => { %>
@@ -35,15 +35,20 @@
                   <span><%= c.name %></span>
                 </div>
               </td>
-              <td><%= c.project || '—' %></td>
+              <td>
+                <% var plist = projByCompany[c.id] || []; %>
+                <% if (plist.length) { %>
+                  <% plist.forEach(function (p) { var pc = p.status === 'Finalizado' ? 'st-fin' : (p.status === 'En pausa' ? 'st-pau' : 'st-vig'); %>
+                    <div class="proj-pill"><span><%= p.name %></span><span class="st-chip <%= pc %>"><%= p.status %></span></div>
+                  <% }) %>
+                <% } else { %><span class="meta">—</span><% } %>
+              </td>
               <% var chkOk = '<svg class="check-circle" viewBox="0 0 24 24" fill="none" stroke="#3fb950" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.4l2.6 2.6 5-5.6"/></svg>'; %>
               <td class="ta-center"><% if (c.logo_path) { %><%- chkOk %><% } else { %><span class="meta">—</span><% } %></td>
               <td class="ta-center"><% if (c.eslogan_path) { %><%- chkOk %><% } else { %><span class="meta">—</span><% } %></td>
               <td><%= c.contact || '—' %></td>
               <td class="ta-center"><%= c.user_count %></td>
-              <% var ps = c.project_status || 'Vigente';
-                 var psCls = ps === 'Finalizado' ? 'st-fin' : (ps === 'En pausa' ? 'st-pau' : 'st-vig'); %>
-              <td><span class="st-chip <%= psCls %>"><%= ps %></span></td>
+              <td class="ta-center"><%= c.project_count %></td>
               <% if (canManage) { %>
               <td class="ta-actions">
                 <button class="iconbtn" type="button" data-dialog="dlg-edit-company-<%= c.id %>" title="Editar" aria-label="Editar">
@@ -77,16 +82,6 @@
       <label>Contacto (opcional)
         <input type="text" name="contact" value="<%= c.contact || '' %>" maxlength="160" />
       </label>
-      <label>Proyecto (opcional)
-        <input type="text" name="project" value="<%= c.project || '' %>" maxlength="160" placeholder="ej. Validación de Franquicias" />
-      </label>
-      <label>Estatus del proyecto
-        <select name="project_status">
-          <% ['Vigente','En pausa','Finalizado'].forEach(function(s){ %>
-            <option value="<%= s %>" <%= (c.project_status || 'Vigente') === s ? 'selected' : '' %>><%= s %></option>
-          <% }) %>
-        </select>
-      </label>
       <label>Nombre de la empresa — imagen <%= c.eslogan_path ? '(reemplazar)' : '(opcional)' %>
         <span class="meta" style="font-weight:400;display:block;margin:2px 0 0">Versión del nombre como imagen (se le quita el fondo). Si no se sube, se usa el nombre de texto de arriba.</span>
         <div style="display:flex;align-items:center;gap:12px;margin-top:6px">
@@ -108,6 +103,41 @@
         <button class="btn btn-ghost" type="button" data-close>Cancelar</button>
       </div>
     </form>
+
+    <div class="proj-manager">
+      <h3>Proyectos de la empresa</h3>
+      <p class="meta">Cada proyecto tiene sus propias minutas, entregables y entrevistas. El cliente responsable los verá en su selector.</p>
+      <% (projByCompany[c.id] || []).forEach(function (p) { %>
+        <div class="proj-row">
+          <form method="post" action="/admin/proyectos/<%= p.id %>/edit" class="proj-edit">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <input type="text" name="name" value="<%= p.name %>" maxlength="160" aria-label="Nombre del proyecto" />
+            <select name="status" aria-label="Estatus">
+              <% ['Vigente','En pausa','Finalizado'].forEach(function (s) { %>
+                <option value="<%= s %>" <%= p.status === s ? 'selected' : '' %>><%= s %></option>
+              <% }) %>
+            </select>
+            <button class="btn btn-ghost btn-sm" type="submit">Guardar</button>
+          </form>
+          <form method="post" action="/admin/proyectos/<%= p.id %>/delete" class="inline" data-confirm="¿Eliminar el proyecto “<%= p.name %>”? (Solo si no tiene minutas/entrevistas.)">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <button class="iconbtn danger" type="submit" title="Eliminar proyecto" aria-label="Eliminar proyecto">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+          </form>
+        </div>
+      <% }) %>
+      <form method="post" action="/admin/empresas/<%= c.id %>/proyectos" class="proj-row proj-add">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <input type="text" name="name" placeholder="Nuevo proyecto…" maxlength="160" required />
+        <select name="status" aria-label="Estatus">
+          <option value="Vigente">Vigente</option>
+          <option value="En pausa">En pausa</option>
+          <option value="Finalizado">Finalizado</option>
+        </select>
+        <button class="btn btn-primary btn-sm" type="submit">Agregar</button>
+      </form>
+    </div>
   </dialog>
 <% }) %>
 

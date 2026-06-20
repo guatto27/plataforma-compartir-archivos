@@ -92,9 +92,19 @@ router.post('/interviews', (req, res) => {
     req.session.flash = { type: 'error', text: 'El nombre de la persona entrevistada es obligatorio.' };
     return res.redirect('/admin');
   }
+  // Multi-proyecto: asigna la entrevista al proyecto indicado, o al primer proyecto de la empresa
+  let projectId = parseInt(req.body.project_id, 10) || null;
+  if (projectId) {
+    const ok = db.prepare('SELECT id FROM projects WHERE id = ? AND company_id = ?').get(projectId, client.company_id);
+    if (!ok) projectId = null;
+  }
+  if (!projectId && client.company_id) {
+    const p = db.prepare('SELECT id FROM projects WHERE company_id = ? ORDER BY created_at, id LIMIT 1').get(client.company_id);
+    projectId = p ? p.id : null;
+  }
   db.prepare(
-    `INSERT INTO interviews (client_id, created_by, nombre, cargo, area) VALUES (?, ?, ?, ?, ?)`
-  ).run(client.id, req.session.userId, nombre, cargo, area);
+    `INSERT INTO interviews (client_id, created_by, nombre, cargo, area, project_id) VALUES (?, ?, ?, ?, ?, ?)`
+  ).run(client.id, req.session.userId, nombre, cargo, area, projectId);
   logAction(req.session.userId, 'interview_create', `${nombre} (${client.username})`, req.ip);
 
   req.session.flash = { type: 'success', text: 'Entrevista agregada.' };
@@ -237,11 +247,20 @@ router.get('/empresas', (req, res) => {
   const companies = db
     .prepare(
       `SELECT c.*,
-              (SELECT COUNT(*) FROM users u WHERE u.company_id = c.id AND u.role IN ('client', 'cliente_responsable')) AS user_count
+              (SELECT COUNT(*) FROM users u WHERE u.company_id = c.id AND u.role IN ('client', 'cliente_responsable')) AS user_count,
+              (SELECT COUNT(*) FROM projects p WHERE p.company_id = c.id) AS project_count
        FROM companies c ORDER BY c.created_at DESC`
     )
     .all();
-  res.render('admin/empresas', { title: 'Empresas', active: 'empresas', companies, canManage: req.session.role === 'admin' });
+  // Proyectos por empresa (para el gestor en el modal de edición)
+  const projByCompany = {};
+  db.prepare('SELECT id, company_id, name, status FROM projects ORDER BY created_at, id').all().forEach((p) => {
+    (projByCompany[p.company_id] = projByCompany[p.company_id] || []).push(p);
+  });
+  res.render('admin/empresas', {
+    title: 'Empresas', active: 'empresas', companies, projByCompany,
+    canManage: req.session.role === 'admin',
+  });
 });
 
 router.post('/empresas', requireAdmin, logoUpload, async (req, res) => {
@@ -263,7 +282,11 @@ router.post('/empresas', requireAdmin, logoUpload, async (req, res) => {
   const projectStatus = PROJECT_STATUSES.includes(req.body.project_status) ? req.body.project_status : 'Vigente';
   const logoPath = await processCompanyImage(logoFile);
   const esloPath = await processCompanyImage(esloFile);
-  db.prepare(`INSERT INTO companies (name, contact, notes, project, eslogan, project_status, logo_path, eslogan_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(name, contact, notes, project, eslogan, projectStatus, logoPath, esloPath);
+  const info = db.prepare(`INSERT INTO companies (name, contact, notes, project, eslogan, project_status, logo_path, eslogan_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(name, contact, notes, project, eslogan, projectStatus, logoPath, esloPath);
+  // Multi-proyecto: el proyecto indicado al crear la empresa se registra como su primer proyecto
+  if (project) {
+    db.prepare('INSERT INTO projects (company_id, name, status) VALUES (?, ?, ?)').run(info.lastInsertRowid, project, projectStatus);
+  }
   logAction(req.session.userId, 'company_create', name, req.ip);
   req.session.flash = { type: 'success', text: 'Empresa registrada.' };
   res.redirect('/admin/empresas');
@@ -305,6 +328,53 @@ router.post('/empresas/:id/edit', requireAdmin, logoUpload, async (req, res) => 
   db.prepare('UPDATE companies SET name = ?, contact = ?, notes = ?, project = ?, eslogan = ?, project_status = ?, logo_path = ?, eslogan_path = ? WHERE id = ?').run(name, contact, notes, project, eslogan, projectStatus, logoPath, esloPath, company.id);
   logAction(req.session.userId, 'company_edit', name, req.ip);
   req.session.flash = { type: 'success', text: 'Empresa actualizada.' };
+  res.redirect('/admin/empresas');
+});
+
+// ───────── Gestión de proyectos por empresa ─────────
+const PROJ_STATUSES = ['Vigente', 'En pausa', 'Finalizado'];
+
+router.post('/empresas/:id/proyectos', requireAdmin, (req, res) => {
+  if (!verifyCsrf(req)) return denyCsrf(res);
+  const company = db.prepare('SELECT id, name FROM companies WHERE id = ?').get(req.params.id);
+  if (!company) return res.status(404).render('error', { title: 'No encontrado', message: 'Empresa no encontrada.' });
+  const name = String(req.body.name || '').trim().slice(0, 160);
+  const status = PROJ_STATUSES.includes(req.body.status) ? req.body.status : 'Vigente';
+  if (!name) {
+    req.session.flash = { type: 'error', text: 'El nombre del proyecto es obligatorio.' };
+    return res.redirect('/admin/empresas');
+  }
+  db.prepare('INSERT INTO projects (company_id, name, status) VALUES (?, ?, ?)').run(company.id, name, status);
+  logAction(req.session.userId, 'project_create', `${company.name}: ${name}`, req.ip);
+  req.session.flash = { type: 'success', text: `Proyecto "${name}" agregado a ${company.name}.` };
+  res.redirect('/admin/empresas');
+});
+
+router.post('/proyectos/:id/edit', requireAdmin, (req, res) => {
+  if (!verifyCsrf(req)) return denyCsrf(res);
+  const proj = db.prepare('SELECT * FROM projects WHERE id = ?').get(req.params.id);
+  if (!proj) return res.status(404).render('error', { title: 'No encontrado', message: 'Proyecto no encontrado.' });
+  const name = String(req.body.name || '').trim().slice(0, 160) || proj.name;
+  const status = PROJ_STATUSES.includes(req.body.status) ? req.body.status : proj.status;
+  db.prepare('UPDATE projects SET name = ?, status = ? WHERE id = ?').run(name, status, proj.id);
+  logAction(req.session.userId, 'project_edit', name, req.ip);
+  req.session.flash = { type: 'success', text: 'Proyecto actualizado.' };
+  res.redirect('/admin/empresas');
+});
+
+router.post('/proyectos/:id/delete', requireAdmin, (req, res) => {
+  if (!verifyCsrf(req)) return denyCsrf(res);
+  const proj = db.prepare('SELECT * FROM projects WHERE id = ?').get(req.params.id);
+  if (!proj) return res.status(404).render('error', { title: 'No encontrado', message: 'Proyecto no encontrado.' });
+  const minutas = db.prepare('SELECT COUNT(*) AS n FROM minutas WHERE project_id = ?').get(proj.id).n;
+  const ivs = db.prepare('SELECT COUNT(*) AS n FROM interviews WHERE project_id = ?').get(proj.id).n;
+  if (minutas > 0 || ivs > 0) {
+    req.session.flash = { type: 'error', text: `No puedes eliminar "${proj.name}": tiene ${minutas} minuta(s) y ${ivs} entrevista(s) asociadas.` };
+    return res.redirect('/admin/empresas');
+  }
+  db.prepare('DELETE FROM projects WHERE id = ?').run(proj.id);
+  logAction(req.session.userId, 'project_delete', proj.name, req.ip);
+  req.session.flash = { type: 'success', text: `Proyecto "${proj.name}" eliminado.` };
   res.redirect('/admin/empresas');
 });
 

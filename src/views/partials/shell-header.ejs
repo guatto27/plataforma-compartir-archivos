@@ -39,6 +39,17 @@
         var caret = '<svg class="tree-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
         var f1Active = (act === 'proyecto' || act === 'agente' || act === 'entregables' || act === 'archivos-empresa');
       %>
+      <% if (typeof sidebarProjects !== 'undefined' && sidebarProjects && sidebarProjects.length) { %>
+        <div class="sidebar-section">Proyecto</div>
+        <form method="get" action="/app/seleccionar" class="sidebar-project">
+          <select name="id" data-autosubmit aria-label="Seleccionar proyecto">
+            <% sidebarProjects.forEach(function (p) { %>
+              <option value="<%= p.id %>" <%= p.id === activeProjectId ? 'selected' : '' %>><%= p.name %></option>
+            <% }) %>
+          </select>
+          <noscript><button type="submit" class="btn btn-ghost btn-sm">Ver</button></noscript>
+        </form>
+      <% } %>
       <div class="sidebar-section">Fases del proyecto</div>
       <nav class="sidebar-nav sidebar-tree">
 

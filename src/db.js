@@ -119,6 +119,15 @@ db.exec(`
     used INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
+
+  CREATE TABLE IF NOT EXISTS projects (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'Vigente',
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_projects_company ON projects(company_id);
 `);
 
 // Migración: relacionar archivos con una entrevista (columna añadida si no existe)
@@ -210,6 +219,37 @@ if (!minutaHas('firma_cliente_sello'))   db.exec('ALTER TABLE minutas ADD COLUMN
 if (!minutaHas('firma_cliente_cert'))    db.exec('ALTER TABLE minutas ADD COLUMN firma_cliente_cert TEXT');
 // Fila de firma detectada (JSON {page,y}) para alinear admin y cliente
 if (!minutaHas('firma_slots'))           db.exec('ALTER TABLE minutas ADD COLUMN firma_slots TEXT');
+// Multi-proyecto: a qué proyecto pertenece la minuta
+if (!minutaHas('project_id'))            db.exec('ALTER TABLE minutas ADD COLUMN project_id INTEGER');
+
+// Migración: a qué proyecto pertenece cada entrevista (los archivos heredan el proyecto vía su entrevista)
+const interviewCols = db.prepare('PRAGMA table_info(interviews)').all();
+if (!interviewCols.some((c) => c.name === 'project_id')) {
+  db.exec('ALTER TABLE interviews ADD COLUMN project_id INTEGER');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_interviews_project ON interviews(project_id)');
+}
+
+// Migración: a partir del campo de texto company.project (modelo de 1 proyecto por
+// empresa) creamos el primer registro real en la tabla projects y reasignamos las
+// minutas/entrevistas existentes de esa empresa a ese proyecto. Idempotente: solo
+// corre para empresas que aún no tienen ningún proyecto registrado.
+(function seedProjectsFromCompanies() {
+  const companies = db.prepare('SELECT id, project, project_status FROM companies').all();
+  const countFor = db.prepare('SELECT COUNT(*) AS n FROM projects WHERE company_id = ?');
+  const insertProj = db.prepare('INSERT INTO projects (company_id, name, status) VALUES (?, ?, ?)');
+  const tagMinutas = db.prepare('UPDATE minutas SET project_id = ? WHERE company_id = ? AND project_id IS NULL');
+  const tagInterviews = db.prepare(
+    'UPDATE interviews SET project_id = ? WHERE project_id IS NULL AND client_id IN (SELECT id FROM users WHERE company_id = ?)'
+  );
+  for (const c of companies) {
+    if (!c.project || !String(c.project).trim()) continue; // sin proyecto de texto → nada que migrar
+    if (countFor.get(c.id).n > 0) continue;                // ya tiene proyectos → no duplicar
+    const r = insertProj.run(c.id, String(c.project).trim(), c.project_status || 'Vigente');
+    const pid = r.lastInsertRowid;
+    tagMinutas.run(pid, c.id);
+    tagInterviews.run(pid, c.id);
+  }
+})();
 
 // Bootstrap: crea un administrador inicial desde variables de entorno si aún
 // no existe. Útil en despliegues (Hostinger, etc.) donde la BD arranca vacía.

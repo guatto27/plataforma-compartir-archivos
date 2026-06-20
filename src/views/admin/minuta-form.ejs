@@ -44,6 +44,22 @@
       </label>
     </div>
 
+    <!-- Proyecto: define a qué proyecto del cliente pertenece la minuta -->
+    <% var groupedProjects = {}; (typeof proyectos !== 'undefined' ? proyectos : []).forEach(function(p){ (groupedProjects[p.company_name] = groupedProjects[p.company_name] || []).push(p); }); %>
+    <label style="margin-top:16px;display:block">Proyecto
+      <span class="meta" style="font-weight:400;display:block;margin:2px 0 0">El cliente solo verá esta minuta dentro del proyecto elegido. (La empresa se toma del proyecto.)</span>
+      <select name="project_id" style="margin-top:6px">
+        <option value="">— Sin proyecto específico —</option>
+        <% Object.keys(groupedProjects).forEach(function(cn){ %>
+          <optgroup label="<%= cn %>">
+            <% groupedProjects[cn].forEach(function(p){ %>
+              <option value="<%= p.id %>" <%= minuta && minuta.project_id == p.id ? 'selected' : '' %>><%= p.name %></option>
+            <% }) %>
+          </optgroup>
+        <% }) %>
+      </select>
+    </label>
+
     <!-- Toggle: IA o Subir archivo -->
     <div style="margin-top:20px;margin-bottom:4px">
       <p style="font-size:13px;font-weight:600;margin:0 0 10px;color:var(--bc-text)">¿Cómo quieres agregar el contenido?</p>

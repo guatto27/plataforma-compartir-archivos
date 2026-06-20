@@ -465,6 +465,15 @@ body.has-sidebar { display: flex; height: 100vh; overflow: hidden; }
 .sidebar-nav a:hover .nav-icon,
 .sidebar-nav a.active .nav-icon { opacity: 1; }
 
+/* Selector de proyecto del sidebar */
+.sidebar-project { padding: 0 10px 4px; }
+.sidebar-project select {
+  width: 100%; padding: 8px 10px; border-radius: 8px; font-size: 13px; font-weight: 600;
+  background: var(--bc-surface-2); color: var(--bc-text); border: 1px solid var(--bc-border-2);
+  cursor: pointer; outline: none; box-sizing: border-box;
+}
+.sidebar-project select:focus { border-color: var(--bc-gold); }
+
 /* ───────── Árbol de fases plegable (cliente responsable) ───────── */
 .sidebar-tree { padding: 0 8px; gap: 1px; }
 .sidebar-tree details { margin: 0; }
@@ -1069,6 +1078,18 @@ mark.bc-hl { background: var(--bc-gold); color: #0b0b0d; border-radius: 2px; pad
 .project-metrics .muted { font-size: 12px; }
 /* Columna de avance (barra de progreso) en la tabla de proyectos */
 .th-progress { min-width: 180px; }
+.table tr.row-active { background: rgba(251,191,36,.06); }
+/* Gestor de proyectos por empresa (modal de admin) */
+.proj-manager { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--bc-border); }
+.proj-manager h3 { margin: 0 0 4px; font-size: 15px; }
+.proj-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.proj-row .proj-edit { display: flex; align-items: center; gap: 8px; flex: 1 1 auto; }
+.proj-row input[type="text"] { flex: 1 1 auto; min-width: 0; }
+.proj-row select { flex: 0 0 auto; }
+.proj-add { margin-top: 12px; }
+/* Lista de proyectos en la tabla de empresas */
+.proj-pill { display: flex; align-items: center; gap: 8px; margin: 2px 0; }
+.proj-pill span:first-child { font-weight: 500; }
 .table-progress { display: flex; align-items: center; gap: 10px; min-width: 150px; }
 .table-progress .progress-bar { flex: 1 1 auto; min-width: 70px; }
 .table-progress-pct { flex: 0 0 auto; font-weight: 700; font-size: 13px; white-space: nowrap; }
