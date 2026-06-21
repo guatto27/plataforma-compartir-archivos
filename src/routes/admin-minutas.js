@@ -180,24 +180,52 @@ function buildPrompt(m) {
 // Traduce errores de Gemini a un mensaje claro para el admin
 function geminiErrorMsg(err) {
   const msg = (err && err.message) || String(err);
-  if (/GEMINI_API_KEY/.test(msg)) return 'Falta configurar la API key de Gemini en el servidor.';
-  if (/429|quota|Too Many Requests/i.test(msg)) return 'La cuota de la API de Gemini está agotada (revisa el plan o la facturación en Google AI Studio).';
-  if (/API key not valid|API_KEY_INVALID|401|403|PERMISSION/i.test(msg)) return 'La API key de Gemini no es válida o no tiene permisos.';
-  if (/not found|404|is not supported/i.test(msg)) return 'El modelo de IA no está disponible para esta API key.';
+  if (/proveedor de IA configurado/.test(msg)) return 'No hay proveedor de IA configurado en el servidor.';
+  if (/429|quota|Too Many Requests|rate.?limit/i.test(msg)) return 'La cuota de la API de IA está agotada por ahora. Intenta de nuevo en un momento.';
+  if (/API key not valid|API_KEY_INVALID|invalid_api_key|401|403|PERMISSION/i.test(msg)) return 'La API key de IA no es válida o no tiene permisos.';
+  if (/not found|404|is not supported|model/i.test(msg)) return 'El modelo de IA no está disponible para esta API key.';
   return msg.slice(0, 160);
 }
 
-async function generarConGemini(id, m, req) {
+// IA con Groq (gratis, sin tarjeta) — API compatible con OpenAI
+async function callGroq(prompt) {
+  const apiKey = process.env.GROQ_API_KEY;
+  const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + apiKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.4,
+    }),
+  });
+  if (!resp.ok) {
+    const t = await resp.text().catch(() => '');
+    throw new Error('Groq ' + resp.status + ': ' + t.slice(0, 200));
+  }
+  const data = await resp.json();
+  return (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
+}
+
+// IA con Gemini (Google) — requiere cuota/facturación en la cuenta
+async function callGemini(prompt) {
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error('GEMINI_API_KEY no configurado en el servidor.');
   const { GoogleGenerativeAI } = require('@google/generative-ai');
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-  const prompt = buildPrompt(m) + `\n\nTRANSCRIPCIÓN / DESCRIPCIÓN DE LA REUNIÓN:\n${m.transcripcion}`;
+  const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || 'gemini-2.0-flash' });
   const result = await model.generateContent(prompt);
-  const contenido = result.response.text();
+  return result.response.text();
+}
+
+// Genera el contenido de la minuta con el proveedor de IA disponible (Groq primero, luego Gemini)
+async function generarConGemini(id, m, req) {
+  const prompt = buildPrompt(m) + `\n\nTRANSCRIPCIÓN / DESCRIPCIÓN DE LA REUNIÓN:\n${m.transcripcion}`;
+  let contenido, proveedor;
+  if (process.env.GROQ_API_KEY) { contenido = await callGroq(prompt); proveedor = 'groq'; }
+  else if (process.env.GEMINI_API_KEY) { contenido = await callGemini(prompt); proveedor = 'gemini'; }
+  else throw new Error('No hay proveedor de IA configurado (GROQ_API_KEY o GEMINI_API_KEY).');
   db.prepare('UPDATE minutas SET contenido = ? WHERE id = ?').run(contenido, id);
-  if (req && req.session) logAction(req.session.userId, 'minuta_generated_gemini', m.titulo, req.ip);
+  if (req && req.session) logAction(req.session.userId, 'minuta_generated_' + proveedor, m.titulo, req.ip);
   return contenido;
 }
 
