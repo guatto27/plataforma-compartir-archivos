@@ -278,8 +278,8 @@ router.post('/:id/publicar', (req, res) => {
   const m = db.prepare('SELECT * FROM minutas WHERE id = ?').get(req.params.id);
   if (!m) return res.redirect('/admin/minutas');
   db.prepare('UPDATE minutas SET publicada = ? WHERE id = ?').run(m.publicada ? 0 : 1, m.id);
-  req.session.flash = { type: 'success', text: m.publicada ? 'Minuta despublicada.' : 'Minuta publicada al cliente.' };
-  res.redirect(`/admin/minutas/${m.id}`);
+  req.session.flash = { type: 'success', text: m.publicada ? 'Envío retirado: el cliente ya no la verá.' : 'Minuta enviada al cliente responsable.' };
+  res.redirect('/admin/minutas');
 });
 
 // ── Eliminar minuta ────────────────────────────────────────────────────────
