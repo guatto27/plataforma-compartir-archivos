@@ -79,7 +79,7 @@ router.get('/', (req, res) => {
 
 // ───────── Menú superior del admin: Inicio · ¿Quiénes somos? · Proyectos ─────────
 
-// Inicio: resumen global de la plataforma
+// Inicio: panel de administración (métricas + estado + actividad reciente)
 router.get('/inicio', (req, res) => {
   const n = (sql, ...p) => db.prepare(sql).get(...p).n;
   const stats = {
@@ -90,7 +90,23 @@ router.get('/inicio', (req, res) => {
     entrevistas: n('SELECT COUNT(*) AS n FROM interviews'),
     archivos: n('SELECT COUNT(*) AS n FROM files'),
   };
-  res.render('admin/inicio', { title: 'Inicio', active: 'inicio', stats });
+  const byStatus = { Vigente: 0, 'En pausa': 0, Finalizado: 0 };
+  db.prepare('SELECT status, COUNT(*) AS n FROM projects GROUP BY status').all().forEach((r) => {
+    if (byStatus[r.status] !== undefined) byStatus[r.status] = r.n;
+  });
+  const recentMinutas = db.prepare(
+    `SELECT id, titulo, fecha, company_name, firmada, firmada_cliente, publicada
+     FROM minutas ORDER BY created_at DESC LIMIT 5`
+  ).all();
+  const recentCompanies = db.prepare(
+    `SELECT c.id, c.name, c.created_at,
+            (SELECT COUNT(*) FROM projects p WHERE p.company_id = c.id) AS project_count,
+            (SELECT COUNT(*) FROM users u WHERE u.company_id = c.id AND u.role IN ('client','cliente_responsable')) AS user_count
+     FROM companies c ORDER BY c.created_at DESC LIMIT 5`
+  ).all();
+  res.render('admin/inicio', {
+    title: 'Inicio', active: 'inicio', stats, byStatus, recentMinutas, recentCompanies,
+  });
 });
 
 // Proyectos: todos los proyectos de todas las empresas, con su avance

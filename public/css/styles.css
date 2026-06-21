@@ -1119,6 +1119,20 @@ mark.bc-hl { background: var(--bc-gold); color: #0b0b0d; border-radius: 2px; pad
 
 .home-shortcuts { display: flex; flex-wrap: wrap; gap: 10px; }
 
+/* Panel de administración */
+.admin-cols { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 16px; margin-bottom: 16px; }
+@media (max-width: 820px) { .admin-cols { grid-template-columns: 1fr; } }
+.status-rows { display: flex; flex-direction: column; gap: 10px; }
+.status-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bc-surface-2); border-radius: 10px; }
+.status-row strong { font-size: 20px; }
+.mini-list { list-style: none; padding: 0; margin: 6px 0 0; }
+.mini-list li { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2px 12px; padding: 10px 0; border-top: 1px solid var(--bc-border); }
+.mini-list li:first-child { border-top: none; }
+.mini-list .mini-title { font-weight: 600; color: var(--bc-text); }
+.mini-list .mini-title:hover { color: var(--bc-gold); }
+.mini-list .mini-sub { grid-column: 1; font-size: 12px; color: var(--bc-muted); }
+.mini-list .st-chip { grid-column: 2; grid-row: 1 / 3; align-self: center; }
+
 /* ───────── Proyectos ───────── */
 .project-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .project-progress { margin: 18px 0 6px; }
