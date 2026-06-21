@@ -115,7 +115,14 @@ router.post('/nueva', minutaUpload.single('archivo'), async (req, res) => {
   logAction(req.session.userId, 'minuta_created', titulo, req.ip);
 
   if (accion === 'generar' && transcripcion && transcripcion.trim()) {
-    await generarConGemini(id, { titulo, fecha, company_name: cName, formato: formato || 'ejecutiva', transcripcion }, req);
+    try {
+      await generarConGemini(id, { titulo, fecha, company_name: cName, formato: formato || 'ejecutiva', transcripcion }, req);
+      req.session.flash = { type: 'success', text: 'Minuta creada y generada con IA correctamente.' };
+    } catch (err) {
+      req.session.flash = { type: 'error', text: 'La minuta se creó, pero no se pudo generar con IA: ' + geminiErrorMsg(err) + ' Puedes reintentar desde la minuta.' };
+    }
+  } else {
+    req.session.flash = { type: 'success', text: 'Minuta creada.' };
   }
   res.redirect(`/admin/minutas/${id}`);
 });
@@ -170,6 +177,16 @@ function buildPrompt(m) {
   return prompts[m.formato] || prompts.ejecutiva;
 }
 
+// Traduce errores de Gemini a un mensaje claro para el admin
+function geminiErrorMsg(err) {
+  const msg = (err && err.message) || String(err);
+  if (/GEMINI_API_KEY/.test(msg)) return 'Falta configurar la API key de Gemini en el servidor.';
+  if (/429|quota|Too Many Requests/i.test(msg)) return 'La cuota de la API de Gemini está agotada (revisa el plan o la facturación en Google AI Studio).';
+  if (/API key not valid|API_KEY_INVALID|401|403|PERMISSION/i.test(msg)) return 'La API key de Gemini no es válida o no tiene permisos.';
+  if (/not found|404|is not supported/i.test(msg)) return 'El modelo de IA no está disponible para esta API key.';
+  return msg.slice(0, 160);
+}
+
 async function generarConGemini(id, m, req) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error('GEMINI_API_KEY no configurado en el servidor.');
@@ -199,7 +216,7 @@ router.post('/:id/generar', async (req, res) => {
     await generarConGemini(m.id, m, req);
     req.session.flash = { type: 'success', text: 'Minuta generada con Gemini correctamente.' };
   } catch (err) {
-    req.session.flash = { type: 'error', text: 'Error al generar: ' + err.message };
+    req.session.flash = { type: 'error', text: 'No se pudo generar con IA: ' + geminiErrorMsg(err) };
   }
   res.redirect(`/admin/minutas/${m.id}`);
 });
