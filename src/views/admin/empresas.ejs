@@ -133,7 +133,7 @@
   </dialog>
 <% }) %>
 
-<dialog id="dlg-new-company" class="modal" data-strict>
+<dialog id="dlg-new-company" class="modal" data-strict <%= (typeof openNew !== 'undefined' && openNew) ? 'data-autoopen' : '' %>>
   <h2>Nueva empresa</h2>
   <form method="post" action="/admin/empresas" enctype="multipart/form-data">
     <input type="hidden" name="_csrf" value="<%= csrfToken %>" />

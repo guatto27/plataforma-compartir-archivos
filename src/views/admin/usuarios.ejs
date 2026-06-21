@@ -114,7 +114,7 @@
     </dialog>
   <% }) %>
 
-  <dialog id="dlg-new-user" class="modal" data-strict>
+  <dialog id="dlg-new-user" class="modal" data-strict <%= (typeof openNew !== 'undefined' && openNew) ? 'data-autoopen' : '' %>>
     <h2>Nuevo usuario</h2>
     <form method="post" action="/admin/usuarios" autocomplete="off">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />

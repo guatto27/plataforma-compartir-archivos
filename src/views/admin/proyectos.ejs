@@ -63,7 +63,7 @@
 
 <% if (canManage) { %>
   <!-- Alta de proyecto -->
-  <dialog id="dlg-new-project" class="modal" data-strict>
+  <dialog id="dlg-new-project" class="modal" data-strict <%= (typeof openNew !== 'undefined' && openNew) ? 'data-autoopen' : '' %>>
     <h2>Nuevo proyecto</h2>
     <form method="post" action="/admin/proyectos">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />

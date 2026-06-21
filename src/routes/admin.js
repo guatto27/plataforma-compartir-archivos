@@ -92,6 +92,7 @@ router.get('/', (req, res) => {
 
   res.render('admin/interviews', {
     title: 'Entrevistas', active: 'entrevistas', interviews, clients: activeClients(), projectFilter: proj,
+    openNew: !!req.query.nuevo,
   });
 });
 
@@ -142,6 +143,7 @@ router.get('/proyectos', (req, res) => {
     title: 'Proyectos', active: 'proyectos', rows,
     companies: activeCompanies(), PROJ_STATUSES,
     canManage: req.session.role === 'admin',
+    openNew: !!req.query.nuevo,
   });
 });
 
@@ -334,6 +336,7 @@ router.get('/empresas', (req, res) => {
   res.render('admin/empresas', {
     title: 'Empresas', active: 'empresas', companies, projByCompany,
     canManage: req.session.role === 'admin',
+    openNew: !!req.query.nuevo,
   });
 });
 
@@ -531,6 +534,7 @@ router.get('/usuarios', (req, res) => {
     summary,
     newCredentials,
     canManage: req.session.role === 'admin',
+    openNew: !!req.query.nuevo,
   });
 });
 
