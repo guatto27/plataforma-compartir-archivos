@@ -28,6 +28,16 @@
   </div>
 </div>
 
+<% if (typeof generando !== 'undefined' && generando) { %>
+  <div class="flash flash-success" data-autorefresh="6" style="display:flex;align-items:center;gap:10px">
+    <span class="ia-spinner" aria-hidden="true"></span>
+    <span>Generando la minuta con IA… puede tardar 1–2&nbsp;min en reuniones largas. Esta página se actualiza sola; no la cierres.</span>
+  </div>
+<% } %>
+<% if (typeof errorIA !== 'undefined' && errorIA) { %>
+  <div class="flash flash-error">No se pudo generar con IA: <%= errorIA %> — puedes reintentar con «Generar minuta con IA».</div>
+<% } %>
+
 <% const isPdf = m.archivo_path && m.archivo_path.toLowerCase().match(/\.pdf$/); %>
 
 <% if (isPdf) { %>
@@ -170,7 +180,9 @@
             <button class="btn btn-ghost" type="submit">Guardar</button>
           </div>
         </form>
-        <% if (!m.firmada) { %>
+        <% if (typeof generando !== 'undefined' && generando) { %>
+          <p class="muted" style="margin-top:10px;display:flex;align-items:center;gap:8px"><span class="ia-spinner" aria-hidden="true"></span> Generando con IA…</p>
+        <% } else if (!m.firmada) { %>
           <form method="post" action="/admin/minutas/<%= m.id %>/generar" style="margin-top:10px">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
             <button class="btn btn-primary" type="submit">✨ Generar minuta con IA</button>

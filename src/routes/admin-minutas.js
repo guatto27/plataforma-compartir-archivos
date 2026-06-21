@@ -115,12 +115,8 @@ router.post('/nueva', minutaUpload.single('archivo'), async (req, res) => {
   logAction(req.session.userId, 'minuta_created', titulo, req.ip);
 
   if (accion === 'generar' && transcripcion && transcripcion.trim()) {
-    try {
-      await generarConGemini(id, { titulo, fecha, company_name: cName, formato: formato || 'ejecutiva', transcripcion }, req);
-      req.session.flash = { type: 'success', text: 'Minuta creada y generada con IA correctamente.' };
-    } catch (err) {
-      req.session.flash = { type: 'error', text: 'La minuta se creó, pero no se pudo generar con IA: ' + geminiErrorMsg(err) + ' Puedes reintentar desde la minuta.' };
-    }
+    lanzarGeneracionIA(id, { titulo, fecha, company_name: cName, formato: formato || 'ejecutiva', transcripcion }, req.session.userId, req.ip);
+    req.session.flash = { type: 'success', text: 'Minuta creada. Generando con IA… puede tardar 1–2 min en reuniones largas; la página se actualiza sola.' };
   } else {
     req.session.flash = { type: 'success', text: 'Minuta creada.' };
   }
@@ -141,7 +137,10 @@ router.get('/:id', (req, res) => {
   const m = db.prepare('SELECT * FROM minutas WHERE id = ?').get(req.params.id);
   if (!m) return res.status(404).render('error', { title: 'No encontrado', message: 'Minuta no encontrada.' });
   const fmtObj = FORMATOS.find(f => f.id === m.formato) || FORMATOS[0];
-  res.render('admin/minuta-detalle', { title: m.titulo, active: 'minutas', m, fmtObj, FORMATOS, error: null, success: null });
+  const generando = iaEnCurso.has(Number(m.id));
+  const errorIA = iaError.get(Number(m.id)) || null;
+  if (errorIA) iaError.delete(Number(m.id));
+  res.render('admin/minuta-detalle', { title: m.titulo, active: 'minutas', m, fmtObj, FORMATOS, error: null, success: null, generando, errorIA });
 });
 
 // ── Guardar transcripción / contenido ──────────────────────────────────────
@@ -153,6 +152,21 @@ router.post('/:id/guardar', (req, res) => {
   req.session.flash = { type: 'success', text: 'Guardado correctamente.' };
   res.redirect(`/admin/minutas/${req.params.id}`);
 });
+
+// Estado en memoria de generaciones de IA en curso y último error por minuta
+const iaEnCurso = new Set();
+const iaError = new Map();
+
+// Lanza la generación con IA en segundo plano: la petición HTTP responde de inmediato
+function lanzarGeneracionIA(id, m, userId, ip) {
+  id = Number(id);
+  if (iaEnCurso.has(id)) return;
+  iaEnCurso.add(id);
+  iaError.delete(id);
+  generarConGemini(id, m, { session: { userId }, ip })
+    .catch((err) => { iaError.set(id, geminiErrorMsg(err)); console.error('[IA] minuta', id, '-', err && err.message); })
+    .finally(() => iaEnCurso.delete(id));
+}
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 function buildPrompt(m) {
@@ -177,34 +191,103 @@ function buildPrompt(m) {
   return prompts[m.formato] || prompts.ejecutiva;
 }
 
-// Traduce errores de Gemini a un mensaje claro para el admin
+// Traduce errores de IA a un mensaje claro para el admin
 function geminiErrorMsg(err) {
   const msg = (err && err.message) || String(err);
   if (/proveedor de IA configurado/.test(msg)) return 'No hay proveedor de IA configurado en el servidor.';
-  if (/429|quota|Too Many Requests|rate.?limit/i.test(msg)) return 'La cuota de la API de IA está agotada por ahora. Intenta de nuevo en un momento.';
+  if (/413|Request too large|tokens per minute|TPM/i.test(msg)) return 'La transcripción es muy larga para el plan gratuito. Intenta de nuevo (se procesa por partes) o reduce un poco el texto.';
+  if (/429|quota|Too Many Requests|rate.?limit/i.test(msg)) return 'El servicio de IA está saturado por el límite por minuto. Espera un momento y reintenta.';
   if (/API key not valid|API_KEY_INVALID|invalid_api_key|401|403|PERMISSION/i.test(msg)) return 'La API key de IA no es válida o no tiene permisos.';
-  if (/not found|404|is not supported|model/i.test(msg)) return 'El modelo de IA no está disponible para esta API key.';
-  return msg.slice(0, 160);
+  if (/not found|404|is not supported|model_not_found|decommissioned/i.test(msg)) return 'El modelo de IA configurado no está disponible.';
+  return msg.slice(0, 180);
 }
 
-// IA con Groq (gratis, sin tarjeta) — API compatible con OpenAI
-async function callGroq(prompt) {
-  const apiKey = process.env.GROQ_API_KEY;
-  const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Authorization': 'Bearer ' + apiKey, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.4,
-    }),
-  });
-  if (!resp.ok) {
-    const t = await resp.text().catch(() => '');
-    throw new Error('Groq ' + resp.status + ': ' + t.slice(0, 200));
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// Quita marcas de tiempo y líneas vacías de una transcripción para ahorrar tokens
+function cleanTranscript(t) {
+  return String(t || '')
+    // Líneas con rango de tiempo "HH:MM:SS <sep> HH:MM:SS" (cualquier separador)
+    .replace(/^\s*\d{1,2}:\d{2}(?::\d{2})?\s*[^\w\n]{0,3}\s*\d{1,2}:\d{2}(?::\d{2})?\s*$/gm, '')
+    // Líneas con un solo tiempo "[HH:MM:SS]"
+    .replace(/^\s*\[?\d{1,2}:\d{2}(?::\d{2})?\]?\s*$/gm, '')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+// Divide un texto en trozos de ~maxChars, cortando en saltos de línea cuando se puede
+function chunkText(t, maxChars) {
+  const chunks = [];
+  let i = 0;
+  while (i < t.length) {
+    let end = Math.min(i + maxChars, t.length);
+    if (end < t.length) {
+      const nl = t.lastIndexOf('\n', end);
+      if (nl > i + maxChars * 0.5) end = nl;
+    }
+    chunks.push(t.slice(i, end).trim());
+    i = end;
   }
-  const data = await resp.json();
-  return (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
+  return chunks.filter(Boolean);
+}
+
+// Llama a Groq (API compatible con OpenAI) con reintentos ante el límite por minuto (429)
+async function groqChat(prompt, maxTokens) {
+  const apiKey = process.env.GROQ_API_KEY;
+  const model = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + apiKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.4,
+        max_tokens: maxTokens || 2500,
+      }),
+    });
+    if (resp.status === 429 && attempt < 5) {
+      const ra = parseFloat(resp.headers.get('retry-after') || '');
+      await sleep((Number.isFinite(ra) ? ra + 1 : 6) * 1000);
+      continue;
+    }
+    if (!resp.ok) {
+      const t = await resp.text().catch(() => '');
+      throw new Error('Groq ' + resp.status + ': ' + t.slice(0, 200));
+    }
+    const data = await resp.json();
+    return (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
+  }
+}
+
+// Genera la minuta con Groq. Si la transcripción es muy larga, la procesa por partes (map-reduce).
+async function generarConGroq(m) {
+  const clean = cleanTranscript(m.transcripcion);
+  const SINGLE_LIMIT = 34000;  // ~8.5k tokens: cabe en una sola petición (límite 12k TPM)
+  const CHUNK_SIZE = 24000;    // ~6k tokens por parte
+  if (clean.length <= SINGLE_LIMIT) {
+    return await groqChat(buildPrompt(m) + `\n\nTRANSCRIPCIÓN / DESCRIPCIÓN DE LA REUNIÓN:\n${clean}`, 2500);
+  }
+  // map: extraer puntos clave de cada parte
+  const chunks = chunkText(clean, CHUNK_SIZE);
+  const notas = [];
+  for (let k = 0; k < chunks.length; k++) {
+    const n = await groqChat(
+      `Estás procesando la PARTE ${k + 1} de ${chunks.length} de la transcripción de una reunión. ` +
+      `Extrae en español, en viñetas concisas: temas tratados, decisiones/acuerdos, compromisos (con responsable y fecha si se mencionan) y datos relevantes. ` +
+      `No inventes nada. Devuelve solo las viñetas.\n\n--- PARTE ${k + 1} ---\n${chunks[k]}`,
+      900
+    );
+    notas.push(n);
+  }
+  // reduce: armar la minuta final a partir de las notas
+  return await groqChat(
+    buildPrompt(m) +
+    `\n\nA continuación tienes las NOTAS extraídas por partes de la reunión. Combínalas, elimina duplicados y redunda, ` +
+    `organízalas y redacta la minuta final completa y coherente:\n\n${notas.join('\n\n')}`,
+    3000
+  );
 }
 
 // IA con Gemini (Google) — requiere cuota/facturación en la cuenta
@@ -217,19 +300,14 @@ async function callGemini(prompt) {
   return result.response.text();
 }
 
-// Genera el contenido de la minuta con el proveedor de IA disponible (Groq primero, luego Gemini)
+// Genera el contenido de la minuta con el proveedor disponible (Groq primero, luego Gemini)
 async function generarConGemini(id, m, req) {
-  const prompt = buildPrompt(m) + `\n\nTRANSCRIPCIÓN / DESCRIPCIÓN DE LA REUNIÓN:\n${m.transcripcion}`;
   let contenido, proveedor;
-  console.error('[IA-DEBUG] GROQ?', !!process.env.GROQ_API_KEY, 'GEMINI?', !!process.env.GEMINI_API_KEY, 'GROQ_MODEL', process.env.GROQ_MODEL || '(default)');
-  try {
-    if (process.env.GROQ_API_KEY) { contenido = await callGroq(prompt); proveedor = 'groq'; }
-    else if (process.env.GEMINI_API_KEY) { contenido = await callGemini(prompt); proveedor = 'gemini'; }
-    else throw new Error('No hay proveedor de IA configurado (GROQ_API_KEY o GEMINI_API_KEY).');
-  } catch (e) {
-    console.error('[IA-DEBUG] proveedor intentado:', process.env.GROQ_API_KEY ? 'groq' : 'gemini', '| error:', e && e.message);
-    throw e;
-  }
+  if (process.env.GROQ_API_KEY) { contenido = await generarConGroq(m); proveedor = 'groq'; }
+  else if (process.env.GEMINI_API_KEY) {
+    contenido = await callGemini(buildPrompt(m) + `\n\nTRANSCRIPCIÓN / DESCRIPCIÓN DE LA REUNIÓN:\n${m.transcripcion}`);
+    proveedor = 'gemini';
+  } else throw new Error('No hay proveedor de IA configurado (GROQ_API_KEY o GEMINI_API_KEY).');
   db.prepare('UPDATE minutas SET contenido = ? WHERE id = ?').run(contenido, id);
   if (req && req.session) logAction(req.session.userId, 'minuta_generated_' + proveedor, m.titulo, req.ip);
   return contenido;
@@ -246,12 +324,8 @@ router.post('/:id/generar', async (req, res) => {
     return res.redirect(`/admin/minutas/${m.id}`);
   }
 
-  try {
-    await generarConGemini(m.id, m, req);
-    req.session.flash = { type: 'success', text: 'Minuta generada con Gemini correctamente.' };
-  } catch (err) {
-    req.session.flash = { type: 'error', text: 'No se pudo generar con IA: ' + geminiErrorMsg(err) };
-  }
+  lanzarGeneracionIA(m.id, m, req.session.userId, req.ip);
+  req.session.flash = { type: 'success', text: 'Generando la minuta con IA… puede tardar 1–2 min en reuniones largas; la página se actualiza sola.' };
   res.redirect(`/admin/minutas/${m.id}`);
 });
 

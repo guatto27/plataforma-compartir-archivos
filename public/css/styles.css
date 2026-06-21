@@ -1219,3 +1219,7 @@ mark.bc-hl { background: var(--bc-gold); color: #0b0b0d; border-radius: 2px; pad
   outline: 2px solid rgba(251,191,36,.65);
   outline-offset: 2px;
 }
+
+/* Spinner de generacion de IA */
+.ia-spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(251,191,36,.35);border-top-color:#fbbf24;border-radius:50%;animation:ia-spin .7s linear infinite;flex-shrink:0}
+@keyframes ia-spin{to{transform:rotate(360deg)}}

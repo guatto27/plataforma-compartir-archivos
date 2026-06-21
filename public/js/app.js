@@ -301,3 +301,11 @@ document.addEventListener('DOMContentLoaded', bcUpdateThemeLabels);
     if (!p.box.contains(e.target)) { closePanel(p); p.box.classList.remove('open'); }
   });
 })();
+
+// Auto-actualizar la pagina mientras se genera una minuta con IA
+(function () {
+  var el = document.querySelector("[data-autorefresh]");
+  if (!el) return;
+  var secs = parseInt(el.getAttribute("data-autorefresh"), 10) || 8;
+  setTimeout(function () { window.location.reload(); }, secs * 1000);
+})();
