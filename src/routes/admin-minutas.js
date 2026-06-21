@@ -300,6 +300,7 @@ async function construirDatosMinuta(m) {
     `genera la minuta en formato JSON (responde SOLO con JSON válido, en español) siguiendo EXACTAMENTE este esquema:\n${esquema}\n\n` +
     `Reglas:\n` +
     `- No inventes datos; si algo no aparece, deja el campo como "" o el arreglo vacío [].\n` +
+    `- "meta": llena proyecto, no_minuta, horario, modalidad y tipo_sesion SOLO si se mencionan explícitamente. NUNCA uses la fecha como horario ni el título como no_minuta; si no hay dato, deja "".\n` +
     `- "secciones": incluye las que apliquen (Objetivo, Vision general, Metodologia, Fases del proyecto, Gobernanza y comunicacion, etc.). Cada seccion usa "parrafos" y/o "vinetas".\n` +
     `- "tareas": clasifica cada compromiso en "businesscool" o "cliente" segun el responsable; usa IDs BC-1, BC-2… y PK-1, PK-2…\n` +
     `- "firmas": el firmante por BusinessCool AI suele ser quien dirige el proyecto; por el cliente, su lider/contacto.\n` +
