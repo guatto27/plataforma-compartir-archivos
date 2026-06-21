@@ -28,25 +28,45 @@ async function sendWelcomeEmail({ to, displayName, username, password, companyNa
 
   const brand = config.brand.name;
   const loginUrl = `${config.appUrl}/login`;
-  const subject = `Acceso a la plataforma de ${brand}`;
+  const subject = `Bienvenido a ${brand} · Tu acceso a la plataforma`;
 
+  const name = esc(displayName || username);
+  const company = companyName ? esc(companyName) : '';
   const html = `
-  <div style="font-family:Segoe UI,Arial,sans-serif;background:#09090b;color:#f4f4f5;padding:24px">
-    <div style="max-width:520px;margin:0 auto;background:#161619;border:1px solid #27272a;border-radius:12px;padding:28px">
-      <h1 style="margin:0 0 4px;font-size:20px;color:#fbbf24">${esc(brand)}</h1>
-      <p style="color:#a1a1aa;margin:0 0 18px">Soluciones en IA</p>
-      <p>Hola ${esc(displayName || username)},</p>
-      <p>Te damos acceso a la plataforma${companyName ? ` como parte de <strong>${esc(companyName)}</strong>` : ''}. Estas son tus credenciales:</p>
-      <div style="background:#1c1c1f;border:1px solid #3f3f46;border-radius:8px;padding:14px 16px;margin:16px 0">
-        <p style="margin:6px 0"><span style="color:#a1a1aa">Usuario:</span> <strong>${esc(username)}</strong></p>
-        <p style="margin:6px 0"><span style="color:#a1a1aa">Contraseña temporal:</span> <strong>${esc(password)}</strong></p>
-      </div>
-      <p style="margin:18px 0">
-        <a href="${esc(loginUrl)}" style="display:inline-block;background:#fbbf24;color:#1c1c1f;font-weight:700;text-decoration:none;padding:11px 20px;border-radius:8px">Entrar a la plataforma</a>
-      </p>
-      <p style="color:#a1a1aa;font-size:13px">Por seguridad, se te pedirá <strong>cambiar la contraseña</strong> en tu primer acceso. No compartas estas credenciales.</p>
-      <p style="color:#71717a;font-size:12px;margin-top:20px">Si no esperabas este correo, ignóralo.</p>
-    </div>
+  <div style="margin:0;padding:0;background:#0b0b0d;">
+    <span style="display:none;max-height:0;overflow:hidden;opacity:0;color:#0b0b0d;">Tu acceso a ${esc(brand)} está listo: usuario y contraseña temporal.</span>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0b0b0d;padding:28px 12px;">
+      <tr><td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#15151a;border:1px solid #27272a;border-radius:16px;overflow:hidden;font-family:'Segoe UI',Roboto,Arial,sans-serif;">
+          <tr><td style="padding:22px 28px;border-bottom:1px solid #27272a;">
+            <span style="font-size:18px;font-weight:700;color:#f4f4f5;">BusinessCool <span style="color:#fbbf24;">AI</span></span>
+          </td></tr>
+          <tr><td style="padding:30px 28px 4px;">
+            <h1 style="margin:0;font-size:24px;line-height:1.25;color:#f4f4f5;">Bienvenido a <span style="color:#fbbf24;">${esc(brand)}</span></h1>
+            <p style="margin:12px 0 0;color:#a1a1aa;font-size:15px;line-height:1.6;">Hola ${name}, te damos acceso a la plataforma${company ? ` como parte de <strong style="color:#e4e4e7;">${company}</strong>` : ''}. Desde aquí darás seguimiento a tu proyecto de transformación con Inteligencia Artificial.</p>
+          </td></tr>
+          <tr><td style="padding:20px 28px 4px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0f0f12;border:1px solid #3f3f46;border-radius:12px;">
+              <tr><td style="padding:16px 18px;">
+                <p style="margin:0 0 12px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#71717a;">Tus credenciales de acceso</p>
+                <p style="margin:7px 0;color:#a1a1aa;font-size:14px;">Usuario:&nbsp; <strong style="color:#f4f4f5;font-size:15px;">${esc(username)}</strong></p>
+                <p style="margin:7px 0;color:#a1a1aa;font-size:14px;">Contraseña temporal:&nbsp; <strong style="color:#f4f4f5;font-size:15px;">${esc(password)}</strong></p>
+              </td></tr>
+            </table>
+          </td></tr>
+          <tr><td align="center" style="padding:24px 28px 6px;">
+            <a href="${esc(loginUrl)}" style="display:inline-block;background:#fbbf24;color:#1c1c1f;font-weight:700;font-size:15px;text-decoration:none;padding:13px 30px;border-radius:10px;">Entrar a la plataforma</a>
+          </td></tr>
+          <tr><td style="padding:12px 28px 28px;">
+            <p style="margin:0;color:#a1a1aa;font-size:13px;line-height:1.55;">Por seguridad se te pedirá <strong style="color:#e4e4e7;">cambiar la contraseña</strong> en tu primer acceso. No compartas estas credenciales con nadie.</p>
+          </td></tr>
+          <tr><td style="padding:18px 28px;border-top:1px solid #27272a;background:#101013;">
+            <p style="margin:0;color:#71717a;font-size:12px;">${esc(brand)} · Soluciones en IA · <a href="https://businesscool.ai" style="color:#a1a1aa;text-decoration:none;">businesscool.ai</a></p>
+            <p style="margin:6px 0 0;color:#52525b;font-size:11px;">Si no esperabas este correo, puedes ignorarlo.</p>
+          </td></tr>
+        </table>
+      </td></tr>
+    </table>
   </div>`;
 
   const text =
