@@ -594,42 +594,8 @@ router.post('/usuarios', requireAdmin, async (req, res) => {
   res.redirect('/admin/usuarios');
 });
 
-// Detalle de un usuario
-router.get('/usuarios/:id', (req, res) => {
-  const cliente = db
-    .prepare(
-      `SELECT u.*, co.name AS company_name_real
-       FROM users u LEFT JOIN companies co ON co.id = u.company_id
-       WHERE u.id = ? AND u.role IN ('client', 'colaborador', 'cliente_responsable')`
-    )
-    .get(req.params.id);
-  if (!cliente) {
-    return res.status(404).render('error', { title: 'No encontrado', message: 'Usuario no encontrado.' });
-  }
-
-  const filesFromClient = db
-    .prepare(`SELECT * FROM files WHERE client_id = ? AND direction = 'to_admin' ORDER BY created_at DESC`)
-    .all(cliente.id);
-  const filesToClient = db
-    .prepare(`SELECT * FROM files WHERE client_id = ? AND direction = 'to_client' ORDER BY created_at DESC`)
-    .all(cliente.id);
-  const interviews = db
-    .prepare(`SELECT * FROM interviews WHERE client_id = ? ORDER BY created_at DESC`)
-    .all(cliente.id);
-
-  res.render('admin/client', {
-    title: cliente.display_name || cliente.username,
-    active: 'usuarios',
-    cliente,
-    companies: activeCompanies(),
-    filesFromClient,
-    filesToClient,
-    interviews,
-    allowedExt: config.allowedExt,
-    maxFileMb: Math.round(config.maxFileBytes / (1024 * 1024)),
-    canManage: req.session.role === 'admin',
-  });
-});
+// La ficha de detalle ya no se usa: redirige a la lista de usuarios
+router.get('/usuarios/:id', (req, res) => res.redirect('/admin/usuarios'));
 
 // Compartir archivo(s) con el usuario desde su ficha
 router.post('/usuarios/:id/upload', upload.array('files', 10), (req, res) => {

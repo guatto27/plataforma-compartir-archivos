@@ -35,7 +35,7 @@
             <% var isNew = newCredentials && newCredentials.username === u.username; %>
             <tr class="<%= isNew ? 'row-active' : '' %>">
               <td>
-                <a href="/admin/usuarios/<%= u.id %>"><strong><%= u.display_name || u.username %></strong></a>
+                <strong><%= u.display_name || u.username %></strong>
                 <div class="meta"><%= u.username %></div>
               </td>
               <td><span class="tag"><%= roleLabel(u.role) %></span></td>
@@ -54,13 +54,22 @@
                 <% } %>
               </td>
               <td class="ta-actions">
-                <a class="iconbtn" href="/admin/usuarios/<%= u.id %>" title="Ver ficha" aria-label="Ver ficha">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                </a>
                 <% if (canManage) { %>
                   <button class="iconbtn" type="button" data-dialog="dlg-edit-user-<%= u.id %>" title="Editar" aria-label="Editar">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
                   </button>
+                  <form method="post" action="/admin/usuarios/<%= u.id %>/reset-password" class="inline" data-confirm="¿Restablecer la contraseña de “<%= u.display_name || u.username %>”? Se generará una nueva temporal y se le enviará por correo.">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                    <button class="iconbtn" type="submit" title="Restablecer contraseña" aria-label="Restablecer contraseña">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+                    </button>
+                  </form>
+                  <form method="post" action="/admin/usuarios/<%= u.id %>/toggle-active" class="inline" data-confirm="<%= u.active ? '¿Desactivar el acceso de “' + (u.display_name || u.username) + '”? No podrá iniciar sesión.' : '¿Reactivar el acceso de “' + (u.display_name || u.username) + '”?' %>">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                    <button class="iconbtn <%= u.active ? 'danger' : '' %>" type="submit" title="<%= u.active ? 'Desactivar acceso' : 'Activar acceso' %>" aria-label="<%= u.active ? 'Desactivar acceso' : 'Activar acceso' %>">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+                    </button>
+                  </form>
                   <form method="post" action="/admin/usuarios/<%= u.id %>/delete" class="inline" data-confirm="¿Eliminar a “<%= u.display_name || u.username %>”? Se borrarán también sus entrevistas y archivos. No se puede deshacer.">
                     <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
                     <button class="iconbtn danger" type="submit" title="Eliminar" aria-label="Eliminar">
