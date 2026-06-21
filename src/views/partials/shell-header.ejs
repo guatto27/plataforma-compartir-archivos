@@ -82,14 +82,19 @@
             <div class="tree-group-label">Actividades</div>
             <div class="tree-group">
               <a href="/app/agente" class="<%= (act === 'agente' || act === 'archivos-empresa') ? 'active' : '' %>" title="Entrevistas y Encuesta IMA">Entrevistas y Encuesta IMA</a>
-              <span class="tree-info" title="Mapeo de Procesos Actuales (AS-IS)">Mapeo de Procesos Actuales (AS-IS)</span>
-              <span class="tree-info" title="Informe de Integración de Hallazgos">Informe de Integración de Hallazgos</span>
-              <span class="tree-info" title="Mapeo de Proceso Deseado (TO-BE)">Mapeo de Proceso Deseado (TO-BE)</span>
+              <% if (role === 'cliente_responsable') { %>
+                <span class="tree-info" title="Mapeo de Procesos Actuales (AS-IS)">Mapeo de Procesos Actuales (AS-IS)</span>
+                <span class="tree-info" title="Informe de Integración de Hallazgos">Informe de Integración de Hallazgos</span>
+                <span class="tree-info" title="Mapeo de Proceso Deseado (TO-BE)">Mapeo de Proceso Deseado (TO-BE)</span>
+              <% } %>
             </div>
-            <a href="/app/entregables" class="tree-leaf <%= act === 'entregables' ? 'active' : '' %>" title="Entregables">Entregables</a>
+            <% if (role === 'cliente_responsable') { %>
+              <a href="/app/entregables" class="tree-leaf <%= act === 'entregables' ? 'active' : '' %>" title="Entregables">Entregables</a>
+            <% } %>
           </div>
         </details>
 
+        <% if (role === 'cliente_responsable') { %>
         <details class="nav-phase">
           <summary><span class="phase-title" title="F2 Diseño y Arquitectura (Construcción)">F2 Diseño y Arquitectura (Construcción)</span><%- caret %></summary>
           <div class="phase-body">
@@ -110,6 +115,7 @@
             <a href="/app/entregables" class="tree-leaf" title="Entregables">Entregables</a>
           </div>
         </details>
+        <% } %>
 
       </nav>
 
