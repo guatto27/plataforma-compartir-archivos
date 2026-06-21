@@ -39,7 +39,7 @@
     <% if (showTopnav) { %>
       <!-- Menú superior dentro del cajón (solo celular) -->
       <nav class="sidebar-topnav">
-        <a href="<%= topnavBase %>/inicio" class="<%= act === 'inicio' ? 'active' : '' %>"><%= isAdmin ? 'Panel de Administración' : 'Inicio' %></a>
+        <a href="<%= topnavBase %>/inicio" class="<%= act === 'inicio' ? 'active' : '' %>"><%= isAdmin ? 'Panel' : 'Inicio' %></a>
         <% if (!isAdmin) { %><a href="<%= topnavBase %>/nosotros" class="<%= act === 'nosotros' ? 'active' : '' %>">¿Quiénes somos?</a><% } %>
         <a href="<%= topnavBase %>/proyectos" class="<%= act === 'proyectos' ? 'active' : '' %>">Proyectos</a>
       </nav>
@@ -211,7 +211,7 @@
         <% } %>
         <% if (showTopnav) { %>
           <nav class="topnav">
-            <a href="<%= topnavBase %>/inicio" class="<%= act === 'inicio' ? 'active' : '' %>"><%= isAdmin ? 'Panel de Administración' : 'Inicio' %></a>
+            <a href="<%= topnavBase %>/inicio" class="<%= act === 'inicio' ? 'active' : '' %>"><%= isAdmin ? 'Panel' : 'Inicio' %></a>
             <% if (!isAdmin) { %><a href="<%= topnavBase %>/nosotros" class="<%= act === 'nosotros' ? 'active' : '' %>">¿Quiénes somos?</a><% } %>
             <a href="<%= topnavBase %>/proyectos" class="<%= act === 'proyectos' ? 'active' : '' %>">Proyectos</a>
           </nav>
