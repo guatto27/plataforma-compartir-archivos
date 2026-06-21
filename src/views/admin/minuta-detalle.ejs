@@ -119,6 +119,22 @@
         <% } %>
       </section>
 
+      <!-- Regenerar con IA (si hay transcripción y no está firmada) -->
+      <% if (!m.firmada && m.transcripcion && m.transcripcion.trim()) { %>
+        <section class="card" style="margin-top:16px">
+          <h2 style="margin-top:0">Minuta generada con IA</h2>
+          <p class="muted" style="font-size:13px;margin-bottom:12px">Este es el PDF con formato BusinessCool listo para firmar. Si lo necesitas, puedes volver a generarlo a partir de la transcripción.</p>
+          <% if (typeof generando !== 'undefined' && generando) { %>
+            <p class="muted" style="display:flex;align-items:center;gap:8px"><span class="ia-spinner" aria-hidden="true"></span> Generando con IA…</p>
+          <% } else { %>
+            <form method="post" action="/admin/minutas/<%= m.id %>/generar">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <button class="btn btn-ghost" type="submit" style="width:100%">✨ Regenerar minuta con IA</button>
+            </form>
+          <% } %>
+        </section>
+      <% } %>
+
       <!-- Eliminar -->
       <section class="card" style="margin-top:16px">
         <form method="post" action="/admin/minutas/<%= m.id %>/eliminar"

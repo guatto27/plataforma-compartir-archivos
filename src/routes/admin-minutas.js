@@ -11,6 +11,7 @@ const { db, logAction } = require('../db');
 const config  = require('../config');
 const { requireLogin, requireRole, verifyCsrf, denyCsrf } = require('../middleware/auth');
 const { firmarPDF, MINUTAS_DIR } = require('../lib/minuta-firma');
+const { renderMinutaPDF } = require('../lib/minuta-pdf');
 
 const router = express.Router();
 router.use(requireLogin, requireRole('admin', 'colaborador'));
@@ -233,19 +234,21 @@ function chunkText(t, maxChars) {
 }
 
 // Llama a Groq (API compatible con OpenAI) con reintentos ante el límite por minuto (429)
-async function groqChat(prompt, maxTokens) {
+async function groqChat(prompt, maxTokens, opts = {}) {
   const apiKey = process.env.GROQ_API_KEY;
   const model = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
   for (let attempt = 0; attempt < 6; attempt++) {
+    const body = {
+      model,
+      messages: [{ role: 'user', content: prompt }],
+      temperature: opts.temperature == null ? 0.4 : opts.temperature,
+      max_tokens: maxTokens || 2500,
+    };
+    if (opts.json) body.response_format = { type: 'json_object' };
     const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + apiKey, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model,
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.4,
-        max_tokens: maxTokens || 2500,
-      }),
+      body: JSON.stringify(body),
     });
     if (resp.status === 429 && attempt < 5) {
       const ra = parseFloat(resp.headers.get('retry-after') || '');
@@ -261,33 +264,55 @@ async function groqChat(prompt, maxTokens) {
   }
 }
 
-// Genera la minuta con Groq. Si la transcripción es muy larga, la procesa por partes (map-reduce).
-async function generarConGroq(m) {
-  const clean = cleanTranscript(m.transcripcion);
-  const SINGLE_LIMIT = 34000;  // ~8.5k tokens: cabe en una sola petición (límite 12k TPM)
-  const CHUNK_SIZE = 24000;    // ~6k tokens por parte
-  if (clean.length <= SINGLE_LIMIT) {
-    return await groqChat(buildPrompt(m) + `\n\nTRANSCRIPCIÓN / DESCRIPCIÓN DE LA REUNIÓN:\n${clean}`, 2500);
-  }
-  // map: extraer puntos clave de cada parte
+// Resume una transcripción larga a notas por partes (map). Si es corta, la devuelve tal cual.
+async function extraerNotas(clean) {
+  const CHUNK_SIZE = 24000; // ~6k tokens por parte (límite 12k TPM)
+  if (clean.length <= 34000) return clean;
   const chunks = chunkText(clean, CHUNK_SIZE);
   const notas = [];
   for (let k = 0; k < chunks.length; k++) {
-    const n = await groqChat(
+    notas.push(await groqChat(
       `Estás procesando la PARTE ${k + 1} de ${chunks.length} de la transcripción de una reunión. ` +
-      `Extrae en español, en viñetas concisas: temas tratados, decisiones/acuerdos, compromisos (con responsable y fecha si se mencionan) y datos relevantes. ` +
-      `No inventes nada. Devuelve solo las viñetas.\n\n--- PARTE ${k + 1} ---\n${chunks[k]}`,
+      `Extrae en español, en viñetas concisas: asistentes y roles, temas tratados, decisiones/acuerdos, ` +
+      `compromisos/tareas (con responsable y fecha si se mencionan) y datos relevantes (cifras, fechas, nombres). ` +
+      `No inventes nada. Devuelve solo viñetas.\n\n--- PARTE ${k + 1} ---\n${chunks[k]}`,
       900
-    );
-    notas.push(n);
+    ));
   }
-  // reduce: armar la minuta final a partir de las notas
-  return await groqChat(
-    buildPrompt(m) +
-    `\n\nA continuación tienes las NOTAS extraídas por partes de la reunión. Combínalas, elimina duplicados y redunda, ` +
-    `organízalas y redacta la minuta final completa y coherente:\n\n${notas.join('\n\n')}`,
-    3000
-  );
+  return notas.join('\n\n');
+}
+
+// Construye los datos estructurados de la minuta (JSON) a partir de la transcripción.
+async function construirDatosMinuta(m) {
+  const clean = cleanTranscript(m.transcripcion);
+  const fuente = await extraerNotas(clean);
+  const esquema = `{
+  "subtitulo": "subtitulo breve de la sesion (string, opcional)",
+  "meta": { "proyecto":"", "no_minuta":"", "horario":"", "modalidad":"", "tipo_sesion":"" },
+  "asistentes": { "businesscool":[{"nombre":"","rol":""}], "cliente":[{"nombre":"","rol":""}] },
+  "secciones": [ {"titulo":"Objetivo de la sesion","parrafos":["..."],"vinetas":["..."]} ],
+  "acuerdos": ["..."],
+  "tareas": [ {"id":"BC-1 o PK-1","tarea":"","responsable":"","fecha":"","parte":"businesscool|cliente"} ],
+  "firmas": { "businesscool":{"nombre":"","rol":""}, "cliente":{"nombre":"","rol":""} }
+}`;
+  const prompt =
+    `Eres un asistente experto en actas y minutas corporativas. A partir de las NOTAS de una reunión, ` +
+    `genera la minuta en formato JSON (responde SOLO con JSON válido, en español) siguiendo EXACTAMENTE este esquema:\n${esquema}\n\n` +
+    `Reglas:\n` +
+    `- No inventes datos; si algo no aparece, deja el campo como "" o el arreglo vacío [].\n` +
+    `- "secciones": incluye las que apliquen (Objetivo, Vision general, Metodologia, Fases del proyecto, Gobernanza y comunicacion, etc.). Cada seccion usa "parrafos" y/o "vinetas".\n` +
+    `- "tareas": clasifica cada compromiso en "businesscool" o "cliente" segun el responsable; usa IDs BC-1, BC-2… y PK-1, PK-2…\n` +
+    `- "firmas": el firmante por BusinessCool AI suele ser quien dirige el proyecto; por el cliente, su lider/contacto.\n` +
+    `- Titulo "${m.titulo || ''}", fecha "${m.fecha || ''}", empresa "${m.company_name || ''}".\n\n` +
+    `NOTAS DE LA REUNIÓN:\n${fuente}`;
+  const raw = await groqChat(prompt, 4000, { json: true, temperature: 0.3 });
+  try {
+    return JSON.parse(raw);
+  } catch (_) {
+    const a = raw.indexOf('{'), b = raw.lastIndexOf('}');
+    if (a >= 0 && b > a) return JSON.parse(raw.slice(a, b + 1));
+    throw new Error('La IA no devolvió un JSON válido para la minuta.');
+  }
 }
 
 // IA con Gemini (Google) — requiere cuota/facturación en la cuenta
@@ -300,17 +325,24 @@ async function callGemini(prompt) {
   return result.response.text();
 }
 
-// Genera el contenido de la minuta con el proveedor disponible (Groq primero, luego Gemini)
+// Genera la minuta con IA y la guarda como PDF con el formato corporativo (firmable).
 async function generarConGemini(id, m, req) {
-  let contenido, proveedor;
-  if (process.env.GROQ_API_KEY) { contenido = await generarConGroq(m); proveedor = 'groq'; }
-  else if (process.env.GEMINI_API_KEY) {
-    contenido = await callGemini(buildPrompt(m) + `\n\nTRANSCRIPCIÓN / DESCRIPCIÓN DE LA REUNIÓN:\n${m.transcripcion}`);
-    proveedor = 'gemini';
-  } else throw new Error('No hay proveedor de IA configurado (GROQ_API_KEY o GEMINI_API_KEY).');
-  db.prepare('UPDATE minutas SET contenido = ? WHERE id = ?').run(contenido, id);
-  if (req && req.session) logAction(req.session.userId, 'minuta_generated_' + proveedor, m.titulo, req.ip);
-  return contenido;
+  if (!process.env.GROQ_API_KEY) {
+    // Respaldo: Gemini en texto (no produce PDF; requiere cuota, normalmente no disponible)
+    if (!process.env.GEMINI_API_KEY) throw new Error('No hay proveedor de IA configurado (GROQ_API_KEY o GEMINI_API_KEY).');
+    const contenido = await callGemini(buildPrompt(m) + `\n\nTRANSCRIPCIÓN / DESCRIPCIÓN DE LA REUNIÓN:\n${m.transcripcion}`);
+    db.prepare('UPDATE minutas SET contenido = ? WHERE id = ?').run(contenido, id);
+    if (req && req.session) logAction(req.session.userId, 'minuta_generated_gemini', m.titulo, req.ip);
+    return;
+  }
+  const data = await construirDatosMinuta(m);
+  const pdfBytes = await renderMinutaPDF(m, data);
+  const filename = `minuta-${id}-${Date.now()}.pdf`;
+  fs.writeFileSync(path.join(MINUTAS_DIR, filename), pdfBytes);
+  const nombre = `Minuta - ${(m.titulo || 'minuta').replace(/[^\w\sáéíóúñÁÉÍÓÚÑ.-]/g, '').trim()}.pdf`;
+  db.prepare('UPDATE minutas SET archivo_path = ?, archivo_nombre = ?, contenido = ? WHERE id = ?')
+    .run(filename, nombre, JSON.stringify(data), id);
+  if (req && req.session) logAction(req.session.userId, 'minuta_generated_groq_pdf', m.titulo, req.ip);
 }
 
 // ── Generar minuta con IA ──────────────────────────────────────────────────
