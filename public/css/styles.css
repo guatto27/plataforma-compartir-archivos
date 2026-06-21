@@ -1206,15 +1206,12 @@ mark.bc-hl { background: var(--bc-gold); color: #0b0b0d; border-radius: 2px; pad
 .site-footer-social svg { width: 18px; height: 18px; display: block; }
 .site-footer-copy { margin: 0; font-size: 13px; color: var(--bc-muted); }
 
-/* Acciones rápidas del panel admin: mismo color + realce/foco al pasar el cursor */
-.quick-actions .qa-btn {
-  transition: transform .12s ease, box-shadow .15s ease, filter .15s ease;
-}
+/* Acciones rápidas del panel admin: mismo color; al pasar el cursor solo aparece el foco (sin iluminar) */
 .quick-actions .qa-btn:hover,
 .quick-actions .qa-btn:focus-visible {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(251,191,36,.38);
-  filter: brightness(1.06);
-  outline: 2px solid rgba(251,191,36,.55);
+  filter: none;
+  transform: none;
+  box-shadow: none;
+  outline: 2px solid rgba(251,191,36,.65);
   outline-offset: 2px;
 }
