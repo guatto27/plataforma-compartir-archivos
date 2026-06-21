@@ -196,6 +196,10 @@ function buildPrompt(m) {
 function geminiErrorMsg(err) {
   const msg = (err && err.message) || String(err);
   if (/proveedor de IA configurado/.test(msg)) return 'No hay proveedor de IA configurado en el servidor.';
+  if (/límite diario|per day|TPD/i.test(msg)) {
+    const mm = msg.match(/reintenta en ([0-9hms.\s]+)/i) || msg.match(/try again in ([0-9hms.\s]+)/i);
+    return 'Se alcanzó el límite diario gratuito de IA (Groq: 100,000 tokens/día).' + (mm ? ' Vuelve a intentar en ~' + mm[1].trim().replace(/\.\d+s/, 's') + '.' : ' Vuelve a intentar más tarde (se restablece cada día).');
+  }
   if (/413|Request too large|tokens per minute|TPM/i.test(msg)) return 'La transcripción es muy larga para el plan gratuito. Intenta de nuevo (se procesa por partes) o reduce un poco el texto.';
   if (/429|quota|Too Many Requests|rate.?limit/i.test(msg)) return 'El servicio de IA está saturado por el límite por minuto. Espera un momento y reintenta.';
   if (/API key not valid|API_KEY_INVALID|invalid_api_key|401|403|PERMISSION/i.test(msg)) return 'La API key de IA no es válida o no tiene permisos.';
@@ -268,10 +272,14 @@ async function groqChat(prompt, maxTokens, opts = {}) {
       clearTimeout(to);
     }
     if (resp.status === 429) {
+      const bodyTxt = await resp.text().catch(() => '');
+      const perDay = /per day|TPD/i.test(bodyTxt);
+      const tryIn = (bodyTxt.match(/try again in ([0-9hms.\s]+)/i) || [])[1];
       const ra = parseFloat(resp.headers.get('retry-after') || '');
       const waitMs = Math.min(MAX_WAIT_MS, (Number.isFinite(ra) ? ra + 1 : 6) * 1000);
-      lastErr = 'Groq 429 (límite por minuto/día)';
-      if (Date.now() + waitMs > deadline) throw new Error('Groq 429: límite de tokens del plan gratuito alcanzado. Intenta de nuevo en unos minutos.');
+      lastErr = 'Groq 429' + (perDay ? ' [límite diario]' : ' [límite por minuto]') + (tryIn ? ' reintenta en ' + tryIn.trim() : '');
+      // Si es el límite diario o no alcanzamos a esperar dentro del plazo, no insistas.
+      if (perDay || Date.now() + waitMs > deadline) throw new Error(lastErr);
       await sleep(waitMs);
       continue;
     }
