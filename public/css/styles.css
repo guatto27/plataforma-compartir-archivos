@@ -301,6 +301,7 @@ select:focus, textarea:focus { outline: none; border-color: var(--bc-gold); box-
 .iconbtn svg { width: 16px; height: 16px; }
 .iconbtn.danger:hover { color: #f87171; border-color: rgba(239,68,68,.5); }
 .iconbtn.is-on { color: #3fb950; border-color: rgba(63,185,80,.45); }
+.minuta-pdf-view { width: 100%; height: 78vh; min-height: 360px; border: 1px solid var(--bc-border); border-radius: 10px; background: #525659; display: block; }
 .iconbtn .count {
   position: absolute; top: -6px; right: -6px; min-width: 16px; height: 16px; padding: 0 3px;
   background: var(--bc-gold); color: #1c1c1f; font-size: 10px; font-weight: 700;
