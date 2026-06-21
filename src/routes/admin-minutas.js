@@ -233,11 +233,17 @@ function chunkText(t, maxChars) {
   return chunks.filter(Boolean);
 }
 
-// Llama a Groq (API compatible con OpenAI) con reintentos ante el límite por minuto (429)
+// Llama a Groq (API compatible con OpenAI) con reintentos acotados ante 429.
+// opts.deadline: timestamp límite global para abortar (evita que la tarea se cuelgue).
+const MAX_WAIT_MS = 20000;   // nunca dormir más de 20s entre reintentos
+const FETCH_TIMEOUT_MS = 70000; // timeout por petición (evita fetch colgado)
 async function groqChat(prompt, maxTokens, opts = {}) {
   const apiKey = process.env.GROQ_API_KEY;
   const model = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
-  for (let attempt = 0; attempt < 6; attempt++) {
+  const deadline = opts.deadline || (Date.now() + 240000);
+  let lastErr = 'desconocido';
+  for (let attempt = 0; attempt < 5; attempt++) {
+    if (Date.now() > deadline) throw new Error('Groq timeout: la generación tardó demasiado (límite de tokens del plan gratuito).');
     const body = {
       model,
       messages: [{ role: 'user', content: prompt }],
@@ -245,14 +251,28 @@ async function groqChat(prompt, maxTokens, opts = {}) {
       max_tokens: maxTokens || 2500,
     };
     if (opts.json) body.response_format = { type: 'json_object' };
-    const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + apiKey, 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    if (resp.status === 429 && attempt < 5) {
+    const ac = new AbortController();
+    const to = setTimeout(() => ac.abort(), FETCH_TIMEOUT_MS);
+    let resp;
+    try {
+      resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + apiKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: ac.signal,
+      });
+    } catch (e) {
+      lastErr = e.name === 'AbortError' ? 'tiempo de espera agotado' : ('red: ' + e.message);
+      continue; // reintenta ante error de red / timeout
+    } finally {
+      clearTimeout(to);
+    }
+    if (resp.status === 429) {
       const ra = parseFloat(resp.headers.get('retry-after') || '');
-      await sleep((Number.isFinite(ra) ? ra + 1 : 6) * 1000);
+      const waitMs = Math.min(MAX_WAIT_MS, (Number.isFinite(ra) ? ra + 1 : 6) * 1000);
+      lastErr = 'Groq 429 (límite por minuto/día)';
+      if (Date.now() + waitMs > deadline) throw new Error('Groq 429: límite de tokens del plan gratuito alcanzado. Intenta de nuevo en unos minutos.');
+      await sleep(waitMs);
       continue;
     }
     if (!resp.ok) {
@@ -262,10 +282,11 @@ async function groqChat(prompt, maxTokens, opts = {}) {
     const data = await resp.json();
     return (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
   }
+  throw new Error('Groq: no respondió tras varios intentos (' + lastErr + ').');
 }
 
 // Resume una transcripción larga a notas por partes (map). Si es corta, la devuelve tal cual.
-async function extraerNotas(clean) {
+async function extraerNotas(clean, deadline) {
   const CHUNK_SIZE = 24000; // ~6k tokens por parte (límite 12k TPM)
   if (clean.length <= 34000) return clean;
   const chunks = chunkText(clean, CHUNK_SIZE);
@@ -276,7 +297,7 @@ async function extraerNotas(clean) {
       `Extrae en español, en viñetas concisas: asistentes y roles, temas tratados, decisiones/acuerdos, ` +
       `compromisos/tareas (con responsable y fecha si se mencionan) y datos relevantes (cifras, fechas, nombres). ` +
       `No inventes nada. Devuelve solo viñetas.\n\n--- PARTE ${k + 1} ---\n${chunks[k]}`,
-      900
+      900, { deadline }
     ));
   }
   return notas.join('\n\n');
@@ -284,8 +305,9 @@ async function extraerNotas(clean) {
 
 // Construye los datos estructurados de la minuta (JSON) a partir de la transcripción.
 async function construirDatosMinuta(m) {
+  const deadline = Date.now() + 300000; // 5 min como máximo para toda la generación
   const clean = cleanTranscript(m.transcripcion);
-  const fuente = await extraerNotas(clean);
+  const fuente = await extraerNotas(clean, deadline);
   const esquema = `{
   "subtitulo": "subtitulo breve de la sesion (string, opcional)",
   "meta": { "proyecto":"", "no_minuta":"", "horario":"", "modalidad":"", "tipo_sesion":"" },
@@ -306,7 +328,7 @@ async function construirDatosMinuta(m) {
     `- "firmas": el firmante por BusinessCool AI suele ser quien dirige el proyecto; por el cliente, su lider/contacto.\n` +
     `- Titulo "${m.titulo || ''}", fecha "${m.fecha || ''}", empresa "${m.company_name || ''}".\n\n` +
     `NOTAS DE LA REUNIÓN:\n${fuente}`;
-  const raw = await groqChat(prompt, 4000, { json: true, temperature: 0.3 });
+  const raw = await groqChat(prompt, 4000, { json: true, temperature: 0.3, deadline });
   try {
     return JSON.parse(raw);
   } catch (_) {
