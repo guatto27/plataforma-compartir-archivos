@@ -20,7 +20,7 @@
     <div class="table-wrap">
       <table class="table">
         <thead>
-          <tr><th>Empresa</th><th>Proyectos</th><th class="ta-center">Logo</th><th class="ta-center">Nombre</th><th>Contacto</th><th class="ta-center">Usuarios</th><th class="ta-center"># Proy.</th><% if (canManage) { %><th class="ta-actions">Acciones</th><% } %></tr>
+          <tr><th>Empresa</th><th class="ta-center">Logo</th><th class="ta-center">Nombre</th><th>Contacto</th><th class="ta-center">Usuarios</th><th class="ta-center"># Proy.</th><% if (canManage) { %><th class="ta-actions">Acciones</th><% } %></tr>
         </thead>
         <tbody>
           <% companies.forEach((c) => { %>
@@ -34,14 +34,6 @@
                   <% } %>
                   <span><%= c.name %></span>
                 </div>
-              </td>
-              <td>
-                <% var plist = projByCompany[c.id] || []; %>
-                <% if (plist.length) { %>
-                  <% plist.forEach(function (p) { var pc = p.status === 'Finalizado' ? 'st-fin' : (p.status === 'En pausa' ? 'st-pau' : 'st-vig'); %>
-                    <div class="proj-pill"><span><%= p.name %></span><span class="st-chip <%= pc %>"><%= p.status %></span></div>
-                  <% }) %>
-                <% } else { %><span class="meta">—</span><% } %>
               </td>
               <% var chkOk = '<svg class="check-circle" viewBox="0 0 24 24" fill="none" stroke="#3fb950" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.4l2.6 2.6 5-5.6"/></svg>'; %>
               <td class="ta-center"><% if (c.logo_path) { %><%- chkOk %><% } else { %><span class="meta">—</span><% } %></td>
