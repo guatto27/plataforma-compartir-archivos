@@ -45,13 +45,23 @@ const FORMATOS = [
 
 // ── Listar minutas ──────────────────────────────────────────────────────────
 router.get('/', (req, res) => {
-  const minutas = db.prepare(
-    `SELECT m.*, u.display_name AS autor_nombre
-     FROM minutas m LEFT JOIN users u ON u.id = m.created_by
-     ORDER BY m.fecha DESC, m.created_at DESC`
-  ).all();
+  const pid = parseInt(req.query.proyecto, 10) || null;
+  const projectFilter = pid
+    ? db.prepare('SELECT p.id, p.name, c.name AS company_name FROM projects p JOIN companies c ON c.id = p.company_id WHERE p.id = ?').get(pid)
+    : null;
+  const minutas = projectFilter
+    ? db.prepare(
+        `SELECT m.*, u.display_name AS autor_nombre
+         FROM minutas m LEFT JOIN users u ON u.id = m.created_by
+         WHERE m.project_id = ? ORDER BY m.fecha DESC, m.created_at DESC`
+      ).all(projectFilter.id)
+    : db.prepare(
+        `SELECT m.*, u.display_name AS autor_nombre
+         FROM minutas m LEFT JOIN users u ON u.id = m.created_by
+         ORDER BY m.fecha DESC, m.created_at DESC`
+      ).all();
   const empresas = db.prepare('SELECT id, name FROM companies ORDER BY name').all();
-  res.render('admin/minutas', { title: 'Minutas', active: 'minutas', minutas, empresas, FORMATOS });
+  res.render('admin/minutas', { title: 'Minutas', active: 'minutas', minutas, empresas, FORMATOS, projectFilter });
 });
 
 // ── Nueva minuta ────────────────────────────────────────────────────────────

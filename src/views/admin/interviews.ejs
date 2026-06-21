@@ -6,9 +6,19 @@
       <h1>Entrevistas</h1>
       <p class="muted">Personas entrevistadas de todos tus clientes, con su link de Gemini y archivos asociados.</p>
     </div>
-    <button class="btn btn-primary" type="button" data-dialog="dlg-add-interview">+ Agregar entrevista</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <a class="btn btn-ghost" href="/admin/archivos<%= (typeof projectFilter !== 'undefined' && projectFilter) ? ('?proyecto=' + projectFilter.id) : '' %>">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        Ver archivos
+      </a>
+      <button class="btn btn-primary" type="button" data-dialog="dlg-add-interview">+ Agregar entrevista</button>
+    </div>
   </div>
 </div>
+
+<% if (typeof projectFilter !== 'undefined' && projectFilter) { %>
+  <div class="flash flash-success">Proyecto: <strong><%= projectFilter.company_name %> — <%= projectFilter.name %></strong> · <a href="/admin">ver todas las entrevistas</a></div>
+<% } %>
 
 <dialog id="dlg-add-interview" class="modal" data-strict>
   <h2>Nueva entrevista</h2>

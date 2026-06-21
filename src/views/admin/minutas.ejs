@@ -10,6 +10,10 @@
   </div>
 </div>
 
+<% if (typeof projectFilter !== 'undefined' && projectFilter) { %>
+  <div class="flash flash-success">Proyecto: <strong><%= projectFilter.company_name %> — <%= projectFilter.name %></strong> · <a href="/admin/minutas">ver todas las minutas</a></div>
+<% } %>
+
 <% if (!minutas.length) { %>
   <div class="empty-state">Aún no hay minutas. Crea la primera con el botón de arriba.</div>
 <% } else { %>

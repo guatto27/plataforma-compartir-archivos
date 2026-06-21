@@ -61,20 +61,38 @@ function activeCompanies() {
   return db.prepare(`SELECT id, name FROM companies WHERE active = 1 ORDER BY name`).all();
 }
 
-// Página principal: Entrevistas (de todos los usuarios)
+// Proyecto en foco para filtrar las páginas del admin (?proyecto=ID)
+function adminProjectFilter(req) {
+  const id = parseInt(req.query.proyecto, 10) || null;
+  if (!id) return null;
+  return db.prepare(
+    'SELECT p.id, p.name, c.name AS company_name FROM projects p JOIN companies c ON c.id = p.company_id WHERE p.id = ?'
+  ).get(id) || null;
+}
+
+// Selecciona el proyecto activo del admin (lo guarda en sesión y entra a sus entrevistas)
+router.get('/seleccionar', (req, res) => {
+  const id = parseInt(req.query.id, 10) || null;
+  req.session.adminProjectId = (id && db.prepare('SELECT id FROM projects WHERE id = ?').get(id)) ? id : null;
+  if (req.session.adminProjectId) return res.redirect('/admin?proyecto=' + req.session.adminProjectId);
+  return res.redirect('/admin');
+});
+
+// Página principal: Entrevistas (de todos los usuarios, o de un proyecto)
 router.get('/', (req, res) => {
-  const interviews = db
-    .prepare(
-      `SELECT iv.*,
+  const proj = adminProjectFilter(req);
+  const base = `SELECT iv.*,
               cl.username AS client_username, cl.display_name AS client_name,
               (SELECT COUNT(*) FROM files f WHERE f.interview_id = iv.id) AS file_count
        FROM interviews iv
-       LEFT JOIN users cl ON cl.id = iv.client_id
-       ORDER BY iv.created_at DESC`
-    )
-    .all();
+       LEFT JOIN users cl ON cl.id = iv.client_id`;
+  const interviews = proj
+    ? db.prepare(`${base} WHERE iv.project_id = ? ORDER BY iv.created_at DESC`).all(proj.id)
+    : db.prepare(`${base} ORDER BY iv.created_at DESC`).all();
 
-  res.render('admin/interviews', { title: 'Entrevistas', active: 'entrevistas', interviews, clients: activeClients() });
+  res.render('admin/interviews', {
+    title: 'Entrevistas', active: 'entrevistas', interviews, clients: activeClients(), projectFilter: proj,
+  });
 });
 
 // ───────── Menú superior del admin: Inicio · ¿Quiénes somos? · Proyectos ─────────
@@ -169,11 +187,15 @@ router.get('/archivos', (req, res) => {
     interview = getAccessibleInterview(req, req.query.entrevista) || null;
   }
 
+  const proj = adminProjectFilter(req);
   const params = [];
   let where = '1 = 1';
   if (interview) {
     where = 'f.interview_id = ?';
     params.push(interview.id);
+  } else if (proj) {
+    where = 'f.interview_id IN (SELECT id FROM interviews WHERE project_id = ?)';
+    params.push(proj.id);
   }
 
   const files = db
@@ -206,6 +228,7 @@ router.get('/archivos', (req, res) => {
     files,
     interviews,
     interview,
+    projectFilter: proj,
     clients: activeClients(),
     maxFileMb: Math.round(config.maxFileBytes / (1024 * 1024)),
   });

@@ -18,6 +18,10 @@
   </div>
 </div>
 
+<% if (typeof projectFilter !== 'undefined' && projectFilter) { %>
+  <div class="flash flash-success">Proyecto: <strong><%= projectFilter.company_name %> — <%= projectFilter.name %></strong> · <a href="/admin/archivos">ver todos los archivos</a></div>
+<% } %>
+
 <dialog id="dlg-add-file" class="modal" data-strict <%= interview ? 'data-autoopen' : '' %>>
   <h2>Agregar archivos<% if (interview) { %> · <%= interview.nombre %><% } %></h2>
   <% if (isAdmin && !interview && !clients.length) { %>

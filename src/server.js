@@ -103,10 +103,26 @@ app.use((req, res, next) => {
       res.locals.sidebarProjects = projectsLib.listByCompany(u.company_id);
       res.locals.activeProjectId = active ? active.id : null;
     }
+
+    // Selector de proyecto del admin (todos los proyectos de todas las empresas)
+    res.locals.adminProjects = [];
+    res.locals.adminProjectId = null;
+    if (req.session.role === 'admin') {
+      res.locals.adminProjects = db.prepare(
+        `SELECT p.id, p.name, p.company_id, c.name AS company_name
+         FROM projects p JOIN companies c ON c.id = p.company_id
+         ORDER BY c.name, p.created_at, p.id`
+      ).all();
+      let sel = parseInt(req.session.adminProjectId, 10) || null;
+      if (sel && !res.locals.adminProjects.some((p) => p.id === sel)) sel = null;
+      res.locals.adminProjectId = sel;
+    }
   } else {
     res.locals.currentUser = null;
     res.locals.sidebarProjects = [];
     res.locals.activeProjectId = null;
+    res.locals.adminProjects = [];
+    res.locals.adminProjectId = null;
   }
   res.locals.flash = req.session.flash || null;
   delete req.session.flash;
