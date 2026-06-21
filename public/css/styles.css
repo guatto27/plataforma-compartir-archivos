@@ -1146,6 +1146,8 @@ mark.bc-hl { background: var(--bc-gold); color: #0b0b0d; border-radius: 2px; pad
 /* Columna de avance (barra de progreso) en la tabla de proyectos */
 .th-progress { min-width: 180px; }
 .table tr.row-active { background: rgba(251,191,36,.06); }
+.cred-cell { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.cred-cell code { background: var(--bc-surface-2); border: 1px solid var(--bc-border-2); border-radius: 6px; padding: 3px 8px; font-size: 13px; color: var(--bc-gold); white-space: nowrap; }
 /* Gestor de proyectos por empresa (modal de admin) */
 .proj-manager { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--bc-border); }
 .proj-manager h3 { margin: 0 0 4px; font-size: 15px; }

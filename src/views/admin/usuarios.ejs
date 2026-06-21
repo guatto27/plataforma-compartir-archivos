@@ -20,17 +20,6 @@
   <div class="stat <%= summary.pending ? 'warn' : '' %>"><span class="stat-num"><%= summary.pending %></span><span class="stat-lbl">Pendientes</span></div>
 </section>
 
-<% if (newCredentials) { %>
-  <div class="card credentials">
-    <h2>Credenciales generadas</h2>
-    <p class="muted">Cópialas y compártelas por un canal seguro. <strong>No se volverán a mostrar.</strong></p>
-    <div class="cred-row"><span>Usuario:</span> <code id="cred-user"><%= newCredentials.username %></code></div>
-    <div class="cred-row"><span>Contraseña temporal:</span> <code id="cred-pass"><%= newCredentials.password %></code></div>
-    <button class="btn btn-ghost" type="button" data-copy="cred-user|cred-pass">Copiar credenciales</button>
-    <p class="meta">Se le pedirá cambiar la contraseña en su primer acceso.</p>
-  </div>
-<% } %>
-
 <section class="card">
   <h2>Usuarios registrados</h2>
   <% if (users.length === 0) { %>
@@ -39,19 +28,31 @@
     <div class="table-wrap">
       <table class="table">
         <thead>
-          <tr><th>Usuario</th><th>Tipo</th><th>Empresa</th><th>Correo</th><th>Acceso</th><th class="ta-actions">Acciones</th></tr>
+          <tr><th>Usuario</th><th>Tipo</th><th>Empresa</th><th>Correo</th><th>Acceso</th><th>Contraseña temporal</th><th class="ta-actions">Acciones</th></tr>
         </thead>
         <tbody>
           <% users.forEach((u) => { %>
-            <tr>
+            <% var isNew = newCredentials && newCredentials.username === u.username; %>
+            <tr class="<%= isNew ? 'row-active' : '' %>">
               <td>
                 <a href="/admin/usuarios/<%= u.id %>"><strong><%= u.display_name || u.username %></strong></a>
                 <div class="meta"><%= u.username %></div>
               </td>
               <td><span class="tag"><%= roleLabel(u.role) %></span></td>
               <td><%= u.role === 'colaborador' ? '—' : (u.company_name_real || u.company_name || '—') %></td>
-              <td class="meta"><%= u.email || '—' %></td>
+              <td class="meta"><% if (isNew) { %><span id="cred-user"><%= u.email || u.username %></span><% } else { %><%= u.email || '—' %><% } %></td>
               <td><span class="pill <%= u.active ? 'ok' : 'off' %>"><%= u.active ? 'Activo' : 'Inactivo' %></span></td>
+              <td>
+                <% if (isNew) { %>
+                  <div class="cred-cell">
+                    <code id="cred-pass"><%= newCredentials.password %></code>
+                    <button class="btn btn-ghost btn-sm" type="button" data-copy="cred-user|cred-pass" title="Copiar usuario y contraseña">Copiar</button>
+                  </div>
+                  <span class="meta">Solo se muestra ahora.</span>
+                <% } else { %>
+                  <span class="meta">—</span>
+                <% } %>
+              </td>
               <td class="ta-actions">
                 <a class="iconbtn" href="/admin/usuarios/<%= u.id %>" title="Ver ficha" aria-label="Ver ficha">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
