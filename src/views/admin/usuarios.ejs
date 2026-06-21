@@ -97,14 +97,11 @@
             <% }) %>
           </select>
         </label>
-        <label>Usuario (para iniciar sesión)
-          <input type="text" name="username" value="<%= u.username %>" required pattern="[a-z0-9._\-]{3,40}" title="Solo minúsculas, números y . _ - (sin espacios ni mayúsculas). 3 a 40 caracteres." maxlength="40" />
+        <label>Correo electrónico (acceso para iniciar sesión)
+          <input type="email" name="email" value="<%= u.email || u.username || '' %>" required maxlength="160" />
         </label>
         <label>Nombre de contacto (nombre real)
           <input type="text" name="display_name" value="<%= u.display_name || '' %>" maxlength="120" />
-        </label>
-        <label>Correo electrónico
-          <input type="email" name="email" value="<%= u.email || '' %>" maxlength="160" />
         </label>
         <div class="modal-actions">
           <button class="btn btn-primary" type="submit">Guardar cambios</button>
@@ -133,15 +130,12 @@
           <% }) %>
         </select>
       </label>
-      <label>Usuario (para iniciar sesión)
-        <input type="text" name="username" required pattern="[a-z0-9._\-]{3,40}" title="Solo minúsculas, números y . _ - (sin espacios ni mayúsculas). 3 a 40 caracteres." placeholder="ej. juan.perez" maxlength="40" />
+      <label>Correo electrónico (será su acceso y se le enviarán sus credenciales)
+        <input type="email" name="email" required maxlength="160" placeholder="ej. juan@empresa.com" />
       </label>
-      <p class="meta">Solo minúsculas, números y <code>. _ -</code> (sin espacios). Es el identificador de acceso.</p>
+      <p class="meta">El correo es el identificador para iniciar sesión.</p>
       <label>Nombre de contacto (nombre real)
         <input type="text" name="display_name" maxlength="120" placeholder="ej. Juan Pérez" />
-      </label>
-      <label>Correo electrónico (se le enviarán sus credenciales)
-        <input type="email" name="email" maxlength="160" placeholder="ej. juan@empresa.com" />
       </label>
       <label>Contraseña temporal (déjala vacía para generar una)
         <input type="text" name="password" maxlength="200" placeholder="(opcional, mín. 10 caracteres)" />

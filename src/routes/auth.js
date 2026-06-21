@@ -33,27 +33,28 @@ router.get('/login', (req, res) => {
 });
 
 router.post('/login', loginLimiter, (req, res) => {
-  const username = String(req.body.username || '').trim().toLowerCase();
+  // El acceso es por correo electrónico (se acepta también el usuario heredado)
+  const login = String(req.body.username || req.body.email || '').trim().toLowerCase();
   const password = String(req.body.password || '');
 
   const fail = () =>
     res.status(401).render('login', {
       title: 'Iniciar sesión',
-      error: 'Usuario o contraseña incorrectos.',
+      error: 'Correo o contraseña incorrectos.',
     });
 
-  if (!username || !password) return fail();
+  if (!login || !password) return fail();
 
   const user = db
-    .prepare('SELECT * FROM users WHERE username = ? AND active = 1')
-    .get(username);
+    .prepare('SELECT * FROM users WHERE (LOWER(username) = ? OR LOWER(email) = ?) AND active = 1')
+    .get(login, login);
 
   // Comparación con hash incluso si no existe el usuario, para no filtrar tiempos
   const hash = user ? user.password_hash : '$2a$10$invalidinvalidinvalidinvalidinvalidinvalidinvalidinva';
   const ok = bcrypt.compareSync(password, hash);
 
   if (!user || !ok) {
-    logAction(user ? user.id : null, 'login_failed', username, req.ip);
+    logAction(user ? user.id : null, 'login_failed', login, req.ip);
     return fail();
   }
 

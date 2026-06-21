@@ -552,24 +552,18 @@ router.post('/usuarios', requireAdmin, async (req, res) => {
     }
   }
 
-  const username = String(req.body.username || '').trim().toLowerCase();
   const displayName = String(req.body.display_name || '').trim().slice(0, 120);
-  const email = String(req.body.email || '').trim().slice(0, 160);
+  const email = String(req.body.email || '').trim().toLowerCase().slice(0, 160);
   let password = String(req.body.password || '').trim();
 
-  if (!USERNAME_RE.test(username)) {
-    req.session.flash = {
-      type: 'error',
-      text: 'Usuario inválido. Usa 3-40 caracteres: minúsculas, números, punto, guion o guion bajo.',
-    };
+  // El correo electrónico es el identificador de acceso (login)
+  if (!email || !EMAIL_RE.test(email)) {
+    req.session.flash = { type: 'error', text: 'El correo electrónico es obligatorio y debe ser válido (es el acceso del usuario).' };
     return res.redirect('/admin/usuarios');
   }
-  if (email && !EMAIL_RE.test(email)) {
-    req.session.flash = { type: 'error', text: 'El correo electrónico no es válido.' };
-    return res.redirect('/admin/usuarios');
-  }
-  if (db.prepare('SELECT id FROM users WHERE username = ?').get(username)) {
-    req.session.flash = { type: 'error', text: 'Ese usuario ya existe.' };
+  const username = email;
+  if (db.prepare('SELECT id FROM users WHERE LOWER(username) = ? OR LOWER(email) = ?').get(username, email)) {
+    req.session.flash = { type: 'error', text: 'Ya existe un usuario con ese correo.' };
     return res.redirect('/admin/usuarios');
   }
   if (!password) password = tempPassword();
@@ -672,22 +666,19 @@ router.post('/usuarios/:id/edit', requireAdmin, (req, res) => {
   if (!client) {
     return res.status(404).render('error', { title: 'No encontrado', message: 'Usuario no encontrado.' });
   }
-  const username = String(req.body.username || '').trim().toLowerCase();
   const displayName = String(req.body.display_name || '').trim().slice(0, 120);
-  const email = String(req.body.email || '').trim().slice(0, 160);
+  const email = String(req.body.email || '').trim().toLowerCase().slice(0, 160);
   const role = ['colaborador', 'cliente_responsable'].includes(req.body.role) ? req.body.role : 'client';
   const back = `/admin/usuarios/${client.id}`;
 
-  if (!USERNAME_RE.test(username)) {
-    req.session.flash = { type: 'error', text: 'Usuario inválido (3-40: minúsculas, números, . _ -).' };
+  // El correo es el identificador de acceso
+  if (!email || !EMAIL_RE.test(email)) {
+    req.session.flash = { type: 'error', text: 'El correo electrónico es obligatorio y debe ser válido (es el acceso del usuario).' };
     return res.redirect(back);
   }
-  if (email && !EMAIL_RE.test(email)) {
-    req.session.flash = { type: 'error', text: 'El correo electrónico no es válido.' };
-    return res.redirect(back);
-  }
-  if (db.prepare('SELECT id FROM users WHERE username = ? AND id <> ?').get(username, client.id)) {
-    req.session.flash = { type: 'error', text: 'Ese usuario ya está en uso por otra cuenta.' };
+  const username = email;
+  if (db.prepare('SELECT id FROM users WHERE (LOWER(username) = ? OR LOWER(email) = ?) AND id <> ?').get(username, email, client.id)) {
+    req.session.flash = { type: 'error', text: 'Ya existe otra cuenta con ese correo.' };
     return res.redirect(back);
   }
 

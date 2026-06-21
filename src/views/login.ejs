@@ -47,8 +47,8 @@
 
         <form method="post" action="/login" autocomplete="off">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-          <label class="auth-label">Usuario
-            <input type="text" name="username" required autofocus maxlength="40" />
+          <label class="auth-label">Correo electrónico
+            <input type="email" name="username" required autofocus maxlength="160" autocomplete="username" placeholder="tucorreo@empresa.com" />
           </label>
           <label class="auth-label">Contraseña
             <div class="pw-wrap">
