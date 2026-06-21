@@ -221,9 +221,15 @@ async function callGemini(prompt) {
 async function generarConGemini(id, m, req) {
   const prompt = buildPrompt(m) + `\n\nTRANSCRIPCIÓN / DESCRIPCIÓN DE LA REUNIÓN:\n${m.transcripcion}`;
   let contenido, proveedor;
-  if (process.env.GROQ_API_KEY) { contenido = await callGroq(prompt); proveedor = 'groq'; }
-  else if (process.env.GEMINI_API_KEY) { contenido = await callGemini(prompt); proveedor = 'gemini'; }
-  else throw new Error('No hay proveedor de IA configurado (GROQ_API_KEY o GEMINI_API_KEY).');
+  console.error('[IA-DEBUG] GROQ?', !!process.env.GROQ_API_KEY, 'GEMINI?', !!process.env.GEMINI_API_KEY, 'GROQ_MODEL', process.env.GROQ_MODEL || '(default)');
+  try {
+    if (process.env.GROQ_API_KEY) { contenido = await callGroq(prompt); proveedor = 'groq'; }
+    else if (process.env.GEMINI_API_KEY) { contenido = await callGemini(prompt); proveedor = 'gemini'; }
+    else throw new Error('No hay proveedor de IA configurado (GROQ_API_KEY o GEMINI_API_KEY).');
+  } catch (e) {
+    console.error('[IA-DEBUG] proveedor intentado:', process.env.GROQ_API_KEY ? 'groq' : 'gemini', '| error:', e && e.message);
+    throw e;
+  }
   db.prepare('UPDATE minutas SET contenido = ? WHERE id = ?').run(contenido, id);
   if (req && req.session) logAction(req.session.userId, 'minuta_generated_' + proveedor, m.titulo, req.ip);
   return contenido;
