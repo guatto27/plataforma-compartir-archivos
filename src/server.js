@@ -94,10 +94,10 @@ app.use((req, res, next) => {
       companyEslogan: companyEslogan,
     };
 
-    // Selector de proyecto del sidebar (solo cliente responsable)
+    // Selector de proyecto del sidebar (cliente responsable y usuario cliente)
     res.locals.sidebarProjects = [];
     res.locals.activeProjectId = null;
-    if (req.session.role === 'cliente_responsable' && u && u.company_id) {
+    if ((req.session.role === 'cliente_responsable' || req.session.role === 'client') && u && u.company_id) {
       const projectsLib = require('./lib/projects');
       const active = projectsLib.activeFor(req, u.company_id);
       res.locals.sidebarProjects = projectsLib.listByCompany(u.company_id);
