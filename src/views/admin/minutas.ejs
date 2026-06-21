@@ -20,9 +20,12 @@
   <section class="card">
     <table class="table">
       <thead>
-        <tr><th>Título</th><th>Empresa</th><th>Fecha</th><th>Formato</th><th>Estado</th><th class="ta-actions">Acciones</th></tr>
+        <tr><th>Título</th><th>Empresa</th><th>Fecha</th><th>Formato</th><th class="ta-center">Firma BusinessCool</th><th class="ta-center">Firma Cliente</th><th class="ta-center">Enviada al cliente</th><th class="ta-actions">Acciones</th></tr>
       </thead>
       <tbody>
+        <%
+          var chkOk = '<svg class="check-circle" viewBox="0 0 24 24" fill="none" stroke="#3fb950" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.4l2.6 2.6 5-5.6"/></svg>';
+        %>
         <% minutas.forEach(function(m) {
              var fmt = FORMATOS.find(f => f.id === m.formato) || FORMATOS[0]; %>
         <tr>
@@ -30,12 +33,9 @@
           <td><%= m.company_name || '—' %></td>
           <td class="nowrap meta"><%= m.fecha %></td>
           <td class="meta"><%= fmt.label %></td>
-          <td>
-            <% if (m.firmada) { %><span class="st aprob">Firmada</span>
-            <% } else if (m.publicada) { %><span class="st rev">Publicada</span>
-            <% } else if (m.contenido) { %><span class="st pend">Borrador</span>
-            <% } else { %><span class="meta">Sin contenido</span><% } %>
-          </td>
+          <td class="ta-center"><% if (m.firmada) { %><%- chkOk %><% } else { %><span class="meta">—</span><% } %></td>
+          <td class="ta-center"><% if (m.firmada_cliente) { %><%- chkOk %><% } else { %><span class="meta">—</span><% } %></td>
+          <td class="ta-center"><% if (m.publicada) { %><%- chkOk %><% } else { %><span class="meta">—</span><% } %></td>
           <td class="ta-actions">
             <a class="iconbtn" href="/admin/minutas/<%= m.id %>" title="Ver/Editar">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
