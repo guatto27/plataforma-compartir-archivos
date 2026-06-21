@@ -21,7 +21,8 @@
      con validez verificable. Así tú y tu equipo siempre saben en qué punto va el proyecto y qué sigue.</p>
 </section>
 
-<!-- Estado del proyecto -->
+<!-- Estado del proyecto (solo cliente responsable) -->
+<% if (isResp) { %>
 <div class="home-grid">
   <div class="card home-stat">
     <span class="home-stat-label">Proyecto</span>
@@ -33,19 +34,18 @@
     <strong class="home-stat-value"><%= filesCount %></strong>
     <span class="muted">Ver entregables →</span>
   </a>
-  <% if (isResp) { %>
   <a class="card home-stat home-link" href="/app/minutas">
     <span class="home-stat-label">Minutas publicadas</span>
     <strong class="home-stat-value"><%= minutasCount %></strong>
     <span class="muted">Ver minutas →</span>
   </a>
-  <% } %>
   <a class="card home-stat home-link" href="/app/agente">
     <span class="home-stat-label">Entrevistas de levantamiento</span>
     <strong class="home-stat-value"><%= interviewsCount %></strong>
     <span class="muted">Ir al levantamiento →</span>
   </a>
 </div>
+<% } %>
 
 <!-- Accesos directos -->
 <section class="card">
@@ -56,8 +56,10 @@
       <a class="btn btn-ghost" href="/app">Pipeline del proyecto</a>
     <% } %>
     <a class="btn btn-ghost" href="/app/agente">Entrevistas y Encuestas IMA</a>
-    <a class="btn btn-ghost" href="/app/entregables">Entregables</a>
-    <% if (isResp) { %><a class="btn btn-ghost" href="/app/minutas">Minutas</a><% } %>
+    <% if (isResp) { %>
+      <a class="btn btn-ghost" href="/app/entregables">Entregables</a>
+      <a class="btn btn-ghost" href="/app/minutas">Minutas</a>
+    <% } %>
     <a class="btn btn-ghost" href="/app/nosotros">Conócenos</a>
   </div>
 </section>
