@@ -159,9 +159,8 @@ router.get('/', (req, res) => {
 
 // ───────── Menú superior (solo cliente_responsable): Inicio · Proyectos · Nosotros ─────────
 
-// Inicio — portada/dashboard del portal (acotado al proyecto activo)
+// Inicio — portada/dashboard del portal (cliente responsable y usuario)
 router.get('/inicio', (req, res) => {
-  if (req.session.role !== 'cliente_responsable') return res.redirect('/app/agente');
   const ctx = projectContext(req);
   res.render('client/inicio', Object.assign({ title: 'Inicio', active: 'inicio' }, ctx));
 });
@@ -181,9 +180,8 @@ router.get('/proyectos', (req, res) => {
   res.render('client/proyectos', Object.assign({ title: 'Proyectos', active: 'proyectos', rows }, ctx));
 });
 
-// Nosotros — quiénes somos
+// Nosotros — quiénes somos (cliente responsable y usuario)
 router.get('/nosotros', (req, res) => {
-  if (req.session.role !== 'cliente_responsable') return res.redirect('/app/agente');
   res.render('client/nosotros', {
     title: 'Nosotros', active: 'nosotros', companyName: companyOf(req),
   });

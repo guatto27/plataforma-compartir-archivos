@@ -21,8 +21,8 @@
   var homeBase = isStaff ? '/admin' : '/app';
   var act = (typeof active !== 'undefined') ? active : '';
   var roleLabel = isAdmin ? 'Administrador' : (isColab ? 'Colaborador' : (role === 'cliente_responsable' ? 'Cliente responsable' : 'Parte interesada'));
-  // Menú superior: cliente responsable (Inicio/¿Quiénes somos?/Proyectos) y admin (solo Panel)
-  var showTopnav = (role === 'cliente_responsable') || isAdmin;
+  // Menú superior: clientes (Inicio/¿Quiénes somos?[/Proyectos]) y admin (solo Panel)
+  var showTopnav = isClient || isAdmin;
   var topnavBase = isAdmin ? '/admin' : '/app';
   // Flecha del árbol de fases (reusada por cliente y admin)
   var caret = '<span class="tree-caret-btn" data-tree-toggle><svg class="tree-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>';
@@ -44,6 +44,8 @@
         <a href="<%= topnavBase %>/inicio" class="<%= act === 'inicio' ? 'active' : '' %>"><%= isAdmin ? 'Panel' : 'Inicio' %></a>
         <% if (!isAdmin) { %>
           <a href="<%= topnavBase %>/nosotros" class="<%= act === 'nosotros' ? 'active' : '' %>">¿Quiénes somos?</a>
+        <% } %>
+        <% if (role === 'cliente_responsable') { %>
           <a href="<%= topnavBase %>/proyectos" class="<%= act === 'proyectos' ? 'active' : '' %>">Proyectos</a>
         <% } %>
       </nav>
@@ -246,6 +248,8 @@
             <a href="<%= topnavBase %>/inicio" class="<%= act === 'inicio' ? 'active' : '' %>"><%= isAdmin ? 'Panel' : 'Inicio' %></a>
             <% if (!isAdmin) { %>
               <a href="<%= topnavBase %>/nosotros" class="<%= act === 'nosotros' ? 'active' : '' %>">¿Quiénes somos?</a>
+            <% } %>
+            <% if (role === 'cliente_responsable') { %>
               <a href="<%= topnavBase %>/proyectos" class="<%= act === 'proyectos' ? 'active' : '' %>">Proyectos</a>
             <% } %>
           </nav>

@@ -2,6 +2,7 @@
 
 <%
   var stCls = projectStatus === 'Finalizado' ? 'st-fin' : (projectStatus === 'En pausa' ? 'st-pau' : 'st-vig');
+  var isResp = currentUser && currentUser.role === 'cliente_responsable';
 %>
 
 <div class="page-head">
@@ -32,11 +33,13 @@
     <strong class="home-stat-value"><%= filesCount %></strong>
     <span class="muted">Ver entregables →</span>
   </a>
+  <% if (isResp) { %>
   <a class="card home-stat home-link" href="/app/minutas">
     <span class="home-stat-label">Minutas publicadas</span>
     <strong class="home-stat-value"><%= minutasCount %></strong>
     <span class="muted">Ver minutas →</span>
   </a>
+  <% } %>
   <a class="card home-stat home-link" href="/app/agente">
     <span class="home-stat-label">Entrevistas de levantamiento</span>
     <strong class="home-stat-value"><%= interviewsCount %></strong>
@@ -48,10 +51,13 @@
 <section class="card">
   <h2>Accesos directos</h2>
   <div class="home-shortcuts">
-    <a class="btn btn-ghost" href="/app/proyectos">Ver mis proyectos</a>
-    <a class="btn btn-ghost" href="/app">Pipeline del proyecto</a>
+    <% if (isResp) { %>
+      <a class="btn btn-ghost" href="/app/proyectos">Ver mis proyectos</a>
+      <a class="btn btn-ghost" href="/app">Pipeline del proyecto</a>
+    <% } %>
+    <a class="btn btn-ghost" href="/app/agente">Entrevistas y Encuestas IMA</a>
     <a class="btn btn-ghost" href="/app/entregables">Entregables</a>
-    <a class="btn btn-ghost" href="/app/minutas">Minutas</a>
+    <% if (isResp) { %><a class="btn btn-ghost" href="/app/minutas">Minutas</a><% } %>
     <a class="btn btn-ghost" href="/app/nosotros">Conócenos</a>
   </div>
 </section>
