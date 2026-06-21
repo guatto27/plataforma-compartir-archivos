@@ -82,13 +82,6 @@
       <label>Contacto (opcional)
         <input type="text" name="contact" value="<%= c.contact || '' %>" maxlength="160" />
       </label>
-      <label>Nombre de la empresa — imagen <%= c.eslogan_path ? '(reemplazar)' : '(opcional)' %>
-        <span class="meta" style="font-weight:400;display:block;margin:2px 0 0">Versión del nombre como imagen (se le quita el fondo). Si no se sube, se usa el nombre de texto de arriba.</span>
-        <div style="display:flex;align-items:center;gap:12px;margin-top:6px">
-          <% if (c.eslogan_path) { %><img src="/admin/empresas/<%= c.id %>/eslogan" alt="" class="empresa-logo" /><% } %>
-          <input type="file" name="eslogan_img" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif" />
-        </div>
-      </label>
       <label>Notas (opcional)
         <input type="text" name="notes" value="<%= c.notes || '' %>" maxlength="500" />
       </label>
@@ -96,6 +89,13 @@
         <div style="display:flex;align-items:center;gap:12px;margin-top:6px">
           <% if (c.logo_path) { %><img src="/admin/empresas/<%= c.id %>/logo" alt="" class="empresa-logo" /><% } %>
           <input type="file" name="logo" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif" />
+        </div>
+      </label>
+      <label>Nombre de la empresa — imagen <%= c.eslogan_path ? '(reemplazar)' : '(opcional)' %>
+        <span class="meta" style="font-weight:400;display:block;margin:2px 0 0">Versión del nombre como imagen (se le quita el fondo). Si no se sube, se usa el nombre de texto de arriba.</span>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:6px">
+          <% if (c.eslogan_path) { %><img src="/admin/empresas/<%= c.id %>/eslogan" alt="" class="empresa-logo" /><% } %>
+          <input type="file" name="eslogan_img" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif" />
         </div>
       </label>
       <div class="modal-actions">
@@ -151,26 +151,17 @@
     <label>Contacto (opcional)
       <input type="text" name="contact" maxlength="160" placeholder="ej. Juan Pérez / correo / teléfono" />
     </label>
-    <label>Proyecto (opcional)
-      <input type="text" name="project" maxlength="160" placeholder="ej. Validación de Franquicias" />
-    </label>
-    <label>Estatus del proyecto
-      <select name="project_status">
-        <option value="Vigente" selected>Vigente</option>
-        <option value="En pausa">En pausa</option>
-        <option value="Finalizado">Finalizado</option>
-      </select>
-    </label>
-    <label>Nombre de la empresa — imagen (opcional)
-      <span class="meta" style="font-weight:400;display:block;margin:2px 0 0">Versión del nombre como imagen (se le quita el fondo). Si no, se usa el nombre de texto.</span>
-      <input type="file" name="eslogan_img" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif" style="margin-top:6px" />
-    </label>
     <label>Notas (opcional)
       <input type="text" name="notes" maxlength="500" />
     </label>
     <label>Logo de la empresa (opcional)
       <input type="file" name="logo" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif" style="margin-top:6px" />
     </label>
+    <label>Nombre de la empresa — imagen (opcional)
+      <span class="meta" style="font-weight:400;display:block;margin:2px 0 0">Versión del nombre como imagen (se le quita el fondo). Si no, se usa el nombre de texto.</span>
+      <input type="file" name="eslogan_img" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif" style="margin-top:6px" />
+    </label>
+    <p class="meta" style="margin-top:2px">Los proyectos se agregan después, al editar la empresa o desde la sección Proyectos.</p>
     <div class="modal-actions">
       <button class="btn btn-primary" type="submit">Registrar empresa</button>
       <button class="btn btn-ghost" type="button" data-close>Cancelar</button>
