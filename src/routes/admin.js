@@ -105,7 +105,7 @@ router.get('/inicio', (req, res) => {
      FROM companies c ORDER BY c.created_at DESC LIMIT 5`
   ).all();
   res.render('admin/inicio', {
-    title: 'Inicio', active: 'inicio', stats, byStatus, recentMinutas, recentCompanies,
+    title: 'Panel de Administración', active: 'inicio', stats, byStatus, recentMinutas, recentCompanies,
   });
 });
 
