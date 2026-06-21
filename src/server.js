@@ -170,7 +170,9 @@ app.use('/admin/minutas', require('./routes/admin-minutas'));
 // Raíz
 app.get('/', (req, res) => {
   if (!req.session.userId) return res.redirect('/login');
-  if (req.session.role === 'admin' || req.session.role === 'colaborador') return res.redirect('/admin');
+  // El administrador inicia en su Panel
+  if (req.session.role === 'admin') return res.redirect('/admin/inicio');
+  if (req.session.role === 'colaborador') return res.redirect('/admin');
   // El cliente responsable inicia en su página de Inicio
   if (req.session.role === 'cliente_responsable') return res.redirect('/app/inicio');
   return res.redirect('/app');
