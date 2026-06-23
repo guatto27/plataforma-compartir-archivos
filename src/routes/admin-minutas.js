@@ -62,7 +62,12 @@ router.get('/', (req, res) => {
          ORDER BY m.fecha DESC, m.created_at DESC`
       ).all();
   const empresas = db.prepare('SELECT id, name FROM companies ORDER BY name').all();
-  res.render('admin/minutas', { title: 'Minutas', active: 'minutas', minutas, empresas, FORMATOS, projectFilter });
+  // Contratos: todos los proyectos (o el filtrado) con su estado de contrato/firma
+  const contratos = db.prepare(
+    `SELECT p.*, c.name AS company FROM projects p JOIN companies c ON c.id = p.company_id
+     ${projectFilter ? 'WHERE p.id = ?' : ''} ORDER BY c.name, p.created_at, p.id`
+  ).all(...(projectFilter ? [projectFilter.id] : []));
+  res.render('admin/minutas', { title: 'Minutas y Contratos', active: 'minutas', minutas, empresas, FORMATOS, projectFilter, contratos });
 });
 
 // ── Nueva minuta ────────────────────────────────────────────────────────────
