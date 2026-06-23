@@ -308,7 +308,7 @@ router.get('/minutas', (req, res) => {
 
 // Firma de minuta por el cliente con su e.firma (FIEL)
 const multer = require('multer');
-const { firmarPDFCliente } = require('../lib/minuta-firma');
+const { firmarPDFCliente, firmarContratoCliente, CONTRATOS_DIR } = require('../lib/minuta-firma');
 const memUploadClient = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2 * 1024 * 1024 } });
 
 router.post('/minutas/:id/firmar', memUploadClient.fields([{ name: 'key_file', maxCount: 1 }, { name: 'cer_file', maxCount: 1 }]), async (req, res) => {
@@ -350,6 +350,79 @@ router.post('/minutas/:id/firmar', memUploadClient.fields([{ name: 'key_file', m
     req.session.flash = { type: 'error', text: 'Error al firmar: ' + err.message };
   }
   res.redirect('/app/minutas');
+});
+
+// ───────── Contratos del proyecto (solo cliente_responsable) ─────────
+// Devuelve el proyecto si su contrato fue enviado y pertenece a la empresa del usuario.
+function contratoAccesible(req, projectId) {
+  if (req.session.role === 'client') return null;
+  const me = db.prepare('SELECT company_id FROM users WHERE id = ?').get(req.session.userId);
+  if (!me || !me.company_id) return null;
+  const p = db.prepare('SELECT * FROM projects WHERE id = ? AND company_id = ? AND contrato_enviado = 1').get(projectId, me.company_id);
+  return p || null;
+}
+
+router.get('/contratos', (req, res) => {
+  if (req.session.role === 'client') return res.redirect('/app/agente');
+  const me = db.prepare('SELECT company_id FROM users WHERE id = ?').get(req.session.userId);
+  const contratos = me && me.company_id
+    ? db.prepare(
+        `SELECT p.*, c.name AS company_name FROM projects p JOIN companies c ON c.id = p.company_id
+         WHERE p.company_id = ? AND p.contrato_enviado = 1 ORDER BY p.created_at DESC`
+      ).all(me.company_id)
+    : [];
+  res.render('client/contratos', { title: 'Contratos', active: 'contratos', companyName: companyOf(req), contratos });
+});
+
+router.get('/contratos/:id/ver-pdf', (req, res) => {
+  const p = contratoAccesible(req, req.params.id);
+  if (!p || !p.contrato_path) return res.status(404).send('Sin contrato');
+  const path = require('path'); const fs = require('fs');
+  const fp = path.join(CONTRATOS_DIR, p.contrato_path);
+  if (!fs.existsSync(fp)) return res.status(404).send('Archivo no encontrado');
+  res.removeHeader('X-Frame-Options');
+  res.removeHeader('Content-Security-Policy');
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', 'inline; filename="contrato.pdf"');
+  res.setHeader('Cache-Control', 'private, max-age=60');
+  fs.createReadStream(fp).pipe(res);
+});
+
+router.get('/contratos/:id/descargar', (req, res) => {
+  const p = contratoAccesible(req, req.params.id);
+  if (!p || !p.contrato_path) return res.status(404).send('Sin contrato');
+  const path = require('path'); const fs = require('fs');
+  const fp = path.join(CONTRATOS_DIR, p.contrato_path);
+  if (!fs.existsSync(fp)) return res.status(404).send('Archivo no encontrado');
+  res.download(fp, p.contrato_nombre || 'contrato.pdf');
+});
+
+router.post('/contratos/:id/firmar', memUploadClient.fields([{ name: 'key_file', maxCount: 1 }, { name: 'cer_file', maxCount: 1 }]), async (req, res) => {
+  if (req.session.role === 'client') return res.redirect('/app/agente');
+  if (!verifyCsrf(req)) return denyCsrf(res);
+  const p = contratoAccesible(req, req.params.id);
+  if (!p || !p.contrato_path || !p.cont_firmada) {
+    req.session.flash = { type: 'error', text: 'Contrato no disponible para firmar.' };
+    return res.redirect('/app/contratos');
+  }
+  if (p.cont_firmada_cliente) {
+    req.session.flash = { type: 'error', text: 'Este contrato ya fue firmado por el cliente.' };
+    return res.redirect('/app/contratos');
+  }
+  const keyFile = req.files && req.files['key_file'] && req.files['key_file'][0];
+  const cerFile = req.files && req.files['cer_file'] && req.files['cer_file'][0];
+  const passphrase = String(req.body.passphrase || '');
+  if (!keyFile || !cerFile || !passphrase) {
+    req.session.flash = { type: 'error', text: 'Sube los archivos .key y .cer e ingresa la contraseña.' };
+    return res.redirect('/app/contratos');
+  }
+  try {
+    const result = await firmarContratoCliente(p.id, p, keyFile.buffer, cerFile.buffer, passphrase, req.session.userId, req.ip);
+    req.session.flash = { type: 'success', text: `Contrato firmado con tu e.firma. Folio: ${result.folio}` };
+  } catch (err) {
+    req.session.flash = { type: 'error', text: 'Error al firmar: ' + err.message };
+  }
+  res.redirect('/app/contratos');
 });
 
 // Agente de levantamiento (entrevistas reales)

@@ -10,6 +10,10 @@ const { db, logAction } = require('../db');
 const MINUTAS_DIR = path.join(config.uploadsDir, 'minutas');
 if (!fs.existsSync(MINUTAS_DIR)) fs.mkdirSync(MINUTAS_DIR, { recursive: true });
 
+const CONTRATOS_DIR = path.join(config.uploadsDir, 'contratos');
+if (!fs.existsSync(CONTRATOS_DIR)) fs.mkdirSync(CONTRATOS_DIR, { recursive: true });
+exports.CONTRATOS_DIR = CONTRATOS_DIR;
+
 const VERIFY_BASE = 'https://proyectos.businesscool.ai/verificar';
 
 // Dimensiones del bloque de firma en puntos PDF (deben coincidir con
@@ -469,3 +473,112 @@ async function firmarPDFCliente(minutaId, m, keyBuf, cerBuf, passphrase, actorUs
 }
 
 exports.firmarPDFCliente = firmarPDFCliente;
+
+// ════════ CONTRATO DE PROYECTO ════════════════════════════════════════════
+// Mismo mecanismo de e.firma que las minutas, pero sobre el contrato (PDF) de
+// un proyecto y escribiendo en la tabla projects (columnas cont_*).
+
+// ── Firma ADMIN del contrato (columna izquierda, BusinessCool) ───────────────
+async function firmarContrato(projectId, p, keyBuf, cerBuf, passphrase, actorUserId, ip) {
+  const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
+  const QRCode = require('qrcode');
+
+  const certData = parseCert(cerBuf);
+  const privKey  = decryptKey(keyBuf, passphrase);
+
+  const filePath = path.join(CONTRATOS_DIR, p.contrato_path);
+  const pdfBytes = fs.readFileSync(filePath);
+
+  const folio      = crypto.randomUUID();
+  const fechaFirma = fechaMX();
+
+  const pdfDoc = await PDFDocument.load(pdfBytes);
+  const font   = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fontB  = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+  const row = (await detectSignatureRow(pdfBytes)) || { page: pdfDoc.getPageCount() - 1, y: 120 };
+  drawFooters(pdfDoc, font, rgb, `Contrato · Folio BC: ${folio}`);
+
+  const qrBuf = await QRCode.toBuffer(`${VERIFY_BASE}/${folio}`, { width: 130, margin: 1, type: 'png', errorCorrectionLevel: 'M' });
+  const qrImg = await pdfDoc.embedPng(qrBuf);
+
+  const adminData = { nombre: certData.nombre, rfc: certData.rfc, serial: certData.serial, email: certData.email, folio, fecha: fechaFirma };
+  placeBlock(pdfDoc, font, fontB, rgb, colTarget(pdfDoc, row, 'left'), null, 'left', adminData, qrImg);
+
+  const signedBytes = await pdfDoc.save();
+  const ext        = path.extname(p.contrato_path);
+  const signedFile = path.basename(p.contrato_path, ext) + '_firmado' + ext;
+  fs.writeFileSync(path.join(CONTRATOS_DIR, signedFile), signedBytes);
+
+  const { hashHex, sello } = sellarBytes(privKey, signedBytes);
+  const certPem = cerToPem(cerBuf);
+  const extO       = path.extname(p.contrato_nombre || 'contrato.pdf');
+  const signedName = path.basename(p.contrato_nombre || 'contrato.pdf', extO) + '_firmado' + extO;
+
+  db.prepare(`UPDATE projects SET cont_firmada=1, cont_firma_serial=?, cont_firma_nombre=?, cont_firma_fecha=?,
+              cont_firma_folio=?, cont_firma_email=?, cont_firma_rfc=?, cont_firma_hash=?, cont_firma_sello=?, cont_firma_cert=?,
+              cont_firma_slots=?, contrato_path=?, contrato_nombre=? WHERE id=?`)
+    .run(certData.serial, certData.nombre, fechaFirma, folio, certData.email, certData.rfc,
+         hashHex, sello, certPem, JSON.stringify(row), signedFile, signedName, projectId);
+
+  if (actorUserId) logAction(actorUserId, 'contrato_firmado', `${p.name} · ${certData.serial}`, ip);
+  return { folio, ...certData, fechaFirma };
+}
+exports.firmarContrato = firmarContrato;
+
+// ── Firma CLIENTE del contrato (columna derecha) ─────────────────────────────
+async function firmarContratoCliente(projectId, p, keyBuf, cerBuf, passphrase, actorUserId, ip) {
+  const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
+  const QRCode = require('qrcode');
+
+  const certData = parseCert(cerBuf);
+  const privKey  = decryptKey(keyBuf, passphrase);
+
+  const filePath = path.join(CONTRATOS_DIR, p.contrato_path);
+  const pdfBytes = fs.readFileSync(filePath);
+
+  const clientFolio = crypto.randomUUID();
+  const fechaFirma  = fechaMX();
+
+  const pdfDoc = await PDFDocument.load(pdfBytes);
+  const font   = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fontB  = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+  let row = null;
+  try { row = p.cont_firma_slots ? JSON.parse(p.cont_firma_slots) : null; } catch (_) { row = null; }
+  if (!row) row = (await detectSignatureRow(pdfBytes)) || { page: pdfDoc.getPageCount() - 1, y: 120 };
+
+  const qrBuf = await QRCode.toBuffer(`${VERIFY_BASE}/${clientFolio}`, { width: 130, margin: 1, type: 'png', errorCorrectionLevel: 'M' });
+  const qrImg = await pdfDoc.embedPng(qrBuf);
+
+  const clientData = { nombre: certData.nombre, rfc: certData.rfc, serial: certData.serial, email: certData.email, folio: clientFolio, fecha: fechaFirma };
+  placeBlock(pdfDoc, font, fontB, rgb, colTarget(pdfDoc, row, 'right'), null, 'right', clientData, qrImg);
+
+  const cfTxt = `Folio cliente: ${clientFolio}`;
+  for (const page of pdfDoc.getPages()) {
+    const { width } = page.getSize();
+    const tw = font.widthOfTextAtSize(cfTxt, 6);
+    page.drawText(cfTxt, { x: width - 28 - tw, y: 13, size: 6, font, color: rgb(0.44, 0.44, 0.44) });
+  }
+
+  const signedBytes = await pdfDoc.save();
+  const ext     = path.extname(p.contrato_path);
+  const base    = path.basename(p.contrato_path, ext).replace(/_cliente$/, '');
+  const newFile = base + '_cliente' + ext;
+  fs.writeFileSync(path.join(CONTRATOS_DIR, newFile), signedBytes);
+
+  const { hashHex, sello } = sellarBytes(privKey, signedBytes);
+  const certPem = cerToPem(cerBuf);
+  const extO    = path.extname(p.contrato_nombre || 'contrato.pdf');
+  const newName = path.basename(p.contrato_nombre || 'contrato.pdf', extO).replace(/_cliente$/, '') + '_cliente' + extO;
+
+  db.prepare(`UPDATE projects SET cont_firmada_cliente=1, cont_fc_serial=?, cont_fc_nombre=?,
+              cont_fc_fecha=?, cont_fc_folio=?, cont_fc_email=?, cont_fc_rfc=?,
+              cont_fc_hash=?, cont_fc_sello=?, cont_fc_cert=?, contrato_path=?, contrato_nombre=? WHERE id=?`)
+    .run(certData.serial, certData.nombre, fechaFirma, clientFolio, certData.email, certData.rfc,
+         hashHex, sello, certPem, newFile, newName, projectId);
+
+  if (actorUserId) logAction(actorUserId, 'contrato_firmado_cliente', `${p.name} · ${certData.serial}`, ip);
+  return { folio: clientFolio, ...certData, fechaFirma };
+}
+exports.firmarContratoCliente = firmarContratoCliente;

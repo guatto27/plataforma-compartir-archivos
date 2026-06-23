@@ -15,6 +15,18 @@ const { makeInterviewActionsRouter, getAccessibleInterview } = require('./interv
 const { sendWelcomeEmail } = require('../lib/mailer');
 const { removeLogoBackground } = require('../lib/logo-bg');
 const projectsLib = require('../lib/projects');
+const { firmarContrato, CONTRATOS_DIR } = require('../lib/minuta-firma');
+
+// Subida del contrato (PDF) a disco y de .key/.cer en memoria (nunca se guardan)
+const contratoUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, CONTRATOS_DIR),
+    filename: (req, file, cb) => cb(null, `contrato-${Date.now()}-${crypto.randomBytes(5).toString('hex')}.pdf`),
+  }),
+  limits: { fileSize: 25 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => cb(null, path.extname(file.originalname).toLowerCase() === '.pdf'),
+});
+const memUploadFirma = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2 * 1024 * 1024 } });
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const {
@@ -131,13 +143,17 @@ router.get('/inicio', (req, res) => {
 // Proyectos: todos los proyectos de todas las empresas, con su avance
 router.get('/proyectos', (req, res) => {
   const rows = db.prepare(
-    `SELECT p.id, p.name, p.status, p.company_id, c.name AS company_name
+    `SELECT p.*, c.name AS company_name
      FROM projects p JOIN companies c ON c.id = p.company_id
      ORDER BY c.name, p.created_at, p.id`
   ).all().map((p) => {
     const cnt = projectsLib.counts(p.id);
     return { id: p.id, name: p.name, status: p.status, company: p.company_name,
-             files: cnt.files, minutas: cnt.minutas, interviews: cnt.interviews };
+             files: cnt.files, minutas: cnt.minutas, interviews: cnt.interviews,
+             contrato_path: p.contrato_path, contrato_nombre: p.contrato_nombre,
+             contrato_enviado: p.contrato_enviado,
+             cont_firmada: p.cont_firmada, cont_firmada_cliente: p.cont_firmada_cliente,
+             cont_firma_nombre: p.cont_firma_nombre, cont_fc_nombre: p.cont_fc_nombre };
   });
   res.render('admin/proyectos', {
     title: 'Proyectos', active: 'proyectos', rows,
@@ -479,6 +495,112 @@ router.post('/proyectos/:id/delete', requireAdmin, (req, res) => {
   logAction(req.session.userId, 'project_delete', proj.name, req.ip);
   req.session.flash = { type: 'success', text: `Proyecto "${proj.name}" eliminado.` };
   res.redirect(projBack(req));
+});
+
+// ───────── Contrato del proyecto (subir, firmar e.firma, enviar al cliente) ─────────
+function contratoFile(p, res) {
+  if (!p || !p.contrato_path) { res.status(404).send('Sin contrato'); return null; }
+  const fp = path.join(CONTRATOS_DIR, p.contrato_path);
+  if (!fs.existsSync(fp)) { res.status(404).send('Archivo no encontrado'); return null; }
+  return fp;
+}
+
+// Subir / reemplazar el contrato (PDF)
+router.post('/proyectos/:id/contrato', requireAdmin, contratoUpload.single('contrato'), (req, res) => {
+  if (!verifyCsrf(req)) return denyCsrf(res);
+  const proj = db.prepare('SELECT * FROM projects WHERE id = ?').get(req.params.id);
+  if (!proj) return res.status(404).render('error', { title: 'No encontrado', message: 'Proyecto no encontrado.' });
+  if (!req.file) {
+    req.session.flash = { type: 'error', text: 'Sube un archivo PDF del contrato.' };
+    return res.redirect('/admin/proyectos');
+  }
+  // Al subir un contrato nuevo se reinician las firmas previas
+  db.prepare(`UPDATE projects SET contrato_path=?, contrato_nombre=?, contrato_enviado=0,
+              cont_firmada=0, cont_firma_serial=NULL, cont_firma_nombre=NULL, cont_firma_fecha=NULL,
+              cont_firma_folio=NULL, cont_firma_email=NULL, cont_firma_rfc=NULL, cont_firma_hash=NULL,
+              cont_firma_sello=NULL, cont_firma_cert=NULL, cont_firma_slots=NULL,
+              cont_firmada_cliente=0, cont_fc_serial=NULL, cont_fc_nombre=NULL, cont_fc_fecha=NULL,
+              cont_fc_folio=NULL, cont_fc_email=NULL, cont_fc_rfc=NULL, cont_fc_hash=NULL,
+              cont_fc_sello=NULL, cont_fc_cert=NULL WHERE id=?`)
+    .run(req.file.filename, req.file.originalname, proj.id);
+  logAction(req.session.userId, 'contrato_subido', proj.name, req.ip);
+  req.session.flash = { type: 'success', text: 'Contrato cargado. Ya puedes firmarlo con tu e.firma.' };
+  res.redirect('/admin/proyectos');
+});
+
+// Firmar el contrato con e.firma (BusinessCool)
+router.post('/proyectos/:id/contrato/firmar', requireAdmin,
+  memUploadFirma.fields([{ name: 'key_file', maxCount: 1 }, { name: 'cer_file', maxCount: 1 }]),
+  async (req, res) => {
+    if (!verifyCsrf(req)) return denyCsrf(res);
+    const proj = db.prepare('SELECT * FROM projects WHERE id = ?').get(req.params.id);
+    if (!proj || !proj.contrato_path) {
+      req.session.flash = { type: 'error', text: 'Primero sube el contrato.' };
+      return res.redirect('/admin/proyectos');
+    }
+    const keyFile = req.files && req.files['key_file'] && req.files['key_file'][0];
+    const cerFile = req.files && req.files['cer_file'] && req.files['cer_file'][0];
+    const passphrase = String(req.body.passphrase || '');
+    if (!keyFile || !cerFile || !passphrase) {
+      req.session.flash = { type: 'error', text: 'Sube los archivos .key y .cer e ingresa la contraseña.' };
+      return res.redirect('/admin/proyectos');
+    }
+    try {
+      await firmarContrato(proj.id, proj, keyFile.buffer, cerFile.buffer, passphrase, req.session.userId, req.ip);
+      req.session.flash = { type: 'success', text: 'Contrato firmado con e.firma. Ahora puedes enviarlo al cliente responsable.' };
+    } catch (err) {
+      req.session.flash = { type: 'error', text: 'Error al firmar: ' + err.message };
+    }
+    res.redirect('/admin/proyectos');
+  });
+
+// Enviar el contrato al cliente responsable para su firma
+router.post('/proyectos/:id/contrato/enviar', requireAdmin, (req, res) => {
+  if (!verifyCsrf(req)) return denyCsrf(res);
+  const proj = db.prepare('SELECT * FROM projects WHERE id = ?').get(req.params.id);
+  if (!proj || !proj.contrato_path) return res.redirect('/admin/proyectos');
+  if (!proj.cont_firmada) {
+    req.session.flash = { type: 'error', text: 'Firma el contrato con tu e.firma antes de enviarlo al cliente.' };
+    return res.redirect('/admin/proyectos');
+  }
+  const enviado = proj.contrato_enviado ? 0 : 1;
+  db.prepare('UPDATE projects SET contrato_enviado=? WHERE id=?').run(enviado, proj.id);
+  logAction(req.session.userId, enviado ? 'contrato_enviado' : 'contrato_retirado', proj.name, req.ip);
+  req.session.flash = { type: 'success', text: enviado
+    ? 'Contrato enviado al cliente responsable. Lo verá en su portal para firmarlo con su e.firma.'
+    : 'Envío retirado: el cliente ya no verá el contrato.' };
+  res.redirect('/admin/proyectos');
+});
+
+// Eliminar el contrato
+router.post('/proyectos/:id/contrato/eliminar', requireAdmin, (req, res) => {
+  if (!verifyCsrf(req)) return denyCsrf(res);
+  const proj = db.prepare('SELECT * FROM projects WHERE id = ?').get(req.params.id);
+  if (!proj) return res.redirect('/admin/proyectos');
+  db.prepare(`UPDATE projects SET contrato_path=NULL, contrato_nombre=NULL, contrato_enviado=0,
+              cont_firmada=0, cont_firmada_cliente=0 WHERE id=?`).run(proj.id);
+  logAction(req.session.userId, 'contrato_eliminado', proj.name, req.ip);
+  req.session.flash = { type: 'success', text: 'Contrato eliminado del proyecto.' };
+  res.redirect('/admin/proyectos');
+});
+
+// Ver / descargar el contrato
+router.get('/proyectos/:id/contrato/ver-pdf', (req, res) => {
+  const proj = db.prepare('SELECT contrato_path FROM projects WHERE id = ?').get(req.params.id);
+  const fp = contratoFile(proj, res);
+  if (!fp) return;
+  res.removeHeader('X-Frame-Options');
+  res.removeHeader('Content-Security-Policy');
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', 'inline; filename="contrato.pdf"');
+  res.setHeader('Cache-Control', 'private, max-age=60');
+  fs.createReadStream(fp).pipe(res);
+});
+router.get('/proyectos/:id/contrato/descargar', (req, res) => {
+  const proj = db.prepare('SELECT contrato_path, contrato_nombre FROM projects WHERE id = ?').get(req.params.id);
+  const fp = contratoFile(proj, res);
+  if (!fp) return;
+  res.download(fp, proj.contrato_nombre || 'contrato.pdf');
 });
 
 router.post('/empresas/:id/delete', requireAdmin, (req, res) => {

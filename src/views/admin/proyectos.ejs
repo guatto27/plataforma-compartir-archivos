@@ -26,6 +26,7 @@
             <th class="ta-center">Entregables</th>
             <th class="ta-center">Minutas</th>
             <th class="ta-center">Entrevistas</th>
+            <th class="ta-center">Contrato</th>
             <% if (canManage) { %><th class="ta-actions">Acciones</th><% } %>
           </tr>
         </thead>
@@ -39,6 +40,18 @@
               <td class="ta-center"><%= r.files %></td>
               <td class="ta-center"><%= r.minutas %></td>
               <td class="ta-center"><%= r.interviews %></td>
+              <td class="ta-center">
+                <% if (!r.contrato_path) { %>
+                  <% if (canManage) { %><button class="btn btn-ghost btn-sm" type="button" data-dialog="dlg-contrato-<%= r.id %>">+ Subir</button><% } else { %><span class="meta">—</span><% } %>
+                <% } else { %>
+                  <button class="btn btn-ghost btn-sm" type="button" data-dialog="dlg-contrato-<%= r.id %>" style="display:inline-flex;align-items:center;gap:6px">
+                    <% if (r.cont_firmada && r.cont_firmada_cliente) { %><span class="st-chip st-fin">Firmado</span>
+                    <% } else if (r.contrato_enviado) { %><span class="st-chip st-vig">Con el cliente</span>
+                    <% } else if (r.cont_firmada) { %><span class="st-chip st-vig">Firma BC</span>
+                    <% } else { %><span class="st-chip st-pau">Sin firmar</span><% } %>
+                  </button>
+                <% } %>
+              </td>
               <% if (canManage) { %>
               <td class="ta-actions">
                 <button class="iconbtn" type="button" data-dialog="dlg-edit-proj-<%= r.id %>" title="Editar" aria-label="Editar">
@@ -112,6 +125,77 @@
           <button class="btn btn-ghost" type="button" data-close>Cancelar</button>
         </div>
       </form>
+    </dialog>
+  <% }) %>
+
+  <!-- Contrato de cada proyecto -->
+  <% rows.forEach(function (r) { %>
+    <dialog id="dlg-contrato-<%= r.id %>" class="modal firma-modal">
+      <div class="head-row" style="margin-bottom:10px">
+        <div><h2 style="margin:0">Contrato del proyecto</h2><p class="meta" style="margin:2px 0 0"><%= r.name %> · <%= r.company %></p></div>
+        <button class="btn btn-ghost btn-sm" type="button" data-close>Cerrar</button>
+      </div>
+
+      <% if (!r.contrato_path) { %>
+        <p class="muted" style="font-size:13px">Sube el contrato en PDF para firmarlo con tu e.firma y enviarlo al cliente responsable para su firma.</p>
+        <form method="post" action="/admin/proyectos/<%= r.id %>/contrato" enctype="multipart/form-data">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <label>Archivo del contrato (PDF)
+            <input type="file" name="contrato" accept=".pdf" required />
+          </label>
+          <div class="modal-actions">
+            <button class="btn btn-primary" type="submit">Subir contrato</button>
+            <button class="btn btn-ghost" type="button" data-close>Cancelar</button>
+          </div>
+        </form>
+      <% } else { %>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+          <span class="st <%= r.cont_firmada ? 'aprob' : 'rev' %>"><%= r.cont_firmada ? '✓ Firmado por BusinessCool' : 'Pendiente firma BusinessCool' %></span>
+          <span class="st <%= r.cont_firmada_cliente ? 'aprob' : 'rev' %>"><%= r.cont_firmada_cliente ? '✓ Firmado por el cliente' : 'Pendiente firma del cliente' %></span>
+          <% if (r.contrato_enviado) { %><span class="st rev">Enviado al cliente</span><% } %>
+        </div>
+
+        <object class="minuta-pdf-view" data-pdf-src="/admin/proyectos/<%= r.id %>/contrato/ver-pdf" type="application/pdf">
+          <p class="muted">No se pudo mostrar el PDF. <a href="/admin/proyectos/<%= r.id %>/contrato/ver-pdf" target="_blank" rel="noopener noreferrer">Ábrelo en una pestaña</a>.</p>
+        </object>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+          <a class="btn btn-ghost btn-sm" href="/admin/proyectos/<%= r.id %>/contrato/descargar">Descargar</a>
+          <% if (r.cont_firmada) { %>
+            <form method="post" action="/admin/proyectos/<%= r.id %>/contrato/enviar" class="inline">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <button class="btn <%= r.contrato_enviado ? 'btn-ghost' : 'btn-primary' %> btn-sm" type="submit"><%= r.contrato_enviado ? 'Retirar del cliente' : 'Enviar al cliente responsable' %></button>
+            </form>
+          <% } %>
+          <form method="post" action="/admin/proyectos/<%= r.id %>/contrato/eliminar" class="inline" data-confirm="¿Eliminar el contrato de este proyecto?">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <button class="btn btn-ghost btn-sm" type="submit" style="color:var(--bc-error)">Eliminar</button>
+          </form>
+        </div>
+
+        <% if (!r.cont_firmada) { %>
+          <hr style="border:none;border-top:1px solid var(--bc-border);margin:16px 0" />
+          <h3 style="margin:0 0 6px">Firmar con e.firma (SAT)</h3>
+          <p class="muted" style="font-size:12px;margin-bottom:10px">La firma se coloca automáticamente. Los archivos .key/.cer <strong>nunca se almacenan</strong>.</p>
+          <form method="post" action="/admin/proyectos/<%= r.id %>/contrato/firmar" enctype="multipart/form-data">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <label>Archivo .key (llave privada) <input type="file" name="key_file" accept=".key" required /></label>
+            <label>Archivo .cer (certificado) <input type="file" name="cer_file" accept=".cer" required /></label>
+            <label>Contraseña de e.firma <input type="password" name="passphrase" required maxlength="100" placeholder="Contraseña del SAT" /></label>
+            <div class="modal-actions"><button class="btn btn-primary" type="submit">Firmar contrato</button></div>
+          </form>
+        <% } %>
+
+        <hr style="border:none;border-top:1px solid var(--bc-border);margin:16px 0" />
+        <details>
+          <summary class="muted" style="cursor:pointer;font-size:13px">Reemplazar el contrato por otro PDF</summary>
+          <form method="post" action="/admin/proyectos/<%= r.id %>/contrato" enctype="multipart/form-data" style="margin-top:10px">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <label><input type="file" name="contrato" accept=".pdf" required /></label>
+            <div class="modal-actions"><button class="btn btn-ghost btn-sm" type="submit">Subir nuevo (reinicia firmas)</button></div>
+          </form>
+        </details>
+      <% } %>
     </dialog>
   <% }) %>
 <% } %>

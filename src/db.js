@@ -222,6 +222,22 @@ if (!minutaHas('firma_slots'))           db.exec('ALTER TABLE minutas ADD COLUMN
 // Multi-proyecto: a qué proyecto pertenece la minuta
 if (!minutaHas('project_id'))            db.exec('ALTER TABLE minutas ADD COLUMN project_id INTEGER');
 
+// Migración: contrato del proyecto (PDF) + firma e.firma de BusinessCool y del cliente
+const projCols = db.prepare('PRAGMA table_info(projects)').all();
+const projHas = (n) => projCols.some((c) => c.name === n);
+const addProj = (n, type) => { if (!projHas(n)) db.exec(`ALTER TABLE projects ADD COLUMN ${n} ${type}`); };
+addProj('contrato_path', 'TEXT');
+addProj('contrato_nombre', 'TEXT');
+addProj('contrato_enviado', 'INTEGER NOT NULL DEFAULT 0');
+// Firma BusinessCool
+addProj('cont_firmada', 'INTEGER NOT NULL DEFAULT 0');
+['serial', 'nombre', 'fecha', 'folio', 'email', 'rfc', 'hash', 'sello', 'cert', 'slots']
+  .forEach((s) => addProj('cont_firma_' + s, 'TEXT'));
+// Firma cliente
+addProj('cont_firmada_cliente', 'INTEGER NOT NULL DEFAULT 0');
+['serial', 'nombre', 'fecha', 'folio', 'email', 'rfc', 'hash', 'sello', 'cert']
+  .forEach((s) => addProj('cont_fc_' + s, 'TEXT'));
+
 // Migración: a qué proyecto pertenece cada entrevista (los archivos heredan el proyecto vía su entrevista)
 const interviewCols = db.prepare('PRAGMA table_info(interviews)').all();
 if (!interviewCols.some((c) => c.name === 'project_id')) {
