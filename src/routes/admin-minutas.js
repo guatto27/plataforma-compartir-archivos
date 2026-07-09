@@ -470,6 +470,11 @@ router.post('/:id/publicar', (req, res) => {
   if (!verifyCsrf(req)) return denyCsrf(res);
   const m = db.prepare('SELECT * FROM minutas WHERE id = ?').get(req.params.id);
   if (!m) return res.redirect('/admin/minutas');
+  // Solo se puede enviar al cliente si BusinessCool ya firmó la minuta (retirar siempre se permite)
+  if (!m.publicada && !m.firmada) {
+    req.session.flash = { type: 'error', text: 'Firma la minuta con tu e.firma antes de enviarla al cliente.' };
+    return res.redirect('/admin/minutas');
+  }
   db.prepare('UPDATE minutas SET publicada = ? WHERE id = ?').run(m.publicada ? 0 : 1, m.id);
   req.session.flash = { type: 'success', text: m.publicada ? 'Envío retirado: el cliente ya no la verá.' : 'Minuta enviada al cliente responsable.' };
   res.redirect('/admin/minutas');
