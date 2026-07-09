@@ -6,7 +6,10 @@
       <h1>Gestión de Minutas y Contratos</h1>
       <p class="muted">Genera, firma y publica minutas de sesión; y firma y envía contratos de proyecto.</p>
     </div>
-    <a href="/admin/minutas/nueva" class="btn btn-primary">+ Nueva minuta</a>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-ghost" type="button" data-dialog="dlg-nuevo-contrato">+ Nuevo contrato</button>
+      <a href="/admin/minutas/nueva" class="btn btn-primary">+ Nueva minuta</a>
+    </div>
   </div>
 </div>
 
@@ -78,7 +81,42 @@
           <td class="ta-center"><% if (r.cont_firmada_cliente) { %><%- chkOk %><% } else { %><span class="meta">—</span><% } %></td>
           <td class="ta-center"><% if (r.contrato_enviado) { %><%- chkOk %><% } else { %><span class="meta">—</span><% } %></td>
           <td class="ta-actions">
-            <button class="btn <%= r.contrato_path ? 'btn-ghost' : 'btn-primary' %> btn-sm" type="button" data-dialog="dlg-contrato-<%= r.id %>"><%= r.contrato_path ? 'Gestionar / Firmar' : '+ Subir contrato' %></button>
+            <button class="iconbtn" type="button" data-dialog="dlg-contrato-<%= r.id %>" title="<%= r.contrato_path ? 'Modificar / Firmar' : 'Subir contrato' %>" aria-label="Modificar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <% if (r.contrato_path) { %>
+              <button class="iconbtn" type="button" data-dialog="dlg-ver-contrato-<%= r.id %>" title="Visualizar" aria-label="Visualizar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            <% } else { %>
+              <button class="iconbtn" type="button" disabled title="Sube el contrato para visualizarlo" aria-label="Visualizar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            <% } %>
+            <% if (r.contrato_path && r.cont_firmada) { %>
+              <form method="post" action="/admin/proyectos/<%= r.id %>/contrato/enviar" class="inline" data-confirm="<%= r.contrato_enviado ? '¿Retirar el envío? El cliente dejará de verlo.' : '¿Enviar este contrato al cliente responsable?' %>">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                <button class="iconbtn <%= r.contrato_enviado ? 'is-on' : '' %>" type="submit" title="<%= r.contrato_enviado ? 'Enviado (clic para retirar)' : 'Enviar al cliente' %>" aria-label="Enviar al cliente">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+              </form>
+            <% } else { %>
+              <button class="iconbtn" type="button" disabled title="Firma el contrato con tu e.firma para poder enviarlo" aria-label="Enviar al cliente">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </button>
+            <% } %>
+            <% if (r.contrato_path) { %>
+              <form method="post" action="/admin/proyectos/<%= r.id %>/contrato/eliminar" class="inline" data-confirm="¿Eliminar el contrato de “<%= r.name %>”?">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                <button class="iconbtn danger" type="submit" title="Eliminar" aria-label="Eliminar">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
+              </form>
+            <% } else { %>
+              <button class="iconbtn" type="button" disabled title="Sin contrato" aria-label="Eliminar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            <% } %>
           </td>
         </tr>
         <% }) %>
@@ -105,10 +143,56 @@
     </dialog>
   <% }) %>
 
-  <!-- Modales de gestión de contrato -->
+  <!-- Modales de gestión y visualización de contrato -->
   <% (contratos || []).forEach(function (r) { %>
     <%- include('_contrato-modal', { r: r, csrfToken: csrfToken }) %>
+    <% if (r.contrato_path) { %>
+      <dialog id="dlg-ver-contrato-<%= r.id %>" class="modal firma-modal">
+        <div class="head-row" style="margin-bottom:12px">
+          <h2 style="margin:0">Contrato — <%= r.name %></h2>
+          <div style="display:flex;gap:8px">
+            <a class="btn btn-ghost btn-sm" href="/admin/proyectos/<%= r.id %>/contrato/descargar" style="display:inline-flex;align-items:center;gap:6px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Descargar
+            </a>
+            <button class="btn btn-ghost btn-sm" type="button" data-close>Cerrar</button>
+          </div>
+        </div>
+        <object class="minuta-pdf-view" data-pdf-src="/admin/proyectos/<%= r.id %>/contrato/ver-pdf" type="application/pdf">
+          <p class="muted">No se pudo mostrar el PDF aquí. <a href="/admin/proyectos/<%= r.id %>/contrato/ver-pdf" target="_blank" rel="noopener noreferrer">Ábrelo en una pestaña</a>.</p>
+        </object>
+      </dialog>
+    <% } %>
   <% }) %>
 <% } %>
+
+<!-- Nuevo contrato: elegir proyecto y subir PDF -->
+<dialog id="dlg-nuevo-contrato" class="modal" data-strict>
+  <h2>Nuevo contrato</h2>
+  <% if (!contratos || !contratos.length) { %>
+    <p class="muted">Primero crea un proyecto en <a href="/admin/proyectos">Proyectos</a> para poder subirle un contrato.</p>
+    <div class="modal-actions"><button class="btn btn-ghost" type="button" data-close>Cerrar</button></div>
+  <% } else { %>
+    <p class="muted" style="font-size:13px">Elige el proyecto y sube el PDF del contrato. Después podrás firmarlo con tu e.firma y enviarlo al cliente.</p>
+    <form method="post" action="/admin/contratos/subir" enctype="multipart/form-data">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <label>Proyecto
+        <select name="project_id" required>
+          <option value="">— Selecciona el proyecto —</option>
+          <% contratos.forEach(function (r) { %>
+            <option value="<%= r.id %>"><%= r.company %> — <%= r.name %><%= r.contrato_path ? ' (reemplazar)' : '' %></option>
+          <% }) %>
+        </select>
+      </label>
+      <label>Archivo del contrato (PDF)
+        <input type="file" name="contrato" accept=".pdf" required />
+      </label>
+      <div class="modal-actions">
+        <button class="btn btn-primary" type="submit">Subir contrato</button>
+        <button class="btn btn-ghost" type="button" data-close>Cancelar</button>
+      </div>
+    </form>
+  <% } %>
+</dialog>
 
 <%- include('../partials/shell-footer') %>

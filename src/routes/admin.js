@@ -506,6 +506,19 @@ function contratoFile(p, res) {
 }
 
 // Subir / reemplazar el contrato (PDF)
+// Guarda el PDF en un proyecto y reinicia cualquier firma previa
+function guardarContratoEnProyecto(proj, file, userId, ip) {
+  db.prepare(`UPDATE projects SET contrato_path=?, contrato_nombre=?, contrato_enviado=0,
+              cont_firmada=0, cont_firma_serial=NULL, cont_firma_nombre=NULL, cont_firma_fecha=NULL,
+              cont_firma_folio=NULL, cont_firma_email=NULL, cont_firma_rfc=NULL, cont_firma_hash=NULL,
+              cont_firma_sello=NULL, cont_firma_cert=NULL, cont_firma_slots=NULL,
+              cont_firmada_cliente=0, cont_fc_serial=NULL, cont_fc_nombre=NULL, cont_fc_fecha=NULL,
+              cont_fc_folio=NULL, cont_fc_email=NULL, cont_fc_rfc=NULL, cont_fc_hash=NULL,
+              cont_fc_sello=NULL, cont_fc_cert=NULL WHERE id=?`)
+    .run(file.filename, file.originalname, proj.id);
+  logAction(userId, 'contrato_subido', proj.name, ip);
+}
+
 router.post('/proyectos/:id/contrato', requireAdmin, contratoUpload.single('contrato'), (req, res) => {
   if (!verifyCsrf(req)) return denyCsrf(res);
   const proj = db.prepare('SELECT * FROM projects WHERE id = ?').get(req.params.id);
@@ -514,18 +527,26 @@ router.post('/proyectos/:id/contrato', requireAdmin, contratoUpload.single('cont
     req.session.flash = { type: 'error', text: 'Sube un archivo PDF del contrato.' };
     return res.redirect('/admin/proyectos');
   }
-  // Al subir un contrato nuevo se reinician las firmas previas
-  db.prepare(`UPDATE projects SET contrato_path=?, contrato_nombre=?, contrato_enviado=0,
-              cont_firmada=0, cont_firma_serial=NULL, cont_firma_nombre=NULL, cont_firma_fecha=NULL,
-              cont_firma_folio=NULL, cont_firma_email=NULL, cont_firma_rfc=NULL, cont_firma_hash=NULL,
-              cont_firma_sello=NULL, cont_firma_cert=NULL, cont_firma_slots=NULL,
-              cont_firmada_cliente=0, cont_fc_serial=NULL, cont_fc_nombre=NULL, cont_fc_fecha=NULL,
-              cont_fc_folio=NULL, cont_fc_email=NULL, cont_fc_rfc=NULL, cont_fc_hash=NULL,
-              cont_fc_sello=NULL, cont_fc_cert=NULL WHERE id=?`)
-    .run(req.file.filename, req.file.originalname, proj.id);
-  logAction(req.session.userId, 'contrato_subido', proj.name, req.ip);
+  guardarContratoEnProyecto(proj, req.file, req.session.userId, req.ip);
   req.session.flash = { type: 'success', text: 'Contrato cargado. Ya puedes firmarlo con tu e.firma.' };
   res.redirect('/admin/proyectos');
+});
+
+// Nuevo contrato: elegir el proyecto y subir el PDF (desde Gestión de Minutas y Contratos)
+router.post('/contratos/subir', requireAdmin, contratoUpload.single('contrato'), (req, res) => {
+  if (!verifyCsrf(req)) return denyCsrf(res);
+  const proj = db.prepare('SELECT * FROM projects WHERE id = ?').get(parseInt(req.body.project_id, 10) || 0);
+  if (!proj) {
+    req.session.flash = { type: 'error', text: 'Selecciona un proyecto válido para el contrato.' };
+    return res.redirect('/admin/minutas');
+  }
+  if (!req.file) {
+    req.session.flash = { type: 'error', text: 'Sube un archivo PDF del contrato.' };
+    return res.redirect('/admin/minutas');
+  }
+  guardarContratoEnProyecto(proj, req.file, req.session.userId, req.ip);
+  req.session.flash = { type: 'success', text: `Contrato cargado en "${proj.name}". Ya puedes firmarlo con tu e.firma.` };
+  res.redirect('/admin/minutas');
 });
 
 // Firmar el contrato con e.firma (BusinessCool)
