@@ -14,25 +14,29 @@
   <div class="flash flash-success">Proyecto: <strong><%= projectFilter.company_name %> — <%= projectFilter.name %></strong> · <a href="/admin/minutas">ver todas las minutas</a></div>
 <% } %>
 
-<% if (!minutas.length) { %>
-  <div class="empty-state">Aún no hay minutas. Crea la primera con el botón de arriba.</div>
+<%
+  var chkOk = '<svg class="check-circle" viewBox="0 0 24 24" fill="none" stroke="#3fb950" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.4l2.6 2.6 5-5.6"/></svg>';
+  var hayContratos = contratos && contratos.length;
+%>
+<% if (!minutas.length && !hayContratos) { %>
+  <div class="empty-state">Aún no hay minutas ni contratos. Crea una minuta con el botón de arriba, o sube un contrato desde un proyecto.</div>
 <% } else { %>
   <section class="card">
     <table class="table">
       <thead>
-        <tr><th>Título</th><th>Empresa</th><th>Fecha</th><th>Formato</th><th class="ta-center">Firma BusinessCool</th><th class="ta-center">Firma Cliente</th><th class="ta-center">Enviada al cliente</th><th class="ta-actions">Acciones</th></tr>
+        <tr><th>Tipo</th><th>Documento</th><th>Empresa</th><th>Fecha</th><th class="ta-center">Firma BusinessCool</th><th class="ta-center">Firma Cliente</th><th class="ta-center">Enviado al cliente</th><th class="ta-actions">Acciones</th></tr>
       </thead>
       <tbody>
-        <%
-          var chkOk = '<svg class="check-circle" viewBox="0 0 24 24" fill="none" stroke="#3fb950" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.4l2.6 2.6 5-5.6"/></svg>';
-        %>
         <% minutas.forEach(function(m) {
              var fmt = FORMATOS.find(f => f.id === m.formato) || FORMATOS[0]; %>
         <tr>
-          <td><a href="/admin/minutas/<%= m.id %>"><strong><%= m.titulo %></strong></a></td>
+          <td><span class="doc-type minuta">Minuta</span></td>
+          <td>
+            <a href="/admin/minutas/<%= m.id %>"><strong><%= m.titulo %></strong></a>
+            <div class="meta"><%= fmt.label %></div>
+          </td>
           <td><%= m.company_name || '—' %></td>
           <td class="nowrap meta"><%= m.fecha %></td>
-          <td class="meta"><%= fmt.label %></td>
           <td class="ta-center"><% if (m.firmada) { %><%- chkOk %><% } else { %><span class="meta">—</span><% } %></td>
           <td class="ta-center"><% if (m.firmada_cliente) { %><%- chkOk %><% } else { %><span class="meta">—</span><% } %></td>
           <td class="ta-center"><% if (m.publicada) { %><%- chkOk %><% } else { %><span class="meta">—</span><% } %></td>
@@ -63,6 +67,24 @@
           </td>
         </tr>
         <% }) %>
+
+        <% (contratos || []).forEach(function (r) { %>
+        <tr>
+          <td><span class="doc-type contrato">Contrato</span></td>
+          <td>
+            <strong><%= r.name %></strong>
+            <div class="meta">Contrato de proyecto</div>
+          </td>
+          <td><%= r.company %></td>
+          <td class="meta">—</td>
+          <td class="ta-center"><% if (r.cont_firmada) { %><%- chkOk %><% } else { %><span class="meta">—</span><% } %></td>
+          <td class="ta-center"><% if (r.cont_firmada_cliente) { %><%- chkOk %><% } else { %><span class="meta">—</span><% } %></td>
+          <td class="ta-center"><% if (r.contrato_enviado) { %><%- chkOk %><% } else { %><span class="meta">—</span><% } %></td>
+          <td class="ta-actions">
+            <button class="btn <%= r.contrato_path ? 'btn-ghost' : 'btn-primary' %> btn-sm" type="button" data-dialog="dlg-contrato-<%= r.id %>"><%= r.contrato_path ? 'Gestionar / Firmar' : '+ Subir contrato' %></button>
+          </td>
+        </tr>
+        <% }) %>
       </tbody>
     </table>
   </section>
@@ -79,48 +101,11 @@
       </object>
     </dialog>
   <% }) %>
+
+  <!-- Modales de gestión de contrato -->
+  <% (contratos || []).forEach(function (r) { %>
+    <%- include('_contrato-modal', { r: r, csrfToken: csrfToken }) %>
+  <% }) %>
 <% } %>
-
-<!-- ═══ Contratos de proyecto ═══ -->
-<%
-  var chkOkC = '<svg class="check-circle" viewBox="0 0 24 24" fill="none" stroke="#3fb950" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.4l2.6 2.6 5-5.6"/></svg>';
-%>
-<section class="card" style="margin-top:24px">
-  <div class="head-row" style="margin-bottom:6px">
-    <div>
-      <h2 style="margin:0">Contratos de proyecto</h2>
-      <p class="muted" style="margin:2px 0 0">Sube el contrato, fírmalo con tu e.firma y envíalo al cliente responsable para su firma.</p>
-    </div>
-  </div>
-  <% if (!contratos || !contratos.length) { %>
-    <p class="empty">Aún no hay proyectos. Crea un proyecto en <a href="/admin/proyectos">Proyectos</a> para gestionar su contrato.</p>
-  <% } else { %>
-    <div class="table-wrap">
-      <table class="table">
-        <thead>
-          <tr><th>Proyecto</th><th>Empresa</th><th class="ta-center">Firma BusinessCool</th><th class="ta-center">Firma Cliente</th><th class="ta-center">Enviado al cliente</th><th class="ta-actions">Contrato</th></tr>
-        </thead>
-        <tbody>
-          <% contratos.forEach(function (r) { %>
-            <tr>
-              <td><strong><%= r.name %></strong></td>
-              <td><%= r.company %></td>
-              <td class="ta-center"><% if (r.cont_firmada) { %><%- chkOkC %><% } else { %><span class="meta">—</span><% } %></td>
-              <td class="ta-center"><% if (r.cont_firmada_cliente) { %><%- chkOkC %><% } else { %><span class="meta">—</span><% } %></td>
-              <td class="ta-center"><% if (r.contrato_enviado) { %><%- chkOkC %><% } else { %><span class="meta">—</span><% } %></td>
-              <td class="ta-actions">
-                <button class="btn <%= r.contrato_path ? 'btn-ghost' : 'btn-primary' %> btn-sm" type="button" data-dialog="dlg-contrato-<%= r.id %>"><%= r.contrato_path ? 'Gestionar / Firmar' : '+ Subir contrato' %></button>
-              </td>
-            </tr>
-          <% }) %>
-        </tbody>
-      </table>
-    </div>
-  <% } %>
-</section>
-
-<% (contratos || []).forEach(function (r) { %>
-  <%- include('_contrato-modal', { r: r, csrfToken: csrfToken }) %>
-<% }) %>
 
 <%- include('../partials/shell-footer') %>
