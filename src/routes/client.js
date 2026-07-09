@@ -289,7 +289,7 @@ router.get('/minutas/:id/ver-pdf', (req, res) => {
   fs.createReadStream(filePath).pipe(res);
 });
 
-// Minutas — solo cliente_responsable (lee minutas publicadas de su empresa)
+// Minutas y Contratos — solo cliente_responsable (documentos publicados/enviados de su proyecto)
 router.get('/minutas', (req, res) => {
   if (req.session.role === 'client') return res.redirect('/app/agente');
   const active = activeProject(req);
@@ -300,8 +300,14 @@ router.get('/minutas', (req, res) => {
          ORDER BY fecha DESC`
       ).all(active.id)
     : [];
+  const contratos = active
+    ? db.prepare(
+        `SELECT p.*, c.name AS company_name FROM projects p JOIN companies c ON c.id = p.company_id
+         WHERE p.id = ? AND p.contrato_enviado = 1`
+      ).all(active.id)
+    : [];
   res.render('client/minutas', {
-    title: 'Minutas', active: 'minutas', companyName: companyOf(req), minutas,
+    title: 'Minutas y Contratos', active: 'minutas', companyName: companyOf(req), minutas, contratos,
     projectName: active ? active.name : null,
   });
 });
@@ -362,17 +368,8 @@ function contratoAccesible(req, projectId) {
   return p || null;
 }
 
-router.get('/contratos', (req, res) => {
-  if (req.session.role === 'client') return res.redirect('/app/agente');
-  const me = db.prepare('SELECT company_id FROM users WHERE id = ?').get(req.session.userId);
-  const contratos = me && me.company_id
-    ? db.prepare(
-        `SELECT p.*, c.name AS company_name FROM projects p JOIN companies c ON c.id = p.company_id
-         WHERE p.company_id = ? AND p.contrato_enviado = 1 ORDER BY p.created_at DESC`
-      ).all(me.company_id)
-    : [];
-  res.render('client/contratos', { title: 'Contratos', active: 'contratos', companyName: companyOf(req), contratos });
-});
+// Los contratos ahora viven junto a las minutas (tabla unificada)
+router.get('/contratos', (req, res) => res.redirect('/app/minutas'));
 
 router.get('/contratos/:id/ver-pdf', (req, res) => {
   const p = contratoAccesible(req, req.params.id);

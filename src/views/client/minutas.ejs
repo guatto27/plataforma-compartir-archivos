@@ -3,18 +3,20 @@
 <div class="page-head">
   <div class="head-row">
     <div>
-      <h1>Minutas</h1>
+      <h1>Minutas y Contratos</h1>
       <p class="muted"><%= companyName || brand.name %></p>
     </div>
   </div>
 </div>
 
-<% if (minutas && minutas.length > 0) { %>
+<% var hayContratos = contratos && contratos.length; %>
+<% if ((minutas && minutas.length) || hayContratos) { %>
   <section class="card" style="overflow-x:auto">
     <table class="table minutas-table">
       <thead>
         <tr>
-          <th>Minuta</th>
+          <th>Tipo</th>
+          <th>Documento</th>
           <th>Fecha</th>
           <th>BusinessCool AI</th>
           <th>Cliente</th>
@@ -23,23 +25,20 @@
         </tr>
       </thead>
       <tbody>
-        <% minutas.forEach(function (m) { %>
+        <% (minutas || []).forEach(function (m) { %>
           <%
             var esPdf = m.archivo_path && m.archivo_path.toLowerCase().endsWith('.pdf');
             var puedeFirmar = esPdf && m.firmada && !m.firmada_cliente;
           %>
           <tr>
+            <td><span class="doc-type minuta">Minuta</span></td>
             <td>
               <strong><%= m.titulo %></strong>
               <% if (m.formato) { %><div class="meta" style="font-size:11px"><%= m.formato %></div><% } %>
             </td>
             <td class="nowrap meta"><%= m.fecha %></td>
-            <td>
-              <% if (m.firmada) { %><span class="firmante"><%= titleCase(m.firma_nombre) || '—' %></span><% } else { %><span class="meta">—</span><% } %>
-            </td>
-            <td>
-              <% if (m.firmada_cliente) { %><span class="firmante"><%= titleCase(m.firma_cliente_nombre) || '—' %></span><% } else { %><span class="meta">—</span><% } %>
-            </td>
+            <td><% if (m.firmada) { %><span class="firmante"><%= titleCase(m.firma_nombre) || '—' %></span><% } else { %><span class="meta">—</span><% } %></td>
+            <td><% if (m.firmada_cliente) { %><span class="firmante"><%= titleCase(m.firma_cliente_nombre) || '—' %></span><% } else { %><span class="meta">—</span><% } %></td>
             <td>
               <div class="firma-status">
                 <span class="<%= m.firmada ? 'fs-ok' : 'fs-pend' %>"><%= m.firmada ? '✓' : '○' %> BusinessCool</span>
@@ -49,28 +48,64 @@
             <td class="acciones-cell">
               <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
                 <% if (esPdf) { %>
-                  <a class="btn btn-ghost" href="/app/minutas/<%= m.id %>/ver-pdf" target="_blank" rel="noopener"
-                     style="padding:7px 12px;font-size:12px;margin:0;display:inline-flex;align-items:center;gap:5px">
+                  <a class="btn btn-ghost" href="/app/minutas/<%= m.id %>/ver-pdf" target="_blank" rel="noopener" style="padding:7px 12px;font-size:12px;margin:0;display:inline-flex;align-items:center;gap:5px">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                     Visualizar
                   </a>
                 <% } else if (m.contenido) { %>
-                  <button class="btn btn-ghost" data-dialog="ver-<%= m.id %>"
-                          style="padding:7px 12px;font-size:12px;margin:0">Ver contenido</button>
+                  <button class="btn btn-ghost" data-dialog="ver-<%= m.id %>" style="padding:7px 12px;font-size:12px;margin:0">Ver contenido</button>
                 <% } %>
                 <% if (m.archivo_path) { %>
-                  <a class="btn btn-ghost" href="/app/minutas/<%= m.id %>/descargar"
-                     style="padding:7px 12px;font-size:12px;margin:0;display:inline-flex;align-items:center;gap:5px">
+                  <a class="btn btn-ghost" href="/app/minutas/<%= m.id %>/descargar" style="padding:7px 12px;font-size:12px;margin:0;display:inline-flex;align-items:center;gap:5px">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                     Descargar
                   </a>
                 <% } %>
                 <% if (puedeFirmar) { %>
-                  <button class="btn btn-primary" data-dialog="firmar-<%= m.id %>"
-                          style="padding:7px 12px;font-size:12px;margin:0;display:inline-flex;align-items:center;gap:5px">
+                  <button class="btn btn-primary" data-dialog="firmar-<%= m.id %>" style="padding:7px 12px;font-size:12px;margin:0;display:inline-flex;align-items:center;gap:5px">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                     Firmar
                   </button>
+                <% } %>
+              </div>
+            </td>
+          </tr>
+        <% }) %>
+
+        <% (contratos || []).forEach(function (p) { %>
+          <% var puedeFirmarC = p.cont_firmada && !p.cont_firmada_cliente; %>
+          <tr>
+            <td><span class="doc-type contrato">Contrato</span></td>
+            <td>
+              <strong><%= p.name %></strong>
+              <div class="meta" style="font-size:11px">Contrato de proyecto</div>
+            </td>
+            <td class="meta">—</td>
+            <td><% if (p.cont_firmada) { %><span class="firmante"><%= titleCase(p.cont_firma_nombre) || '—' %></span><% } else { %><span class="meta">—</span><% } %></td>
+            <td><% if (p.cont_firmada_cliente) { %><span class="firmante"><%= titleCase(p.cont_fc_nombre) || '—' %></span><% } else { %><span class="meta">—</span><% } %></td>
+            <td>
+              <div class="firma-status">
+                <span class="<%= p.cont_firmada ? 'fs-ok' : 'fs-pend' %>"><%= p.cont_firmada ? '✓' : '○' %> BusinessCool</span>
+                <span class="<%= p.cont_firmada_cliente ? 'fs-ok' : 'fs-pend' %>"><%= p.cont_firmada_cliente ? '✓' : '○' %> Cliente</span>
+              </div>
+            </td>
+            <td class="acciones-cell">
+              <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+                <a class="btn btn-ghost" href="/app/contratos/<%= p.id %>/ver-pdf" target="_blank" rel="noopener" style="padding:7px 12px;font-size:12px;margin:0;display:inline-flex;align-items:center;gap:5px">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  Visualizar
+                </a>
+                <a class="btn btn-ghost" href="/app/contratos/<%= p.id %>/descargar" style="padding:7px 12px;font-size:12px;margin:0;display:inline-flex;align-items:center;gap:5px">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Descargar
+                </a>
+                <% if (puedeFirmarC) { %>
+                  <button class="btn btn-primary" data-dialog="firmar-cont-<%= p.id %>" style="padding:7px 12px;font-size:12px;margin:0;display:inline-flex;align-items:center;gap:5px">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    Firmar
+                  </button>
+                <% } else if (p.cont_firmada_cliente) { %>
+                  <span class="meta" style="align-self:center">Firmado por ambas partes</span>
                 <% } %>
               </div>
             </td>
@@ -80,47 +115,43 @@
     </table>
   </section>
 
-  <!-- Modales: firmar / ver contenido -->
-  <% minutas.forEach(function (m) { %>
+  <!-- Modales: firmar / ver minuta -->
+  <% (minutas || []).forEach(function (m) { %>
     <% var puedeFirmar = m.archivo_path && m.archivo_path.toLowerCase().endsWith('.pdf') && m.firmada && !m.firmada_cliente; %>
     <% if (puedeFirmar) { %>
       <dialog id="firmar-<%= m.id %>" class="modal firma-modal">
         <h2>Firmar “<%= m.titulo %>”</h2>
         <div class="firma-modal-grid">
           <div>
-        <p class="muted" style="font-size:13px;margin-top:0">
-          Tu firma se coloca <strong>automáticamente</strong> sobre el apartado del cliente, alineada con la de BusinessCool AI.
-          Los archivos <strong>.key</strong> y <strong>.cer</strong> <strong>nunca se almacenan</strong> en el servidor.
-        </p>
-        <form method="post" action="/app/minutas/<%= m.id %>/firmar" enctype="multipart/form-data">
-          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-
-          <label style="display:block;margin-bottom:12px">
-            <span style="font-size:12px;font-weight:600;color:var(--bc-muted);display:block;margin-bottom:4px">Archivo .key — Llave privada</span>
-            <input type="file" name="key_file" accept=".key" required />
-          </label>
-
-          <label style="display:block;margin-bottom:12px">
-            <span style="font-size:12px;font-weight:600;color:var(--bc-muted);display:block;margin-bottom:4px">Archivo .cer — Certificado</span>
-            <input type="file" name="cer_file" accept=".cer" required />
-          </label>
-
-          <label style="display:block;margin-bottom:4px">
-            <span style="font-size:12px;font-weight:600;color:var(--bc-muted);display:block;margin-bottom:4px">Contraseña de e.firma</span>
-            <div class="pw-wrap">
-              <input type="password" id="efirma-pw-<%= m.id %>" name="passphrase" required maxlength="100" placeholder="Contraseña del SAT" />
-              <button type="button" class="pw-eye" aria-label="Mostrar" data-pw-toggle="efirma-pw-<%= m.id %>">
-                <svg class="eye-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                <svg class="eye-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-              </button>
-            </div>
-          </label>
-
-          <div class="modal-actions">
-            <button type="button" class="btn btn-ghost" data-close>Cancelar</button>
-            <button type="submit" class="btn btn-primary">Firmar minuta</button>
-          </div>
-        </form>
+            <p class="muted" style="font-size:13px;margin-top:0">
+              Tu firma se coloca <strong>automáticamente</strong> sobre el apartado del cliente, alineada con la de BusinessCool AI.
+              Los archivos <strong>.key</strong> y <strong>.cer</strong> <strong>nunca se almacenan</strong> en el servidor.
+            </p>
+            <form method="post" action="/app/minutas/<%= m.id %>/firmar" enctype="multipart/form-data">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <label style="display:block;margin-bottom:12px">
+                <span style="font-size:12px;font-weight:600;color:var(--bc-muted);display:block;margin-bottom:4px">Archivo .key — Llave privada</span>
+                <input type="file" name="key_file" accept=".key" required />
+              </label>
+              <label style="display:block;margin-bottom:12px">
+                <span style="font-size:12px;font-weight:600;color:var(--bc-muted);display:block;margin-bottom:4px">Archivo .cer — Certificado</span>
+                <input type="file" name="cer_file" accept=".cer" required />
+              </label>
+              <label style="display:block;margin-bottom:4px">
+                <span style="font-size:12px;font-weight:600;color:var(--bc-muted);display:block;margin-bottom:4px">Contraseña de e.firma</span>
+                <div class="pw-wrap">
+                  <input type="password" id="efirma-pw-<%= m.id %>" name="passphrase" required maxlength="100" placeholder="Contraseña del SAT" />
+                  <button type="button" class="pw-eye" aria-label="Mostrar" data-pw-toggle="efirma-pw-<%= m.id %>">
+                    <svg class="eye-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <svg class="eye-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                  </button>
+                </div>
+              </label>
+              <div class="modal-actions">
+                <button type="button" class="btn btn-ghost" data-close>Cancelar</button>
+                <button type="submit" class="btn btn-primary">Firmar minuta</button>
+              </div>
+            </form>
           </div>
           <object class="firma-modal-pdf" data-pdf-src="/app/minutas/<%= m.id %>/ver-pdf" type="application/pdf" aria-label="Vista previa del documento"></object>
         </div>
@@ -135,9 +166,52 @@
       </dialog>
     <% } %>
   <% }) %>
+
+  <!-- Modales: firmar contrato -->
+  <% (contratos || []).forEach(function (p) { %>
+    <% if (p.cont_firmada && !p.cont_firmada_cliente) { %>
+      <dialog id="firmar-cont-<%= p.id %>" class="modal firma-modal">
+        <h2>Firmar contrato — <%= p.name %></h2>
+        <div class="firma-modal-grid">
+          <div>
+            <p class="muted" style="font-size:13px;margin-top:0">
+              Tu firma se coloca <strong>automáticamente</strong> en el apartado del cliente. Los archivos
+              <strong>.key</strong> y <strong>.cer</strong> <strong>nunca se almacenan</strong> en el servidor.
+            </p>
+            <form method="post" action="/app/contratos/<%= p.id %>/firmar" enctype="multipart/form-data">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <label style="display:block;margin-bottom:12px">
+                <span style="font-size:12px;font-weight:600;color:var(--bc-muted);display:block;margin-bottom:4px">Archivo .key — Llave privada</span>
+                <input type="file" name="key_file" accept=".key" required />
+              </label>
+              <label style="display:block;margin-bottom:12px">
+                <span style="font-size:12px;font-weight:600;color:var(--bc-muted);display:block;margin-bottom:4px">Archivo .cer — Certificado</span>
+                <input type="file" name="cer_file" accept=".cer" required />
+              </label>
+              <label style="display:block;margin-bottom:4px">
+                <span style="font-size:12px;font-weight:600;color:var(--bc-muted);display:block;margin-bottom:4px">Contraseña de e.firma</span>
+                <div class="pw-wrap">
+                  <input type="password" id="efirma-cont-<%= p.id %>" name="passphrase" required maxlength="100" placeholder="Contraseña del SAT" />
+                  <button type="button" class="pw-eye" aria-label="Mostrar" data-pw-toggle="efirma-cont-<%= p.id %>">
+                    <svg class="eye-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <svg class="eye-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                  </button>
+                </div>
+              </label>
+              <div class="modal-actions">
+                <button type="button" class="btn btn-ghost" data-close>Cancelar</button>
+                <button type="submit" class="btn btn-primary">Firmar contrato</button>
+              </div>
+            </form>
+          </div>
+          <object class="firma-modal-pdf" data-pdf-src="/app/contratos/<%= p.id %>/ver-pdf" type="application/pdf" aria-label="Vista previa del contrato"></object>
+        </div>
+      </dialog>
+    <% } %>
+  <% }) %>
 <% } else { %>
   <div class="empty-state">
-    <p>Aún no hay minutas publicadas. El equipo de BusinessCool AI las subirá después de cada sesión.</p>
+    <p>Aún no hay minutas ni contratos para este proyecto. El equipo de BusinessCool AI los enviará cuando estén listos.</p>
   </div>
 <% } %>
 
