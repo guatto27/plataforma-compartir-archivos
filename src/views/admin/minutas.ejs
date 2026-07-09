@@ -48,9 +48,6 @@
               <button class="iconbtn" type="button" data-dialog="dlg-ver-minuta-<%= m.id %>" title="Visualizar" aria-label="Visualizar">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               </button>
-              <a class="iconbtn" href="/admin/minutas/<%= m.id %>/descargar" title="Descargar" aria-label="Descargar">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              </a>
             <% } %>
             <form method="post" action="/admin/minutas/<%= m.id %>/publicar" class="inline" data-confirm="<%= m.publicada ? '¿Retirar el envío? El cliente dejará de verla.' : '¿Enviar esta minuta al cliente responsable?' %>">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
@@ -94,7 +91,13 @@
     <dialog id="dlg-ver-minuta-<%= m.id %>" class="modal firma-modal">
       <div class="head-row" style="margin-bottom:12px">
         <h2 style="margin:0"><%= m.titulo %></h2>
-        <button class="btn btn-ghost btn-sm" type="button" data-close>Cerrar</button>
+        <div style="display:flex;gap:8px">
+          <a class="btn btn-ghost btn-sm" href="/admin/minutas/<%= m.id %>/descargar" style="display:inline-flex;align-items:center;gap:6px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Descargar
+          </a>
+          <button class="btn btn-ghost btn-sm" type="button" data-close>Cerrar</button>
+        </div>
       </div>
       <object class="minuta-pdf-view" data-pdf-src="/admin/minutas/<%= m.id %>/ver-pdf" type="application/pdf">
         <p class="muted">No se pudo mostrar el PDF aquí. <a href="/admin/minutas/<%= m.id %>/ver-pdf" target="_blank" rel="noopener noreferrer">Ábrelo en una pestaña</a>.</p>
