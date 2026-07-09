@@ -177,7 +177,7 @@
 <% } %>
 
 <!-- Nuevo contrato: elegir proyecto y subir PDF -->
-<dialog id="dlg-nuevo-contrato" class="modal" data-strict>
+<dialog id="dlg-nuevo-contrato" class="modal" data-strict <%= (typeof openContrato !== 'undefined' && openContrato) ? 'data-autoopen' : '' %>>
   <h2>Nuevo contrato</h2>
   <% if (!contratos || !contratos.length) { %>
     <p class="muted">Primero crea un proyecto en <a href="/admin/proyectos">Proyectos</a> para poder subirle un contrato.</p>

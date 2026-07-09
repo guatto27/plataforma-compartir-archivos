@@ -67,7 +67,7 @@ router.get('/', (req, res) => {
     `SELECT p.*, c.name AS company FROM projects p JOIN companies c ON c.id = p.company_id
      ${projectFilter ? 'WHERE p.id = ?' : ''} ORDER BY c.name, p.created_at, p.id`
   ).all(...(projectFilter ? [projectFilter.id] : []));
-  res.render('admin/minutas', { title: 'Minutas y Contratos', active: 'minutas', minutas, empresas, FORMATOS, projectFilter, contratos });
+  res.render('admin/minutas', { title: 'Minutas y Contratos', active: 'minutas', minutas, empresas, FORMATOS, projectFilter, contratos, openContrato: !!req.query.contrato });
 });
 
 // ── Nueva minuta ────────────────────────────────────────────────────────────
