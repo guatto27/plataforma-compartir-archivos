@@ -51,6 +51,10 @@
               <button class="iconbtn" type="button" data-dialog="dlg-ver-minuta-<%= m.id %>" title="Visualizar" aria-label="Visualizar">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               </button>
+            <% } else { %>
+              <button class="iconbtn" type="button" disabled title="Genera o sube el documento para visualizarlo" aria-label="Visualizar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
             <% } %>
             <form method="post" action="/admin/minutas/<%= m.id %>/publicar" class="inline" data-confirm="<%= m.publicada ? '¿Retirar el envío? El cliente dejará de verla.' : '¿Enviar esta minuta al cliente responsable?' %>">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
