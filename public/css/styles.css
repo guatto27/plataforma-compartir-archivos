@@ -1246,3 +1246,9 @@ mark.bc-hl { background: var(--bc-gold); color: #0b0b0d; border-radius: 2px; pad
 .notif-time { display: block; color: var(--bc-muted); font-size: 11px; margin-top: 4px; }
 
 .iconbtn.is-locked{color:#3fb950;border-color:rgba(63,185,80,.4);opacity:.7;cursor:not-allowed;pointer-events:none}
+
+/* Check list de informacion: comentario del admin y subida compacta en tabla */
+.chk-coment { display: inline-block; background: rgba(251,191,36,.10); border: 1px solid rgba(251,191,36,.35); border-radius: 8px; padding: 6px 10px; font-size: 12.5px; line-height: 1.45; color: var(--bc-text); max-width: 260px; }
+.chk-upload { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.chk-upload input[type="file"] { max-width: 170px; font-size: 12px; }
+.chk-table td { vertical-align: top; padding-top: 12px; }

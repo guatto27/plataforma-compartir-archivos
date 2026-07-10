@@ -28,7 +28,7 @@
       <div class="table-wrap">
         <table class="table">
           <thead>
-            <tr><th style="width:36px">#</th><th>Información solicitada</th><th class="ta-center">Estado</th><th>Archivos entregados</th><% if (canManage) { %><th class="ta-actions">Acciones</th><% } %></tr>
+            <tr><th style="width:36px">#</th><th>Información solicitada</th><th class="ta-center">Estado</th><th>Archivos entregados</th><th>Comentario al cliente</th><% if (canManage) { %><th class="ta-actions">Acciones</th><% } %></tr>
           </thead>
           <tbody>
             <% items.forEach(function (it, idx) { %>
@@ -50,6 +50,9 @@
                       <div style="margin:2px 0"><a href="/admin/informacion/archivo/<%= f.id %>/descargar"><%= f.file_name %></a> <span class="meta"><%= fmtDate(f.created_at) %></span></div>
                     <% }) %>
                   <% } %>
+                </td>
+                <td>
+                  <% if (it.comentario) { %><span class="chk-coment"><%= it.comentario %></span><% } else { %><span class="meta">—</span><% } %>
                 </td>
                 <% if (canManage) { %>
                 <td class="ta-actions">
@@ -116,6 +119,9 @@
           </label>
           <label>Descripción (opcional)
             <input type="text" name="descripcion" value="<%= it.descripcion || '' %>" maxlength="600" />
+          </label>
+          <label>Comentario para el cliente (se le notifica; úsalo para pedir información adicional)
+            <textarea name="comentario" rows="3" maxlength="600" style="width:100%;resize:vertical" placeholder="ej. El Excel de ventas está incompleto: faltan 2024 y 2025 por sucursal."><%= it.comentario || '' %></textarea>
           </label>
           <div class="modal-actions">
             <button class="btn btn-primary" type="submit">Guardar</button>

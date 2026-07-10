@@ -24,50 +24,75 @@
     <p class="meta" style="margin:6px 0 0"><%= entregados %> de <%= items.length %> puntos entregados (<%= pct %>%)</p>
   </section>
 
-  <% items.forEach(function (it, idx) { %>
-    <% var fls = filesByItem[it.id] || []; %>
-    <section class="card" style="margin-bottom:14px">
-      <div class="head-row" style="align-items:flex-start">
-        <div>
-          <h2 style="margin:0 0 2px;font-size:16px"><span class="meta" style="font-weight:400"><%= idx + 1 %>.</span> <%= it.titulo %></h2>
-          <% if (it.descripcion) { %><p class="muted" style="margin:2px 0 0;font-size:13px"><%= it.descripcion %></p><% } %>
-        </div>
-        <% if (it.validado) { %><span class="st-chip st-fin">Validado ✓</span>
-        <% } else if (fls.length) { %><span class="st-chip st-vig">Entregado</span>
-        <% } else { %><span class="st-chip st-pau">Pendiente</span><% } %>
-      </div>
-
-      <% if (fls.length) { %>
-        <div style="margin-top:10px">
-          <% fls.forEach(function (f) { %>
-            <div style="display:flex;align-items:center;gap:10px;margin:4px 0">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;color:var(--bc-gold);flex-shrink:0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-              <a href="/app/informacion/archivo/<%= f.id %>/descargar"><%= f.file_name %></a>
-              <span class="meta"><%= fmtDate(f.created_at) %></span>
-              <% if (!it.validado) { %>
-                <form method="post" action="/app/informacion/archivo/<%= f.id %>/eliminar" class="inline" data-confirm="¿Eliminar “<%= f.file_name %>”?">
-                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-                  <button class="iconbtn danger" type="submit" title="Eliminar" aria-label="Eliminar" style="width:26px;height:26px">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                  </button>
-                </form>
-              <% } %>
-            </div>
+  <section class="card">
+    <div class="table-wrap">
+      <table class="table chk-table">
+        <thead>
+          <tr>
+            <th style="width:34px">#</th>
+            <th>Información solicitada</th>
+            <th class="ta-center">Estado</th>
+            <th>Archivos entregados</th>
+            <th>Comentario de BusinessCool</th>
+            <th class="ta-actions" style="min-width:230px">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% items.forEach(function (it, idx) { %>
+            <% var fls = filesByItem[it.id] || []; %>
+            <tr>
+              <td class="meta"><%= idx + 1 %></td>
+              <td>
+                <strong><%= it.titulo %></strong>
+                <% if (it.descripcion) { %><div class="meta"><%= it.descripcion %></div><% } %>
+              </td>
+              <td class="ta-center">
+                <% if (it.validado) { %><span class="st-chip st-fin">Validado ✓</span>
+                <% } else if (fls.length) { %><span class="st-chip st-vig">Entregado</span>
+                <% } else { %><span class="st-chip st-pau">Pendiente</span><% } %>
+              </td>
+              <td>
+                <% if (!fls.length) { %><span class="meta">—</span><% } else { %>
+                  <% fls.forEach(function (f) { %>
+                    <div style="display:flex;align-items:center;gap:8px;margin:3px 0">
+                      <a href="/app/informacion/archivo/<%= f.id %>/descargar" title="Descargar"><%= f.file_name %></a>
+                      <span class="meta"><%= fmtDate(f.created_at) %></span>
+                      <% if (!it.validado) { %>
+                        <form method="post" action="/app/informacion/archivo/<%= f.id %>/eliminar" class="inline" data-confirm="¿Eliminar “<%= f.file_name %>”?">
+                          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                          <button class="iconbtn danger" type="submit" title="Eliminar" aria-label="Eliminar" style="width:24px;height:24px">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                          </button>
+                        </form>
+                      <% } %>
+                    </div>
+                  <% }) %>
+                <% } %>
+              </td>
+              <td>
+                <% if (it.comentario) { %>
+                  <span class="chk-coment"><%= it.comentario %></span>
+                <% } else { %>
+                  <span class="meta">—</span>
+                <% } %>
+              </td>
+              <td class="ta-actions">
+                <% if (!it.validado) { %>
+                  <form method="post" action="/app/informacion/<%= it.id %>/subir" enctype="multipart/form-data" class="chk-upload">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                    <input type="file" name="archivos" multiple required />
+                    <button class="btn btn-primary btn-sm" type="submit">Subir</button>
+                  </form>
+                <% } else { %>
+                  <span class="meta">Validado — sin pendientes</span>
+                <% } %>
+              </td>
+            </tr>
           <% }) %>
-        </div>
-      <% } %>
-
-      <% if (!it.validado) { %>
-        <form method="post" action="/app/informacion/<%= it.id %>/subir" enctype="multipart/form-data" style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-          <input type="file" name="archivos" multiple required style="flex:1;min-width:220px" />
-          <button class="btn btn-primary btn-sm" type="submit">Subir</button>
-        </form>
-      <% } else { %>
-        <p class="meta" style="margin:10px 0 0">Este punto ya fue validado por BusinessCool AI. ¡Gracias!</p>
-      <% } %>
-    </section>
-  <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </section>
 <% } %>
 
 <%- include('../partials/shell-footer') %>

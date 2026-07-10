@@ -259,6 +259,11 @@ db.exec(`
   );
   CREATE INDEX IF NOT EXISTS idx_chkf_item ON checklist_files(item_id);
 `);
+// Comentario del admin hacia el cliente sobre un punto del check list
+{
+  const chkCols = db.prepare('PRAGMA table_info(checklist_items)').all();
+  if (!chkCols.some((c) => c.name === 'comentario')) db.exec('ALTER TABLE checklist_items ADD COLUMN comentario TEXT');
+}
 
 // Notificaciones en la plataforma (campanita)
 db.exec(`

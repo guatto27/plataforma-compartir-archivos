@@ -699,7 +699,17 @@ router.post('/informacion/:id/edit', requireAdmin, (req, res) => {
   if (!it) return res.redirect('/admin/informacion');
   const titulo = String(req.body.titulo || '').trim().slice(0, 300) || it.titulo;
   const descripcion = String(req.body.descripcion || '').trim().slice(0, 600) || null;
-  db.prepare('UPDATE checklist_items SET titulo = ?, descripcion = ? WHERE id = ?').run(titulo, descripcion, it.id);
+  const comentario = String(req.body.comentario || '').trim().slice(0, 600) || null;
+  db.prepare('UPDATE checklist_items SET titulo = ?, descripcion = ?, comentario = ? WHERE id = ?')
+    .run(titulo, descripcion, comentario, it.id);
+  // Si el comentario es nuevo o cambió, avisar al cliente responsable
+  if (comentario && comentario !== it.comentario) {
+    try {
+      const proj = db.prepare('SELECT * FROM projects WHERE id = ?').get(it.project_id);
+      const { notifyResponsables } = require('../lib/notifications');
+      if (proj) notifyResponsables(proj.company_id, { title: 'Comentario de BusinessCool sobre tu información', body: `${titulo}: ${comentario}`.slice(0, 200), link: '/app/informacion' });
+    } catch (_) { /* best-effort */ }
+  }
   req.session.flash = { type: 'success', text: 'Punto actualizado.' };
   res.redirect(`/admin/informacion?proyecto=${it.project_id}`);
 });
