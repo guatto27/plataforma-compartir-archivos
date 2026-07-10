@@ -26,7 +26,7 @@
     <section class="card">
       <p class="muted" style="margin-top:0">Avance: <strong><%= entregados %></strong> de <strong><%= items.length %></strong> puntos con información entregada o validada.</p>
       <div class="table-wrap">
-        <table class="table">
+        <table class="table chk-table">
           <thead>
             <tr><th style="width:36px">#</th><th>Información solicitada</th><th class="ta-center">Estado</th><th>Archivos entregados</th><th>Comentario al cliente</th><% if (canManage) { %><th class="ta-actions">Acciones</th><% } %></tr>
           </thead>

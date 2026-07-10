@@ -1257,3 +1257,6 @@ mark.bc-hl { background: var(--bc-gold); color: #0b0b0d; border-radius: 2px; pad
 .chk-file-line { display: block; max-width: 210px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 3px 0; }
 /* Icono de comentario con aviso (hay comentario del proveedor) */
 .iconbtn.has-coment { color: #fbbf24; border-color: rgba(251,191,36,.5); }
+
+/* Check list: columna "Información solicitada" más angosta (se envuelve en 2-3 líneas) */
+.chk-table th:nth-child(2), .chk-table td:nth-child(2) { width: 36%; max-width: 430px; }
