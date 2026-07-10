@@ -267,8 +267,9 @@
           <button class="topbar-icon" type="button" data-dialog="dlg-info" title="Información" aria-label="Información">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
           </button>
-          <button class="topbar-icon" type="button" data-dialog="dlg-notif" title="Notificaciones" aria-label="Notificaciones">
+          <button class="topbar-icon notif-bell" type="button" data-dialog="dlg-notif" title="Notificaciones" aria-label="Notificaciones">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <% if (typeof notifUnread !== 'undefined' && notifUnread > 0) { %><span class="notif-badge"><%= notifUnread > 9 ? '9+' : notifUnread %></span><% } %>
           </button>
           <button class="topbar-icon" type="button" data-dialog="dlg-ayuda" title="Asistencia" aria-label="Asistencia">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
@@ -327,8 +328,30 @@
       </dialog>
 
       <dialog id="dlg-notif" class="modal">
-        <h2>Notificaciones</h2>
-        <div class="dlg-empty">No tienes notificaciones nuevas.</div>
+        <div class="head-row" style="margin-bottom:8px">
+          <h2 style="margin:0">Notificaciones</h2>
+          <% if (typeof notifUnread !== 'undefined' && notifUnread > 0) { %>
+            <form method="post" action="/notificaciones/leer" class="inline">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <button class="btn btn-ghost btn-sm" type="submit">Marcar como leídas</button>
+            </form>
+          <% } %>
+        </div>
+        <% if (!notifs || !notifs.length) { %>
+          <div class="dlg-empty">No tienes notificaciones nuevas.</div>
+        <% } else { %>
+          <ul class="notif-list">
+            <% notifs.forEach(function (n) { %>
+              <li class="notif-item<%= n.is_read ? '' : ' unread' %>">
+                <a href="<%= n.link ? ('/notificaciones/ir/' + n.id) : '#' %>">
+                  <strong><%= n.title %></strong>
+                  <% if (n.body) { %><span class="notif-body"><%= n.body %></span><% } %>
+                  <span class="notif-time"><%= fmtDate ? fmtDate(n.created_at) : n.created_at %></span>
+                </a>
+              </li>
+            <% }) %>
+          </ul>
+        <% } %>
         <div class="modal-actions"><button class="btn btn-ghost" type="button" data-close>Cerrar</button></div>
       </dialog>
 

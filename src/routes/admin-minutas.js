@@ -12,6 +12,7 @@ const config  = require('../config');
 const { requireLogin, requireRole, verifyCsrf, denyCsrf } = require('../middleware/auth');
 const { firmarPDF, MINUTAS_DIR } = require('../lib/minuta-firma');
 const { renderMinutaPDF } = require('../lib/minuta-pdf');
+const { notificarDocumentoEnviado } = require('../lib/notifications');
 
 const router = express.Router();
 router.use(requireLogin, requireRole('admin', 'colaborador'));
@@ -466,17 +467,27 @@ router.post('/:id/firmar', memUpload.fields([{ name: 'key_file', maxCount: 1 }, 
 });
 
 // ── Publicar al cliente ────────────────────────────────────────────────────
-router.post('/:id/publicar', (req, res) => {
+router.post('/:id/publicar', async (req, res) => {
   if (!verifyCsrf(req)) return denyCsrf(res);
   const m = db.prepare('SELECT * FROM minutas WHERE id = ?').get(req.params.id);
   if (!m) return res.redirect('/admin/minutas');
-  // Solo se puede enviar al cliente si BusinessCool ya firmó la minuta (retirar siempre se permite)
+  // Solo se puede enviar al cliente si BusinessCool ya firmó la minuta
   if (!m.publicada && !m.firmada) {
     req.session.flash = { type: 'error', text: 'Firma la minuta con tu e.firma antes de enviarla al cliente.' };
     return res.redirect('/admin/minutas');
   }
-  db.prepare('UPDATE minutas SET publicada = ? WHERE id = ?').run(m.publicada ? 0 : 1, m.id);
-  req.session.flash = { type: 'success', text: m.publicada ? 'Envío retirado: el cliente ya no la verá.' : 'Minuta enviada al cliente responsable.' };
+  // Una vez firmada por ambas partes, el envío queda cerrado (no se puede retirar)
+  if (m.publicada && m.firmada && m.firmada_cliente) {
+    req.session.flash = { type: 'error', text: 'La minuta ya está firmada por ambas partes; no se puede retirar el envío.' };
+    return res.redirect('/admin/minutas');
+  }
+  const enviar = m.publicada ? 0 : 1;
+  db.prepare('UPDATE minutas SET publicada = ? WHERE id = ?').run(enviar, m.id);
+  if (enviar) {
+    const companyId = m.company_id || (m.project_id ? (db.prepare('SELECT company_id FROM projects WHERE id = ?').get(m.project_id) || {}).company_id : null);
+    try { await notificarDocumentoEnviado(companyId, { kind: 'minuta', title: m.titulo }); } catch (_) { /* best-effort */ }
+  }
+  req.session.flash = { type: 'success', text: enviar ? 'Minuta enviada al cliente responsable (se le notificó por correo y en la plataforma).' : 'Envío retirado: el cliente ya no la verá.' };
   res.redirect('/admin/minutas');
 });
 

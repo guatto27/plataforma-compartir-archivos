@@ -238,6 +238,20 @@ addProj('cont_firmada_cliente', 'INTEGER NOT NULL DEFAULT 0');
 ['serial', 'nombre', 'fecha', 'folio', 'email', 'rfc', 'hash', 'sello', 'cert']
   .forEach((s) => addProj('cont_fc_' + s, 'TEXT'));
 
+// Notificaciones en la plataforma (campanita)
+db.exec(`
+  CREATE TABLE IF NOT EXISTS notifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    body TEXT,
+    link TEXT,
+    is_read INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_notif_user ON notifications(user_id, is_read);
+`);
+
 // Migración: a qué proyecto pertenece cada entrevista (los archivos heredan el proyecto vía su entrevista)
 const interviewCols = db.prepare('PRAGMA table_info(interviews)').all();
 if (!interviewCols.some((c) => c.name === 'project_id')) {

@@ -56,7 +56,11 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               </button>
             <% } %>
-            <% if (m.firmada || m.publicada) { %>
+            <% if (m.firmada && m.firmada_cliente) { %>
+              <button class="iconbtn is-locked" type="button" disabled title="Firmado por ambas partes — el envío no se puede retirar" aria-label="Firmado por ambas partes">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </button>
+            <% } else if (m.firmada || m.publicada) { %>
               <form method="post" action="/admin/minutas/<%= m.id %>/publicar" class="inline" data-confirm="<%= m.publicada ? '¿Retirar el envío? El cliente dejará de verla.' : '¿Enviar esta minuta al cliente responsable?' %>">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
                 <button class="iconbtn <%= m.publicada ? 'is-on' : 'is-off' %>" type="submit" title="<%= m.publicada ? 'Enviada (clic para retirar)' : 'Enviar al cliente' %>" aria-label="Enviar al cliente">
@@ -103,7 +107,11 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               </button>
             <% } %>
-            <% if (r.contrato_path && r.cont_firmada) { %>
+            <% if (r.cont_firmada && r.cont_firmada_cliente) { %>
+              <button class="iconbtn is-locked" type="button" disabled title="Firmado por ambas partes — el envío no se puede retirar" aria-label="Firmado por ambas partes">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </button>
+            <% } else if (r.contrato_path && r.cont_firmada) { %>
               <form method="post" action="/admin/proyectos/<%= r.id %>/contrato/enviar" class="inline" data-confirm="<%= r.contrato_enviado ? '¿Retirar el envío? El cliente dejará de verlo.' : '¿Enviar este contrato al cliente responsable?' %>">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
                 <button class="iconbtn <%= r.contrato_enviado ? 'is-on' : 'is-off' %>" type="submit" title="<%= r.contrato_enviado ? 'Enviado (clic para retirar)' : 'Enviar al cliente' %>" aria-label="Enviar al cliente">

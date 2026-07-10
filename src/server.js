@@ -94,6 +94,11 @@ app.use((req, res, next) => {
       companyEslogan: companyEslogan,
     };
 
+    // Notificaciones (campanita)
+    const notifLib = require('./lib/notifications');
+    res.locals.notifs = notifLib.listFor(req.session.userId, 12);
+    res.locals.notifUnread = notifLib.unreadCount(req.session.userId);
+
     // Selector de proyecto del sidebar (cliente responsable y usuario cliente)
     res.locals.sidebarProjects = [];
     res.locals.activeProjectId = null;
@@ -123,6 +128,8 @@ app.use((req, res, next) => {
     res.locals.activeProjectId = null;
     res.locals.adminProjects = [];
     res.locals.adminProjectId = null;
+    res.locals.notifs = [];
+    res.locals.notifUnread = 0;
   }
   res.locals.flash = req.session.flash || null;
   delete req.session.flash;
@@ -163,6 +170,7 @@ app.use(csrfProtection);
 // Rutas
 app.use('/', require('./routes/auth'));
 app.use('/buscar', require('./routes/search'));
+app.use('/notificaciones', require('./routes/notifications'));
 app.use('/app', require('./routes/client'));
 app.use('/admin', require('./routes/admin'));
 app.use('/admin/minutas', require('./routes/admin-minutas'));

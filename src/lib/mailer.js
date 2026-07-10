@@ -127,4 +127,66 @@ async function sendPasswordResetEmail({ to, displayName, resetUrl }) {
   }
 }
 
-module.exports = { sendWelcomeEmail, sendPasswordResetEmail, smtpEnabled: () => config.smtp.enabled };
+// Notificación de documento enviado (minuta o contrato) — mismo formato que el de bienvenida
+async function sendDocumentEmail({ to, displayName, kind, title, companyName }) {
+  if (!config.smtp.enabled || !transporter) return { sent: false, error: 'SMTP no configurado' };
+  if (!to) return { sent: false, error: 'Sin correo destino' };
+
+  const brand = config.brand.name;
+  const loginUrl = `${config.appUrl}/login`;
+  const tipo = kind === 'contrato' ? 'contrato' : 'minuta';
+  const Tipo = kind === 'contrato' ? 'Contrato' : 'Minuta';
+  const subject = `Tienes ${tipo === 'contrato' ? 'un nuevo contrato' : 'una nueva minuta'} para revisar · ${brand}`;
+
+  const name = esc(displayName || to);
+  const company = companyName ? esc(companyName) : '';
+  const html = `
+  <div style="margin:0;padding:0;background:#0b0b0d;">
+    <span style="display:none;max-height:0;overflow:hidden;opacity:0;color:#0b0b0d;">${Tipo} disponible en tu portal de ${esc(brand)}.</span>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0b0b0d;padding:28px 12px;">
+      <tr><td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#15151a;border:1px solid #27272a;border-radius:16px;overflow:hidden;font-family:'Segoe UI',Roboto,Arial,sans-serif;">
+          <tr><td style="padding:22px 28px;border-bottom:1px solid #27272a;">
+            <span style="font-size:18px;font-weight:700;color:#f4f4f5;">BusinessCool <span style="color:#fbbf24;">AI</span></span>
+          </td></tr>
+          <tr><td style="padding:30px 28px 4px;">
+            <h1 style="margin:0;font-size:24px;line-height:1.25;color:#f4f4f5;">Tienes ${tipo === 'contrato' ? 'un nuevo <span style="color:#fbbf24;">contrato</span>' : 'una nueva <span style="color:#fbbf24;">minuta</span>'}</h1>
+            <p style="margin:12px 0 0;color:#a1a1aa;font-size:15px;line-height:1.6;">Hola ${name}, el equipo de <strong style="color:#e4e4e7;">${esc(brand)}</strong> ${tipo === 'contrato' ? 'te compartió un contrato' : 'publicó una minuta'}${company ? ` para <strong style="color:#e4e4e7;">${company}</strong>` : ''}. Ingresa a la plataforma para revisar${tipo === 'contrato' ? 'lo y firmarlo' : 'la'} con tu e.firma.</p>
+          </td></tr>
+          <tr><td style="padding:20px 28px 4px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0f0f12;border:1px solid #3f3f46;border-radius:12px;">
+              <tr><td style="padding:16px 18px;">
+                <p style="margin:0 0 8px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#71717a;">${Tipo}</p>
+                <p style="margin:0;color:#f4f4f5;font-size:16px;font-weight:600;">${esc(title || Tipo)}</p>
+              </td></tr>
+            </table>
+          </td></tr>
+          <tr><td align="center" style="padding:24px 28px 6px;">
+            <a href="${esc(loginUrl)}" style="display:inline-block;background:#fbbf24;color:#1c1c1f;font-weight:700;font-size:15px;text-decoration:none;padding:13px 30px;border-radius:10px;">Entrar a la plataforma</a>
+          </td></tr>
+          <tr><td style="padding:12px 28px 28px;">
+            <p style="margin:0;color:#a1a1aa;font-size:13px;line-height:1.55;">Encontrarás el documento en <strong style="color:#e4e4e7;">Gestión de Minutas y Contratos</strong> dentro de tu proyecto.</p>
+          </td></tr>
+          <tr><td style="padding:18px 28px;border-top:1px solid #27272a;background:#101013;">
+            <p style="margin:0;color:#71717a;font-size:12px;">${esc(brand)} · Soluciones en IA · <a href="https://businesscool.ai" style="color:#a1a1aa;text-decoration:none;">businesscool.ai</a></p>
+            <p style="margin:6px 0 0;color:#52525b;font-size:11px;">Si no esperabas este correo, puedes ignorarlo.</p>
+          </td></tr>
+        </table>
+      </td></tr>
+    </table>
+  </div>`;
+
+  const text =
+    `Hola ${displayName || to},\n\n` +
+    `El equipo de ${brand} te compartió ${tipo === 'contrato' ? 'un contrato' : 'una minuta'}: "${title || Tipo}"${companyName ? ` (${companyName})` : ''}.\n\n` +
+    `Ingresa a la plataforma para revisarlo: ${loginUrl}\n`;
+
+  try {
+    await transporter.sendMail({ from: config.smtp.from || config.smtp.user, to, subject, text, html });
+    return { sent: true };
+  } catch (err) {
+    return { sent: false, error: err.message };
+  }
+}
+
+module.exports = { sendWelcomeEmail, sendPasswordResetEmail, sendDocumentEmail, smtpEnabled: () => config.smtp.enabled };

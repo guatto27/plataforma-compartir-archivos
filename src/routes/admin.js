@@ -16,6 +16,7 @@ const { sendWelcomeEmail } = require('../lib/mailer');
 const { removeLogoBackground } = require('../lib/logo-bg');
 const projectsLib = require('../lib/projects');
 const { firmarContrato, CONTRATOS_DIR } = require('../lib/minuta-firma');
+const { notificarDocumentoEnviado } = require('../lib/notifications');
 
 // Subida del contrato (PDF) a disco y de .key/.cer en memoria (nunca se guardan)
 const contratoUpload = multer({
@@ -576,21 +577,30 @@ router.post('/proyectos/:id/contrato/firmar', requireAdmin,
   });
 
 // Enviar el contrato al cliente responsable para su firma
-router.post('/proyectos/:id/contrato/enviar', requireAdmin, (req, res) => {
+router.post('/proyectos/:id/contrato/enviar', requireAdmin, async (req, res) => {
   if (!verifyCsrf(req)) return denyCsrf(res);
+  const back = req.get('Referer') || '/admin/proyectos';
   const proj = db.prepare('SELECT * FROM projects WHERE id = ?').get(req.params.id);
-  if (!proj || !proj.contrato_path) return res.redirect('/admin/proyectos');
+  if (!proj || !proj.contrato_path) return res.redirect(back);
   if (!proj.cont_firmada) {
     req.session.flash = { type: 'error', text: 'Firma el contrato con tu e.firma antes de enviarlo al cliente.' };
-    return res.redirect('/admin/proyectos');
+    return res.redirect(back);
+  }
+  // Una vez firmado por ambas partes, el envío queda cerrado (no se puede retirar)
+  if (proj.contrato_enviado && proj.cont_firmada && proj.cont_firmada_cliente) {
+    req.session.flash = { type: 'error', text: 'El contrato ya está firmado por ambas partes; no se puede retirar el envío.' };
+    return res.redirect(back);
   }
   const enviado = proj.contrato_enviado ? 0 : 1;
   db.prepare('UPDATE projects SET contrato_enviado=? WHERE id=?').run(enviado, proj.id);
   logAction(req.session.userId, enviado ? 'contrato_enviado' : 'contrato_retirado', proj.name, req.ip);
+  if (enviado) {
+    try { await notificarDocumentoEnviado(proj.company_id, { kind: 'contrato', title: proj.name }); } catch (_) { /* best-effort */ }
+  }
   req.session.flash = { type: 'success', text: enviado
-    ? 'Contrato enviado al cliente responsable. Lo verá en su portal para firmarlo con su e.firma.'
+    ? 'Contrato enviado al cliente responsable (se le notificó por correo y en la plataforma).'
     : 'Envío retirado: el cliente ya no verá el contrato.' };
-  res.redirect('/admin/proyectos');
+  res.redirect(back);
 });
 
 // Eliminar el contrato

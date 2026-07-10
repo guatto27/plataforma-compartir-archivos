@@ -1231,3 +1231,17 @@ mark.bc-hl { background: var(--bc-gold); color: #0b0b0d; border-radius: 2px; pad
 .doc-type.contrato{background:rgba(96,165,250,.16);color:#7fb2f0;border:1px solid rgba(96,165,250,.4)}
 
 .iconbtn:disabled,.iconbtn[disabled]{opacity:.3;cursor:not-allowed;pointer-events:none}
+
+/* Notificaciones (campanita) */
+.notif-bell { position: relative; }
+.notif-badge { position: absolute; top: -2px; right: -2px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px; background: #ef4444; color: #fff; font-size: 10px; font-weight: 700; line-height: 16px; text-align: center; box-shadow: 0 0 0 2px var(--bc-bg, #0b0b0d); }
+.notif-list { list-style: none; margin: 0; padding: 0; max-height: 56vh; overflow: auto; }
+.notif-item { border-bottom: 1px solid var(--bc-border); }
+.notif-item a { display: block; padding: 11px 8px; color: var(--bc-text); text-decoration: none; }
+.notif-item a:hover { background: rgba(255,255,255,.03); }
+.notif-item.unread a { border-left: 3px solid #fbbf24; padding-left: 10px; }
+.notif-item strong { display: block; font-size: 13.5px; }
+.notif-body { display: block; color: var(--bc-muted); font-size: 12.5px; margin-top: 2px; }
+.notif-time { display: block; color: var(--bc-muted); font-size: 11px; margin-top: 4px; }
+
+.iconbtn.is-locked{color:#3fb950;border-color:rgba(63,185,80,.4);opacity:.7;cursor:not-allowed;pointer-events:none}
