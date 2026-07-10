@@ -1,0 +1,25 @@
+<!-- Modal de conversación (chat) de un punto del check list. Requiere: it, msgs, csrfToken, chatAction -->
+<dialog id="chk-chat-<%= it.id %>" class="modal" style="width:min(560px,94vw)" data-strict>
+  <div class="head-row" style="margin-bottom:8px">
+    <h2 style="margin:0;font-size:17px">Conversación</h2>
+    <button class="btn btn-ghost btn-sm" type="button" data-close>✕ Cerrar</button>
+  </div>
+  <p class="meta" style="margin:0 0 10px"><%= it.titulo %></p>
+  <div class="chk-chat">
+    <% if (!msgs || !msgs.length) { %>
+      <p class="meta" style="text-align:center;padding:16px 0">Aún no hay mensajes. Escribe el primero para iniciar la conversación sobre este punto.</p>
+    <% } else { %>
+      <% msgs.forEach(function (m) { %>
+        <div class="chk-msg <%= m.role === 'businesscool' ? 'from-bc' : 'from-cli' %>">
+          <div class="chk-msg-meta"><%= m.role === 'businesscool' ? 'BusinessCool AI' : (m.author || 'Cliente') %> · <%= fmtDate(m.created_at) %></div>
+          <div class="chk-msg-body"><%= m.body %></div>
+        </div>
+      <% }) %>
+    <% } %>
+  </div>
+  <form method="post" action="<%= chatAction %>" style="margin-top:12px;display:flex;gap:8px;align-items:flex-end">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <textarea name="body" rows="2" required maxlength="1000" placeholder="Escribe un mensaje…" style="flex:1;resize:vertical"></textarea>
+    <button class="btn btn-primary btn-sm" type="submit">Enviar</button>
+  </form>
+</dialog>

@@ -465,13 +465,34 @@ router.get('/informacion', (req, res) => {
     ? db.prepare('SELECT * FROM checklist_items WHERE project_id = ? ORDER BY id').all(active.id)
     : [];
   const filesByItem = {};
+  const msgsByItem = {};
   items.forEach((it) => {
     filesByItem[it.id] = db.prepare('SELECT * FROM checklist_files WHERE item_id = ? ORDER BY id').all(it.id);
+    msgsByItem[it.id] = db.prepare('SELECT * FROM checklist_messages WHERE item_id = ? ORDER BY id').all(it.id);
   });
   res.render('client/informacion', {
     title: 'Información requerida', active: 'informacion',
-    companyName: companyOf(req), projectName: active ? active.name : null, items, filesByItem,
+    companyName: companyOf(req), projectName: active ? active.name : null, items, filesByItem, msgsByItem,
   });
+});
+
+// Mensaje del cliente en el hilo de un punto
+router.post('/informacion/:id/mensaje', (req, res) => {
+  if (req.session.role === 'client') return res.redirect('/app/agente');
+  if (!verifyCsrf(req)) return denyCsrf(res);
+  const it = checklistItemAccesible(req, req.params.id);
+  if (!it) { req.session.flash = { type: 'error', text: 'Punto no encontrado.' }; return res.redirect('/app/informacion'); }
+  const body = String(req.body.body || '').trim().slice(0, 1000);
+  if (!body) { req.session.flash = { type: 'error', text: 'Escribe un mensaje.' }; return res.redirect('/app/informacion'); }
+  const me = db.prepare('SELECT display_name FROM users WHERE id = ?').get(req.session.userId);
+  db.prepare('INSERT INTO checklist_messages (item_id, role, author, body) VALUES (?, ?, ?, ?)')
+    .run(it.id, 'cliente', (me && me.display_name) || 'Cliente', body);
+  logAction(req.session.userId, 'checklist_msg_cliente', it.titulo, req.ip);
+  try {
+    notifyStaff({ title: 'Nuevo mensaje del cliente', body: `${it.project_name} — ${it.titulo}: ${body}`.slice(0, 200), link: `/admin/informacion?proyecto=${it.project_id}` });
+  } catch (_) { /* best-effort */ }
+  req.session.flash = { type: 'success', text: 'Mensaje enviado a BusinessCool.' };
+  res.redirect('/app/informacion');
 });
 
 // Subir archivo(s) a un punto del check list
@@ -508,8 +529,8 @@ router.get('/informacion/archivo/:fid/descargar', (req, res) => {
   res.download(fp, f.file_name);
 });
 
-// Nota del cliente hacia BusinessCool sobre un punto (dudas/aclaraciones) + responsable interno
-router.post('/informacion/:id/nota', (req, res) => {
+// El cliente define el responsable (nombre, cargo, área) de un punto
+router.post('/informacion/:id/responsable', (req, res) => {
   if (req.session.role === 'client') return res.redirect('/app/agente');
   if (!verifyCsrf(req)) return denyCsrf(res);
   const it = checklistItemAccesible(req, req.params.id);
@@ -517,19 +538,12 @@ router.post('/informacion/:id/nota', (req, res) => {
     req.session.flash = { type: 'error', text: 'Punto no encontrado.' };
     return res.redirect('/app/informacion');
   }
-  const nota = String(req.body.nota || '').trim().slice(0, 600) || null;
   const responsable = String(req.body.responsable || '').trim().slice(0, 120) || null;
   const respCargo = String(req.body.responsable_cargo || '').trim().slice(0, 120) || null;
   const respArea = String(req.body.responsable_area || '').trim().slice(0, 120) || null;
-  db.prepare('UPDATE checklist_items SET nota_cliente = ?, responsable = ?, responsable_cargo = ?, responsable_area = ? WHERE id = ?')
-    .run(nota, responsable, respCargo, respArea, it.id);
-  if (nota && nota !== it.nota_cliente) {
-    try {
-      notifyStaff({ title: 'Nota del cliente en la información requerida', body: `${it.project_name} — ${it.titulo}: ${nota}`.slice(0, 200), link: `/admin/informacion?proyecto=${it.project_id}` });
-    } catch (_) { /* best-effort */ }
-    logAction(req.session.userId, 'checklist_nota', it.titulo, req.ip);
-  }
-  req.session.flash = { type: 'success', text: 'Nota guardada. El equipo de BusinessCool AI fue notificado.' };
+  db.prepare('UPDATE checklist_items SET responsable = ?, responsable_cargo = ?, responsable_area = ? WHERE id = ?')
+    .run(responsable, respCargo, respArea, it.id);
+  req.session.flash = { type: 'success', text: 'Responsable actualizado.' };
   res.redirect('/app/informacion');
 });
 

@@ -1264,3 +1264,13 @@ mark.bc-hl { background: var(--bc-gold); color: #0b0b0d; border-radius: 2px; pad
 /* Nota del cliente (azul, distinta del comentario dorado de BusinessCool) */
 .chk-nota { display: inline-block; background: rgba(96,165,250,.10); border: 1px solid rgba(96,165,250,.35); border-radius: 8px; padding: 6px 10px; font-size: 12.5px; line-height: 1.45; color: var(--bc-text); max-width: 260px; }
 .iconbtn.has-nota { color: #7fb2f0; border-color: rgba(96,165,250,.5); }
+
+/* Conversación (chat) por punto del check list */
+.chk-chat { max-height: 46vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 6px; border: 1px solid var(--bc-border); border-radius: 10px; background: rgba(0,0,0,.15); }
+.chk-msg { max-width: 82%; padding: 8px 11px; border-radius: 10px; }
+.chk-msg-meta { font-size: 10.5px; color: var(--bc-muted); margin-bottom: 3px; }
+.chk-msg-body { font-size: 13px; line-height: 1.45; white-space: pre-wrap; word-break: break-word; }
+.chk-msg.from-bc { align-self: flex-start; background: rgba(251,191,36,.12); border: 1px solid rgba(251,191,36,.32); border-bottom-left-radius: 3px; }
+.chk-msg.from-cli { align-self: flex-end; background: rgba(96,165,250,.12); border: 1px solid rgba(96,165,250,.34); border-bottom-right-radius: 3px; }
+.iconbtn .count { position: absolute; top: -6px; right: -6px; min-width: 15px; height: 15px; padding: 0 3px; border-radius: 999px; background: #ef4444; color: #fff; font-size: 9px; font-weight: 700; line-height: 15px; text-align: center; }
+.iconbtn { position: relative; }

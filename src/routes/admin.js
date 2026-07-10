@@ -653,13 +653,35 @@ router.get('/informacion', (req, res) => {
     ? db.prepare('SELECT * FROM checklist_items WHERE project_id = ? ORDER BY id').all(proj.id)
     : [];
   const filesByItem = {};
+  const msgsByItem = {};
   items.forEach((it) => {
     filesByItem[it.id] = db.prepare('SELECT * FROM checklist_files WHERE item_id = ? ORDER BY id').all(it.id);
+    msgsByItem[it.id] = db.prepare('SELECT * FROM checklist_messages WHERE item_id = ? ORDER BY id').all(it.id);
   });
   res.render('admin/informacion', {
     title: 'Información requerida', active: 'informacion',
-    proj, items, filesByItem, canManage: req.session.role === 'admin',
+    proj, items, filesByItem, msgsByItem, canManage: req.session.role === 'admin',
   });
+});
+
+// Mensaje del equipo BusinessCool en el hilo de un punto
+router.post('/informacion/:id/mensaje', requireAdmin, (req, res) => {
+  if (!verifyCsrf(req)) return denyCsrf(res);
+  const it = db.prepare('SELECT * FROM checklist_items WHERE id = ?').get(req.params.id);
+  if (!it) return res.redirect('/admin/informacion');
+  const body = String(req.body.body || '').trim().slice(0, 1000);
+  if (!body) { req.session.flash = { type: 'error', text: 'Escribe un mensaje.' }; return res.redirect(`/admin/informacion?proyecto=${it.project_id}`); }
+  const me = db.prepare('SELECT display_name FROM users WHERE id = ?').get(req.session.userId);
+  db.prepare('INSERT INTO checklist_messages (item_id, role, author, body) VALUES (?, ?, ?, ?)')
+    .run(it.id, 'businesscool', (me && me.display_name) || 'BusinessCool AI', body);
+  logAction(req.session.userId, 'checklist_msg', it.titulo, req.ip);
+  try {
+    const proj = db.prepare('SELECT company_id FROM projects WHERE id = ?').get(it.project_id);
+    const { notifyResponsables } = require('../lib/notifications');
+    if (proj) notifyResponsables(proj.company_id, { title: 'Nuevo mensaje de BusinessCool', body: `${it.titulo}: ${body}`.slice(0, 200), link: '/app/informacion' });
+  } catch (_) { /* best-effort */ }
+  req.session.flash = { type: 'success', text: 'Mensaje enviado al cliente.' };
+  res.redirect(`/admin/informacion?proyecto=${it.project_id}`);
 });
 
 // Agregar puntos al check list (uno, o varios en bloque: una línea por punto)
@@ -699,20 +721,11 @@ router.post('/informacion/:id/edit', requireAdmin, (req, res) => {
   if (!it) return res.redirect('/admin/informacion');
   const titulo = String(req.body.titulo || '').trim().slice(0, 300) || it.titulo;
   const descripcion = String(req.body.descripcion || '').trim().slice(0, 600) || null;
-  const comentario = String(req.body.comentario || '').trim().slice(0, 600) || null;
   const responsable = String(req.body.responsable || '').trim().slice(0, 120) || null;
   const respCargo = String(req.body.responsable_cargo || '').trim().slice(0, 120) || null;
   const respArea = String(req.body.responsable_area || '').trim().slice(0, 120) || null;
-  db.prepare('UPDATE checklist_items SET titulo = ?, descripcion = ?, comentario = ?, responsable = ?, responsable_cargo = ?, responsable_area = ? WHERE id = ?')
-    .run(titulo, descripcion, comentario, responsable, respCargo, respArea, it.id);
-  // Si el comentario es nuevo o cambió, avisar al cliente responsable
-  if (comentario && comentario !== it.comentario) {
-    try {
-      const proj = db.prepare('SELECT * FROM projects WHERE id = ?').get(it.project_id);
-      const { notifyResponsables } = require('../lib/notifications');
-      if (proj) notifyResponsables(proj.company_id, { title: 'Comentario de BusinessCool sobre tu información', body: `${titulo}: ${comentario}`.slice(0, 200), link: '/app/informacion' });
-    } catch (_) { /* best-effort */ }
-  }
+  db.prepare('UPDATE checklist_items SET titulo = ?, descripcion = ?, responsable = ?, responsable_cargo = ?, responsable_area = ? WHERE id = ?')
+    .run(titulo, descripcion, responsable, respCargo, respArea, it.id);
   req.session.flash = { type: 'success', text: 'Punto actualizado.' };
   res.redirect(`/admin/informacion?proyecto=${it.project_id}`);
 });

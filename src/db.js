@@ -270,6 +270,34 @@ db.exec(`
   if (!chkHas('nota_cliente')) db.exec('ALTER TABLE checklist_items ADD COLUMN nota_cliente TEXT');
 }
 
+// Hilo de conversación (chat) por punto del check list
+db.exec(`
+  CREATE TABLE IF NOT EXISTS checklist_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    item_id INTEGER NOT NULL REFERENCES checklist_items(id) ON DELETE CASCADE,
+    role TEXT NOT NULL,
+    author TEXT,
+    body TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_chkmsg_item ON checklist_messages(item_id);
+`);
+// Migración única: pasar los comentarios/notas antiguos al hilo y vaciar las columnas
+try {
+  const old = db.prepare('SELECT id, comentario, nota_cliente FROM checklist_items WHERE comentario IS NOT NULL OR nota_cliente IS NOT NULL').all();
+  if (old.length) {
+    const insMsg = db.prepare('INSERT INTO checklist_messages (item_id, role, author, body) VALUES (?, ?, ?, ?)');
+    const clr = db.prepare('UPDATE checklist_items SET comentario = NULL, nota_cliente = NULL WHERE id = ?');
+    db.transaction(() => {
+      old.forEach((it) => {
+        if (it.comentario)   insMsg.run(it.id, 'businesscool', 'BusinessCool AI', it.comentario);
+        if (it.nota_cliente) insMsg.run(it.id, 'cliente', 'Cliente', it.nota_cliente);
+        clr.run(it.id);
+      });
+    })();
+  }
+} catch (_) { /* migración best-effort */ }
+
 // Notificaciones en la plataforma (campanita)
 db.exec(`
   CREATE TABLE IF NOT EXISTS notifications (

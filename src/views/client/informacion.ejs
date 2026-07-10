@@ -85,20 +85,16 @@
                   </button>
                 <% } %>
 
-                <!-- Comentario del proveedor -->
-                <% if (it.comentario) { %>
-                  <button class="iconbtn has-coment" type="button" data-dialog="chk-com-<%= it.id %>" title="Ver comentario de BusinessCool" aria-label="Ver comentario">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                  </button>
-                <% } else { %>
-                  <button class="iconbtn" type="button" disabled title="Sin comentarios de BusinessCool" aria-label="Sin comentarios">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                  </button>
-                <% } %>
+                <!-- Conversación (chat) con BusinessCool -->
+                <% var nmsg = (msgsByItem[it.id] || []).length; %>
+                <button class="iconbtn <%= nmsg ? 'has-coment' : '' %>" type="button" data-dialog="chk-chat-<%= it.id %>" title="Conversación con BusinessCool<%= nmsg ? ' ('+nmsg+')' : '' %>" aria-label="Conversación">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  <% if (nmsg) { %><span class="count"><%= nmsg %></span><% } %>
+                </button>
 
-                <!-- Nota / duda del cliente hacia BusinessCool -->
-                <button class="iconbtn <%= it.nota_cliente ? 'has-nota' : '' %>" type="button" data-dialog="chk-nota-<%= it.id %>" title="<%= it.nota_cliente ? 'Ver / editar tu nota' : 'Escribir una nota o duda a BusinessCool' %>" aria-label="Nota para BusinessCool">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+                <!-- Responsable del punto -->
+                <button class="iconbtn <%= it.responsable ? 'has-nota' : '' %>" type="button" data-dialog="chk-resp-<%= it.id %>" title="<%= it.responsable ? 'Responsable: '+it.responsable : 'Asignar responsable de tu equipo' %>" aria-label="Responsable">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 </button>
 
                 <!-- Eliminar archivos -->
@@ -124,32 +120,22 @@
     </div>
   </section>
 
-  <!-- Modales: comentario del proveedor -->
-  <% items.forEach(function (it) { if (!it.comentario) return; %>
-    <dialog id="chk-com-<%= it.id %>" class="modal" style="width:min(520px,94vw)">
-      <div class="head-row" style="margin-bottom:10px">
-        <h2 style="margin:0;font-size:17px">Comentario de BusinessCool</h2>
-        <button class="btn btn-ghost btn-sm" type="button" data-close>✕ Cerrar</button>
-      </div>
-      <p class="meta" style="margin:0 0 10px"><%= it.titulo %></p>
-      <div class="chk-coment" style="max-width:none;display:block"><%= it.comentario %></div>
-    </dialog>
+  <!-- Modales: conversación (chat) por punto -->
+  <% items.forEach(function (it) { %>
+    <%- include('../partials/chk-chat', { it: it, msgs: msgsByItem[it.id], csrfToken: csrfToken, chatAction: '/app/informacion/' + it.id + '/mensaje' }) %>
   <% }) %>
 
-  <!-- Modales: nota / duda del cliente -->
+  <!-- Modales: responsable del punto -->
   <% items.forEach(function (it) { %>
-    <dialog id="chk-nota-<%= it.id %>" class="modal" style="width:min(520px,94vw)" data-strict>
+    <dialog id="chk-resp-<%= it.id %>" class="modal" style="width:min(520px,94vw)" data-strict>
       <div class="head-row" style="margin-bottom:10px">
-        <h2 style="margin:0;font-size:17px">Nota para BusinessCool</h2>
+        <h2 style="margin:0;font-size:17px">Responsable del punto</h2>
         <button class="btn btn-ghost btn-sm" type="button" data-close>✕ Cerrar</button>
       </div>
       <p class="meta" style="margin:0 0 10px"><%= it.titulo %></p>
-      <form method="post" action="/app/informacion/<%= it.id %>/nota">
+      <form method="post" action="/app/informacion/<%= it.id %>/responsable">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <label>Nota o duda (el equipo de BusinessCool recibirá una notificación)
-          <textarea name="nota" rows="4" maxlength="600" style="width:100%;resize:vertical" placeholder="ej. Esta información no existe como tal; ¿les sirve el reporte del ERP?"><%= it.nota_cliente || '' %></textarea>
-        </label>
-        <label>Responsable de este punto en tu equipo (opcional)
+        <label>Responsable de este punto en tu equipo
           <input type="text" name="responsable" value="<%= it.responsable || '' %>" maxlength="120" placeholder="ej. Melissa Aguirre" />
         </label>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -161,7 +147,7 @@
           </label>
         </div>
         <div class="modal-actions">
-          <button class="btn btn-primary" type="submit">Guardar y notificar</button>
+          <button class="btn btn-primary" type="submit">Guardar</button>
           <button class="btn btn-ghost" type="button" data-close>Cancelar</button>
         </div>
       </form>
