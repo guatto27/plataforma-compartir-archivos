@@ -999,8 +999,9 @@ mark.bc-hl { background: var(--bc-gold); color: #0b0b0d; border-radius: 2px; pad
 .topbar-icon:hover { color: var(--bc-text); border-color: var(--bc-gold); }
 .topbar-icon svg { width: 18px; height: 18px; }
 .topbar-icon .notif-badge {
-  position: absolute; top: 6px; right: 7px; width: 8px; height: 8px; border-radius: 50%;
-  background: var(--bc-gold); border: 2px solid var(--bc-bg-2);
+  position: absolute; top: -5px; right: -5px; min-width: 18px; height: 18px; padding: 0 4px;
+  border-radius: 999px; background: #ef4444; color: #fff; font-size: 10.5px; font-weight: 700;
+  line-height: 18px; text-align: center; border: 2px solid var(--bc-bg-2); box-sizing: border-box;
 }
 .usermenu-pop { min-width: 232px; }
 .usermenu-item.is-toggle { justify-content: space-between; }

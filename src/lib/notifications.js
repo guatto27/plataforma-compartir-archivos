@@ -19,6 +19,13 @@ function notifyResponsables(companyId, payload) {
   return users.length;
 }
 
+// Notifica a todo el equipo BusinessCool (admin + colaboradores)
+function notifyStaff(payload) {
+  const users = db.prepare("SELECT id FROM users WHERE role IN ('admin', 'colaborador') AND active = 1").all();
+  users.forEach((u) => notify(u.id, payload));
+  return users.length;
+}
+
 // Últimas notificaciones de un usuario
 function listFor(userId, limit = 12) {
   return db.prepare(
@@ -53,4 +60,4 @@ async function notificarDocumentoEnviado(companyId, { kind, title }) {
   return users.length;
 }
 
-module.exports = { notify, notifyResponsables, listFor, unreadCount, markAllRead, notificarDocumentoEnviado };
+module.exports = { notify, notifyResponsables, notifyStaff, listFor, unreadCount, markAllRead, notificarDocumentoEnviado };

@@ -315,6 +315,7 @@ router.get('/minutas', (req, res) => {
 // Firma de minuta por el cliente con su e.firma (FIEL)
 const multer = require('multer');
 const { firmarPDFCliente, firmarContratoCliente, CONTRATOS_DIR } = require('../lib/minuta-firma');
+const { notifyStaff } = require('../lib/notifications');
 const memUploadClient = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2 * 1024 * 1024 } });
 
 router.post('/minutas/:id/firmar', memUploadClient.fields([{ name: 'key_file', maxCount: 1 }, { name: 'cer_file', maxCount: 1 }]), async (req, res) => {
@@ -351,6 +352,7 @@ router.post('/minutas/:id/firmar', memUploadClient.fields([{ name: 'key_file', m
 
   try {
     const result = await firmarPDFCliente(m.id, m, keyFile.buffer, cerFile.buffer, passphrase, req.session.userId, req.ip);
+    try { notifyStaff({ title: 'El cliente firmó una minuta', body: `${m.titulo}${me && me.company_name ? ' · ' + me.company_name : ''}`, link: '/admin/minutas' }); } catch (_) {}
     req.session.flash = { type: 'success', text: `Minuta firmada con tu e.firma. Folio cliente: ${result.folio}` };
   } catch (err) {
     req.session.flash = { type: 'error', text: 'Error al firmar: ' + err.message };
@@ -415,6 +417,7 @@ router.post('/contratos/:id/firmar', memUploadClient.fields([{ name: 'key_file',
   }
   try {
     const result = await firmarContratoCliente(p.id, p, keyFile.buffer, cerFile.buffer, passphrase, req.session.userId, req.ip);
+    try { notifyStaff({ title: 'El cliente firmó un contrato', body: p.name, link: '/admin/minutas' }); } catch (_) {}
     req.session.flash = { type: 'success', text: `Contrato firmado con tu e.firma. Folio: ${result.folio}` };
   } catch (err) {
     req.session.flash = { type: 'error', text: 'Error al firmar: ' + err.message };
