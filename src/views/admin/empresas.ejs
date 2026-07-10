@@ -65,7 +65,10 @@
 <% if (canManage) { %>
 <% companies.forEach((c) => { %>
   <dialog id="dlg-edit-company-<%= c.id %>" class="modal" data-strict>
-    <h2>Editar empresa</h2>
+    <div class="head-row" style="margin-bottom:12px">
+      <h2 style="margin:0">Editar empresa</h2>
+      <button class="btn btn-ghost btn-sm" type="button" data-close aria-label="Cerrar">✕ Cerrar</button>
+    </div>
     <form method="post" action="/admin/empresas/<%= c.id %>/edit" enctype="multipart/form-data">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <label>Nombre de la empresa
@@ -134,7 +137,10 @@
 <% }) %>
 
 <dialog id="dlg-new-company" class="modal" data-strict <%= (typeof openNew !== 'undefined' && openNew) ? 'data-autoopen' : '' %>>
-  <h2>Nueva empresa</h2>
+  <div class="head-row" style="margin-bottom:12px">
+    <h2 style="margin:0">Nueva empresa</h2>
+    <button class="btn btn-ghost btn-sm" type="button" data-close aria-label="Cerrar">✕ Cerrar</button>
+  </div>
   <form method="post" action="/admin/empresas" enctype="multipart/form-data">
     <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
     <label>Nombre de la empresa
