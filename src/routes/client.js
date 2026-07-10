@@ -519,7 +519,10 @@ router.post('/informacion/:id/nota', (req, res) => {
   }
   const nota = String(req.body.nota || '').trim().slice(0, 600) || null;
   const responsable = String(req.body.responsable || '').trim().slice(0, 120) || null;
-  db.prepare('UPDATE checklist_items SET nota_cliente = ?, responsable = ? WHERE id = ?').run(nota, responsable, it.id);
+  const respCargo = String(req.body.responsable_cargo || '').trim().slice(0, 120) || null;
+  const respArea = String(req.body.responsable_area || '').trim().slice(0, 120) || null;
+  db.prepare('UPDATE checklist_items SET nota_cliente = ?, responsable = ?, responsable_cargo = ?, responsable_area = ? WHERE id = ?')
+    .run(nota, responsable, respCargo, respArea, it.id);
   if (nota && nota !== it.nota_cliente) {
     try {
       notifyStaff({ title: 'Nota del cliente en la información requerida', body: `${it.project_name} — ${it.titulo}: ${nota}`.slice(0, 200), link: `/admin/informacion?proyecto=${it.project_id}` });

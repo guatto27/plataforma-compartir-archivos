@@ -265,6 +265,8 @@ db.exec(`
   const chkHas = (n) => chkCols.some((c) => c.name === n);
   if (!chkHas('comentario'))   db.exec('ALTER TABLE checklist_items ADD COLUMN comentario TEXT');
   if (!chkHas('responsable'))  db.exec('ALTER TABLE checklist_items ADD COLUMN responsable TEXT');
+  if (!chkHas('responsable_cargo')) db.exec('ALTER TABLE checklist_items ADD COLUMN responsable_cargo TEXT');
+  if (!chkHas('responsable_area'))  db.exec('ALTER TABLE checklist_items ADD COLUMN responsable_area TEXT');
   if (!chkHas('nota_cliente')) db.exec('ALTER TABLE checklist_items ADD COLUMN nota_cliente TEXT');
 }
 

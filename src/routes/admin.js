@@ -701,8 +701,10 @@ router.post('/informacion/:id/edit', requireAdmin, (req, res) => {
   const descripcion = String(req.body.descripcion || '').trim().slice(0, 600) || null;
   const comentario = String(req.body.comentario || '').trim().slice(0, 600) || null;
   const responsable = String(req.body.responsable || '').trim().slice(0, 120) || null;
-  db.prepare('UPDATE checklist_items SET titulo = ?, descripcion = ?, comentario = ?, responsable = ? WHERE id = ?')
-    .run(titulo, descripcion, comentario, responsable, it.id);
+  const respCargo = String(req.body.responsable_cargo || '').trim().slice(0, 120) || null;
+  const respArea = String(req.body.responsable_area || '').trim().slice(0, 120) || null;
+  db.prepare('UPDATE checklist_items SET titulo = ?, descripcion = ?, comentario = ?, responsable = ?, responsable_cargo = ?, responsable_area = ? WHERE id = ?')
+    .run(titulo, descripcion, comentario, responsable, respCargo, respArea, it.id);
   // Si el comentario es nuevo o cambió, avisar al cliente responsable
   if (comentario && comentario !== it.comentario) {
     try {

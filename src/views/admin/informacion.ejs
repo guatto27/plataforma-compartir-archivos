@@ -40,7 +40,11 @@
                   <% if (it.descripcion) { %><div class="meta"><%= it.descripcion %></div><% } %>
                 </td>
                 <td>
-                  <% if (it.responsable) { %><%= it.responsable %><% } else { %><span class="meta">—</span><% } %>
+                  <% if (it.responsable) { %>
+                    <strong style="font-weight:600"><%= it.responsable %></strong>
+                    <% var rc = [it.responsable_cargo, it.responsable_area].filter(Boolean).join(' · '); %>
+                    <% if (rc) { %><div class="meta"><%= rc %></div><% } %>
+                  <% } else { %><span class="meta">—</span><% } %>
                 </td>
                 <td>
                   <% if (!fls.length) { %><span class="meta">—</span><% } else { %>
@@ -129,8 +133,16 @@
             <input type="text" name="descripcion" value="<%= it.descripcion || '' %>" maxlength="600" />
           </label>
           <label>Responsable del lado del cliente (opcional)
-            <input type="text" name="responsable" value="<%= it.responsable || '' %>" maxlength="120" placeholder="ej. Melissa Aguirre / área de TI" />
+            <input type="text" name="responsable" value="<%= it.responsable || '' %>" maxlength="120" placeholder="ej. Melissa Aguirre" />
           </label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <label>Cargo
+              <input type="text" name="responsable_cargo" value="<%= it.responsable_cargo || '' %>" maxlength="120" placeholder="ej. Directora de Marketing" />
+            </label>
+            <label>Área
+              <input type="text" name="responsable_area" value="<%= it.responsable_area || '' %>" maxlength="120" placeholder="ej. Marketing" />
+            </label>
+          </div>
           <label>Comentario para el cliente (se le notifica; úsalo para pedir información adicional)
             <textarea name="comentario" rows="3" maxlength="600" style="width:100%;resize:vertical" placeholder="ej. El Excel de ventas está incompleto: faltan 2024 y 2025 por sucursal."><%= it.comentario || '' %></textarea>
           </label>
