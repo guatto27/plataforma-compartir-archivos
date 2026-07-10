@@ -19,7 +19,7 @@
             <th class="ta-center">Entregables</th>
             <th class="ta-center">Minutas</th>
             <th class="ta-center">Entrevistas</th>
-            <th class="th-progress">Avance</th>
+            <th class="th-progress" style="min-width:240px">Avance por fase</th>
             <th class="ta-actions">Acciones</th>
           </tr>
         </thead>
@@ -36,9 +36,21 @@
               <td class="ta-center"><%= r.minutas %></td>
               <td class="ta-center"><%= r.interviews %></td>
               <td>
-                <div class="table-progress">
-                  <div class="progress-bar"><span style="width:<%= r.pct %>%"></span></div>
-                  <span class="table-progress-pct"><%= r.pct %>%</span>
+                <% var fases = [
+                     { n: 'F1', label: 'Diagnóstico y Levantamiento', v: r.phases.f1 },
+                     { n: 'F2', label: 'Diseño y Arquitectura', v: r.phases.f2 },
+                     { n: 'F3', label: 'QA Final, Validación y Lanzamiento', v: r.phases.f3 },
+                     { n: 'F4', label: 'Operatividad, Soporte y Seguimiento', v: r.phases.f4 }
+                   ]; %>
+                <div class="phase-progress">
+                  <% fases.forEach(function (f) { %>
+                    <div class="phase-row" title="<%= f.n %> · <%= f.label %>">
+                      <span class="phase-tag"><%= f.n %></span>
+                      <div class="progress-bar"><span style="width:<%= f.v %>%"></span></div>
+                      <span class="phase-pct"><%= f.v %>%</span>
+                    </div>
+                  <% }) %>
+                  <div class="phase-total">Avance global: <strong><%= r.pct %>%</strong></div>
                 </div>
               </td>
               <td class="ta-actions">

@@ -169,13 +169,10 @@ router.get('/inicio', (req, res) => {
 router.get('/proyectos', (req, res) => {
   if (req.session.role !== 'cliente_responsable') return res.redirect('/app/agente');
   const ctx = projectContext(req);
-  const total = PIPELINE.length;
-  const done = PIPELINE.filter((p) => p.state === 'done').length;
-  const hasCurrent = PIPELINE.some((p) => p.state === 'current');
-  const pct = total ? Math.round(((done + (hasCurrent ? 0.5 : 0)) / total) * 100) : 0;
   const rows = ctx.projects.map((p) => {
     const c = projectsLib.counts(p.id);
-    return { id: p.id, name: p.name, status: p.status, files: c.files, minutas: c.minutas, interviews: c.interviews, pct };
+    const ph = projectsLib.phaseProgress(p.id);
+    return { id: p.id, name: p.name, status: p.status, files: c.files, minutas: c.minutas, interviews: c.interviews, pct: ph.overall, phases: ph };
   });
   res.render('client/proyectos', Object.assign({ title: 'Proyectos', active: 'proyectos', rows }, ctx));
 });

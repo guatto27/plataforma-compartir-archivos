@@ -149,12 +149,14 @@ router.get('/proyectos', (req, res) => {
      ORDER BY c.name, p.created_at, p.id`
   ).all().map((p) => {
     const cnt = projectsLib.counts(p.id);
+    const ph = projectsLib.phaseProgress(p.id);
     return { id: p.id, name: p.name, status: p.status, company: p.company_name,
              files: cnt.files, minutas: cnt.minutas, interviews: cnt.interviews,
              contrato_path: p.contrato_path, contrato_nombre: p.contrato_nombre,
              contrato_enviado: p.contrato_enviado,
              cont_firmada: p.cont_firmada, cont_firmada_cliente: p.cont_firmada_cliente,
-             cont_firma_nombre: p.cont_firma_nombre, cont_fc_nombre: p.cont_fc_nombre };
+             cont_firma_nombre: p.cont_firma_nombre, cont_fc_nombre: p.cont_fc_nombre,
+             fase2_pct: p.fase2_pct, fase3_pct: p.fase3_pct, fase4_pct: p.fase4_pct, phases: ph };
   });
   res.render('admin/proyectos', {
     title: 'Proyectos', active: 'proyectos', rows,
@@ -476,7 +478,10 @@ router.post('/proyectos/:id/edit', requireAdmin, (req, res) => {
   if (!proj) return res.status(404).render('error', { title: 'No encontrado', message: 'Proyecto no encontrado.' });
   const name = String(req.body.name || '').trim().slice(0, 160) || proj.name;
   const status = PROJ_STATUSES.includes(req.body.status) ? req.body.status : proj.status;
-  db.prepare('UPDATE projects SET name = ?, status = ? WHERE id = ?').run(name, status, proj.id);
+  const pct = (v) => Math.max(0, Math.min(100, parseInt(v, 10) || 0));
+  const f2 = pct(req.body.fase2_pct), f3 = pct(req.body.fase3_pct), f4 = pct(req.body.fase4_pct);
+  db.prepare('UPDATE projects SET name = ?, status = ?, fase2_pct = ?, fase3_pct = ?, fase4_pct = ? WHERE id = ?')
+    .run(name, status, f2, f3, f4, proj.id);
   logAction(req.session.userId, 'project_edit', name, req.ip);
   req.session.flash = { type: 'success', text: 'Proyecto actualizado.' };
   res.redirect(projBack(req));

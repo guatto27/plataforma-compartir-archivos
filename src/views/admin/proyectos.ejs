@@ -120,6 +120,18 @@
             <% PROJ_STATUSES.forEach(function (s) { %><option value="<%= s %>" <%= r.status === s ? 'selected' : '' %>><%= s %></option><% }) %>
           </select>
         </label>
+        <p class="meta" style="margin:10px 0 4px">Avance por fase (%). F1 se calcula automáticamente desde la <strong>Información requerida</strong> (<%= r.phases.f1 %>%).</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+          <label>F2 Diseño y Arquitectura
+            <input type="number" name="fase2_pct" min="0" max="100" value="<%= r.fase2_pct || 0 %>" />
+          </label>
+          <label>F3 QA y Lanzamiento
+            <input type="number" name="fase3_pct" min="0" max="100" value="<%= r.fase3_pct || 0 %>" />
+          </label>
+          <label>F4 Operatividad y Soporte
+            <input type="number" name="fase4_pct" min="0" max="100" value="<%= r.fase4_pct || 0 %>" />
+          </label>
+        </div>
         <div class="modal-actions">
           <button class="btn btn-primary" type="submit">Guardar cambios</button>
           <button class="btn btn-ghost" type="button" data-close>Cancelar</button>

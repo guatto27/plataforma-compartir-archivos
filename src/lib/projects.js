@@ -37,4 +37,21 @@ function activeFor(req, companyId) {
   return found || list[0];
 }
 
-module.exports = { STATUSES, listByCompany, get, counts, activeFor };
+// Avance por fase de un proyecto. F1 se calcula desde la información requerida
+// (puntos entregados o validados / total); F2–F4 son el avance manual del admin.
+function phaseProgress(projectId) {
+  let f1 = 0;
+  const r = db.prepare(
+    `SELECT COUNT(*) AS total,
+            SUM(CASE WHEN validado = 1 OR (SELECT COUNT(*) FROM checklist_files f WHERE f.item_id = ci.id) > 0 THEN 1 ELSE 0 END) AS done
+     FROM checklist_items ci WHERE project_id = ?`
+  ).get(projectId);
+  if (r && r.total) f1 = Math.round((r.done / r.total) * 100);
+  const p = db.prepare('SELECT fase2_pct, fase3_pct, fase4_pct FROM projects WHERE id = ?').get(projectId) || {};
+  const cl = (n) => Math.max(0, Math.min(100, parseInt(n, 10) || 0));
+  const f2 = cl(p.fase2_pct), f3 = cl(p.fase3_pct), f4 = cl(p.fase4_pct);
+  const overall = Math.round((f1 + f2 + f3 + f4) / 4);
+  return { f1, f2, f3, f4, overall };
+}
+
+module.exports = { STATUSES, listByCompany, get, counts, activeFor, phaseProgress };

@@ -1274,3 +1274,12 @@ mark.bc-hl { background: var(--bc-gold); color: #0b0b0d; border-radius: 2px; pad
 .chk-msg.from-cli { align-self: flex-end; background: rgba(96,165,250,.12); border: 1px solid rgba(96,165,250,.34); border-bottom-right-radius: 3px; }
 .iconbtn .count { position: absolute; top: -6px; right: -6px; min-width: 15px; height: 15px; padding: 0 3px; border-radius: 999px; background: #ef4444; color: #fff; font-size: 9px; font-weight: 700; line-height: 15px; text-align: center; }
 .iconbtn { position: relative; }
+
+/* Avance por fase (F1-F4) en la lista de proyectos del cliente */
+.phase-progress { display: flex; flex-direction: column; gap: 5px; min-width: 220px; }
+.phase-row { display: flex; align-items: center; gap: 8px; }
+.phase-tag { font-size: 10.5px; font-weight: 700; color: var(--bc-muted); width: 20px; flex-shrink: 0; }
+.phase-row .progress-bar { flex: 1; height: 7px; }
+.phase-pct { font-size: 11px; color: var(--bc-muted); width: 34px; text-align: right; flex-shrink: 0; }
+.phase-total { font-size: 11.5px; color: var(--bc-muted); margin-top: 3px; }
+.phase-total strong { color: var(--bc-gold); }

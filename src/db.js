@@ -237,6 +237,8 @@ addProj('cont_firmada', 'INTEGER NOT NULL DEFAULT 0');
 addProj('cont_firmada_cliente', 'INTEGER NOT NULL DEFAULT 0');
 ['serial', 'nombre', 'fecha', 'folio', 'email', 'rfc', 'hash', 'sello', 'cert']
   .forEach((s) => addProj('cont_fc_' + s, 'TEXT'));
+// Avance manual por fase (F1 se calcula desde la información requerida)
+['fase2_pct', 'fase3_pct', 'fase4_pct'].forEach((c) => addProj(c, 'INTEGER NOT NULL DEFAULT 0'));
 
 // Check list de información requerida por proyecto (el admin lo define; el cliente sube archivos)
 db.exec(`
