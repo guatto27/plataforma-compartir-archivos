@@ -1,0 +1,130 @@
+<%- include('../partials/shell-header') %>
+
+<div class="page-head">
+  <div class="head-row">
+    <div>
+      <h1>Información requerida</h1>
+      <p class="muted">Check list de información que el cliente debe entregar para arrancar el proyecto. El cliente responsable lo ve en su portal y sube los archivos aquí solicitados.</p>
+    </div>
+    <% if (proj && canManage) { %>
+      <button class="btn btn-primary" type="button" data-dialog="dlg-add-items">+ Agregar puntos</button>
+    <% } %>
+  </div>
+</div>
+
+<% if (!proj) { %>
+  <div class="empty-state">Selecciona un proyecto en el panel lateral (sección <strong>Proyecto</strong>) para gestionar su check list de información.</div>
+<% } else { %>
+  <div class="flash flash-success">Proyecto: <strong><%= proj.company_name %> — <%= proj.name %></strong></div>
+
+  <% if (!items.length) { %>
+    <div class="empty-state">Este proyecto aún no tiene check list. Usa «+ Agregar puntos» para crearlo<% if (canManage) { %> — puedes pegar toda la lista de una vez (un punto por línea)<% } %>.</div>
+  <% } else { %>
+    <%
+      var entregados = items.filter(function(i){ return (filesByItem[i.id]||[]).length || i.validado; }).length;
+    %>
+    <section class="card">
+      <p class="muted" style="margin-top:0">Avance: <strong><%= entregados %></strong> de <strong><%= items.length %></strong> puntos con información entregada o validada.</p>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr><th style="width:36px">#</th><th>Información solicitada</th><th class="ta-center">Estado</th><th>Archivos entregados</th><% if (canManage) { %><th class="ta-actions">Acciones</th><% } %></tr>
+          </thead>
+          <tbody>
+            <% items.forEach(function (it, idx) { %>
+              <% var fls = filesByItem[it.id] || []; %>
+              <tr>
+                <td class="meta"><%= idx + 1 %></td>
+                <td>
+                  <strong><%= it.titulo %></strong>
+                  <% if (it.descripcion) { %><div class="meta"><%= it.descripcion %></div><% } %>
+                </td>
+                <td class="ta-center">
+                  <% if (it.validado) { %><span class="st-chip st-fin">Validado</span>
+                  <% } else if (fls.length) { %><span class="st-chip st-vig">Entregado</span>
+                  <% } else { %><span class="st-chip st-pau">Pendiente</span><% } %>
+                </td>
+                <td>
+                  <% if (!fls.length) { %><span class="meta">—</span><% } else { %>
+                    <% fls.forEach(function (f) { %>
+                      <div style="margin:2px 0"><a href="/admin/informacion/archivo/<%= f.id %>/descargar"><%= f.file_name %></a> <span class="meta"><%= fmtDate(f.created_at) %></span></div>
+                    <% }) %>
+                  <% } %>
+                </td>
+                <% if (canManage) { %>
+                <td class="ta-actions">
+                  <form method="post" action="/admin/informacion/<%= it.id %>/validar" class="inline">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                    <button class="iconbtn <%= it.validado ? 'is-on' : '' %>" type="submit" title="<%= it.validado ? 'Validado (clic para quitar)' : 'Marcar como validado' %>" aria-label="Validar">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.4l2.6 2.6 5-5.6"/></svg>
+                    </button>
+                  </form>
+                  <button class="iconbtn" type="button" data-dialog="dlg-edit-item-<%= it.id %>" title="Editar" aria-label="Editar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+                  </button>
+                  <form method="post" action="/admin/informacion/<%= it.id %>/delete" class="inline" data-confirm="¿Eliminar “<%= it.titulo %>” del check list? Se borrarán también sus archivos.">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                    <button class="iconbtn danger" type="submit" title="Eliminar" aria-label="Eliminar">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    </button>
+                  </form>
+                </td>
+                <% } %>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  <% } %>
+
+  <% if (canManage) { %>
+    <!-- Agregar puntos (uno o pegar la lista completa) -->
+    <dialog id="dlg-add-items" class="modal" data-strict>
+      <div class="head-row" style="margin-bottom:12px">
+        <h2 style="margin:0">Agregar puntos al check list</h2>
+        <button class="btn btn-ghost btn-sm" type="button" data-close>✕ Cerrar</button>
+      </div>
+      <form method="post" action="/admin/informacion">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <input type="hidden" name="project_id" value="<%= proj.id %>" />
+        <label>Pega la lista completa (un punto por línea)
+          <textarea name="bulk" rows="8" placeholder="Histórico de sucursales abiertas y cerradas&#10;Ventas por sucursal (tickets y piezas)&#10;Manual de marca y materiales gráficos&#10;…" style="width:100%;resize:vertical"></textarea>
+        </label>
+        <p class="meta" style="margin:6px 0 12px">O agrega un solo punto con descripción:</p>
+        <label>Punto (opcional)
+          <input type="text" name="titulo" maxlength="300" placeholder="ej. Histórico de candidatos evaluados" />
+        </label>
+        <label>Descripción (opcional)
+          <input type="text" name="descripcion" maxlength="600" placeholder="ej. Con motivos de aprobación o rechazo, en Excel" />
+        </label>
+        <div class="modal-actions">
+          <button class="btn btn-primary" type="submit">Agregar al check list</button>
+          <button class="btn btn-ghost" type="button" data-close>Cancelar</button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Editar cada punto -->
+    <% items.forEach(function (it) { %>
+      <dialog id="dlg-edit-item-<%= it.id %>" class="modal" data-strict>
+        <h2>Editar punto</h2>
+        <form method="post" action="/admin/informacion/<%= it.id %>/edit">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <label>Punto
+            <input type="text" name="titulo" value="<%= it.titulo %>" required maxlength="300" />
+          </label>
+          <label>Descripción (opcional)
+            <input type="text" name="descripcion" value="<%= it.descripcion || '' %>" maxlength="600" />
+          </label>
+          <div class="modal-actions">
+            <button class="btn btn-primary" type="submit">Guardar</button>
+            <button class="btn btn-ghost" type="button" data-close>Cancelar</button>
+          </div>
+        </form>
+      </dialog>
+    <% }) %>
+  <% } %>
+<% } %>
+
+<%- include('../partials/shell-footer') %>

@@ -238,6 +238,28 @@ addProj('cont_firmada_cliente', 'INTEGER NOT NULL DEFAULT 0');
 ['serial', 'nombre', 'fecha', 'folio', 'email', 'rfc', 'hash', 'sello', 'cert']
   .forEach((s) => addProj('cont_fc_' + s, 'TEXT'));
 
+// Check list de información requerida por proyecto (el admin lo define; el cliente sube archivos)
+db.exec(`
+  CREATE TABLE IF NOT EXISTS checklist_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL,
+    titulo TEXT NOT NULL,
+    descripcion TEXT,
+    validado INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_chk_project ON checklist_items(project_id);
+  CREATE TABLE IF NOT EXISTS checklist_files (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    item_id INTEGER NOT NULL REFERENCES checklist_items(id) ON DELETE CASCADE,
+    file_path TEXT NOT NULL,
+    file_name TEXT NOT NULL,
+    uploaded_by INTEGER,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_chkf_item ON checklist_files(item_id);
+`);
+
 // Notificaciones en la plataforma (campanita)
 db.exec(`
   CREATE TABLE IF NOT EXISTS notifications (

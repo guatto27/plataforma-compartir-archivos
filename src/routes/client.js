@@ -425,6 +425,109 @@ router.post('/contratos/:id/firmar', memUploadClient.fields([{ name: 'key_file',
   res.redirect('/app/contratos');
 });
 
+// ───────── Información requerida (check list) — solo cliente_responsable ─────────
+const pathMod = require('path');
+const fsMod = require('fs');
+const CHECKLIST_DIR = pathMod.join(config.uploadsDir, 'checklist');
+if (!fsMod.existsSync(CHECKLIST_DIR)) fsMod.mkdirSync(CHECKLIST_DIR, { recursive: true });
+
+const checklistUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, CHECKLIST_DIR),
+    filename: (req, file, cb) => {
+      const crypto = require('crypto');
+      const ext = pathMod.extname(file.originalname).toLowerCase().slice(0, 10);
+      cb(null, `chk-${Date.now()}-${crypto.randomBytes(5).toString('hex')}${ext}`);
+    },
+  }),
+  limits: { fileSize: 200 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const bad = ['.exe', '.bat', '.cmd', '.sh', '.js', '.msi', '.scr'];
+    cb(null, !bad.includes(pathMod.extname(file.originalname).toLowerCase()));
+  },
+});
+
+// Devuelve el item si pertenece a un proyecto de la empresa del usuario
+function checklistItemAccesible(req, itemId) {
+  if (req.session.role === 'client') return null;
+  const me = db.prepare('SELECT company_id FROM users WHERE id = ?').get(req.session.userId);
+  if (!me || !me.company_id) return null;
+  return db.prepare(
+    `SELECT ci.*, p.name AS project_name FROM checklist_items ci
+     JOIN projects p ON p.id = ci.project_id WHERE ci.id = ? AND p.company_id = ?`
+  ).get(itemId, me.company_id) || null;
+}
+
+router.get('/informacion', (req, res) => {
+  if (req.session.role === 'client') return res.redirect('/app/agente');
+  const active = activeProject(req);
+  const items = active
+    ? db.prepare('SELECT * FROM checklist_items WHERE project_id = ? ORDER BY id').all(active.id)
+    : [];
+  const filesByItem = {};
+  items.forEach((it) => {
+    filesByItem[it.id] = db.prepare('SELECT * FROM checklist_files WHERE item_id = ? ORDER BY id').all(it.id);
+  });
+  res.render('client/informacion', {
+    title: 'Información requerida', active: 'informacion',
+    companyName: companyOf(req), projectName: active ? active.name : null, items, filesByItem,
+  });
+});
+
+// Subir archivo(s) a un punto del check list
+router.post('/informacion/:id/subir', checklistUpload.array('archivos', 10), (req, res) => {
+  if (req.session.role === 'client') return res.redirect('/app/agente');
+  if (!verifyCsrf(req)) return denyCsrf(res);
+  const it = checklistItemAccesible(req, req.params.id);
+  if (!it) {
+    req.session.flash = { type: 'error', text: 'Punto no encontrado.' };
+    return res.redirect('/app/informacion');
+  }
+  const files = req.files || [];
+  if (!files.length) {
+    req.session.flash = { type: 'error', text: 'Selecciona al menos un archivo.' };
+    return res.redirect('/app/informacion');
+  }
+  const ins = db.prepare('INSERT INTO checklist_files (item_id, file_path, file_name, uploaded_by) VALUES (?, ?, ?, ?)');
+  files.forEach((f) => ins.run(it.id, f.filename, f.originalname, req.session.userId));
+  logAction(req.session.userId, 'checklist_upload', `${it.titulo} (+${files.length})`, req.ip);
+  try {
+    notifyStaff({ title: 'El cliente subió información', body: `${it.project_name}: ${it.titulo} (${files.length} archivo${files.length > 1 ? 's' : ''})`, link: `/admin/informacion?proyecto=${it.project_id}` });
+  } catch (_) { /* best-effort */ }
+  req.session.flash = { type: 'success', text: `${files.length} archivo(s) cargados en "${it.titulo}".` };
+  res.redirect('/app/informacion');
+});
+
+router.get('/informacion/archivo/:fid/descargar', (req, res) => {
+  const f = db.prepare('SELECT * FROM checklist_files WHERE id = ?').get(req.params.fid);
+  if (!f) return res.status(404).send('Archivo no encontrado');
+  const it = checklistItemAccesible(req, f.item_id);
+  if (!it) return res.status(403).send('Sin acceso.');
+  const fp = pathMod.join(CHECKLIST_DIR, f.file_path);
+  if (!fsMod.existsSync(fp)) return res.status(404).send('Archivo no encontrado en servidor');
+  res.download(fp, f.file_name);
+});
+
+// El cliente puede quitar un archivo mientras el punto no esté validado
+router.post('/informacion/archivo/:fid/eliminar', (req, res) => {
+  if (req.session.role === 'client') return res.redirect('/app/agente');
+  if (!verifyCsrf(req)) return denyCsrf(res);
+  const f = db.prepare('SELECT * FROM checklist_files WHERE id = ?').get(req.params.fid);
+  const it = f ? checklistItemAccesible(req, f.item_id) : null;
+  if (!f || !it) {
+    req.session.flash = { type: 'error', text: 'Archivo no encontrado.' };
+    return res.redirect('/app/informacion');
+  }
+  if (it.validado) {
+    req.session.flash = { type: 'error', text: 'Este punto ya fue validado por BusinessCool; no se puede eliminar el archivo.' };
+    return res.redirect('/app/informacion');
+  }
+  try { fsMod.unlinkSync(pathMod.join(CHECKLIST_DIR, f.file_path)); } catch (_) { /* ya no existe */ }
+  db.prepare('DELETE FROM checklist_files WHERE id = ?').run(f.id);
+  req.session.flash = { type: 'success', text: 'Archivo eliminado.' };
+  res.redirect('/app/informacion');
+});
+
 // Agente de levantamiento (entrevistas reales)
 // cliente_responsable ve todas las entrevistas de su empresa
 router.get('/agente', (req, res) => {

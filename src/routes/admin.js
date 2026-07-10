@@ -634,6 +634,107 @@ router.get('/proyectos/:id/contrato/descargar', (req, res) => {
   res.download(fp, proj.contrato_nombre || 'contrato.pdf');
 });
 
+// ───────── Información requerida (check list por proyecto) ─────────
+const CHECKLIST_DIR = path.join(config.uploadsDir, 'checklist');
+if (!fs.existsSync(CHECKLIST_DIR)) fs.mkdirSync(CHECKLIST_DIR, { recursive: true });
+
+function checklistProject(req) {
+  const pid = parseInt(req.query.proyecto, 10) || parseInt(req.session.adminProjectId, 10) || null;
+  if (!pid) return null;
+  return db.prepare(
+    'SELECT p.*, c.name AS company_name FROM projects p JOIN companies c ON c.id = p.company_id WHERE p.id = ?'
+  ).get(pid) || null;
+}
+
+// Página del check list (admin ve items + archivos entregados)
+router.get('/informacion', (req, res) => {
+  const proj = checklistProject(req);
+  const items = proj
+    ? db.prepare('SELECT * FROM checklist_items WHERE project_id = ? ORDER BY id').all(proj.id)
+    : [];
+  const filesByItem = {};
+  items.forEach((it) => {
+    filesByItem[it.id] = db.prepare('SELECT * FROM checklist_files WHERE item_id = ? ORDER BY id').all(it.id);
+  });
+  res.render('admin/informacion', {
+    title: 'Información requerida', active: 'informacion',
+    proj, items, filesByItem, canManage: req.session.role === 'admin',
+  });
+});
+
+// Agregar puntos al check list (uno, o varios en bloque: una línea por punto)
+router.post('/informacion', requireAdmin, (req, res) => {
+  if (!verifyCsrf(req)) return denyCsrf(res);
+  const proj = db.prepare('SELECT * FROM projects WHERE id = ?').get(parseInt(req.body.project_id, 10) || 0);
+  if (!proj) {
+    req.session.flash = { type: 'error', text: 'Selecciona un proyecto válido.' };
+    return res.redirect('/admin/informacion');
+  }
+  const back = `/admin/informacion?proyecto=${proj.id}`;
+  const ins = db.prepare('INSERT INTO checklist_items (project_id, titulo, descripcion) VALUES (?, ?, ?)');
+  let n = 0;
+  const bulk = String(req.body.bulk || '').trim();
+  if (bulk) {
+    bulk.split(/\r?\n/).map((l) => l.replace(/^\s*[-•▪\d.)\]]+\s*/, '').trim()).filter(Boolean)
+      .forEach((titulo) => { ins.run(proj.id, titulo.slice(0, 300), null); n++; });
+  }
+  const titulo = String(req.body.titulo || '').trim();
+  if (titulo) { ins.run(proj.id, titulo.slice(0, 300), String(req.body.descripcion || '').trim().slice(0, 600) || null); n++; }
+  if (!n) {
+    req.session.flash = { type: 'error', text: 'Escribe al menos un punto para el check list.' };
+    return res.redirect(back);
+  }
+  logAction(req.session.userId, 'checklist_items_added', `${proj.name} (+${n})`, req.ip);
+  try {
+    const { notifyResponsables } = require('../lib/notifications');
+    notifyResponsables(proj.company_id, { title: 'Nueva información solicitada', body: `${proj.name}: ${n} punto(s) por entregar`, link: '/app/informacion' });
+  } catch (_) { /* best-effort */ }
+  req.session.flash = { type: 'success', text: `${n} punto(s) agregados al check list. El cliente responsable ya los ve en su portal.` };
+  res.redirect(back);
+});
+
+router.post('/informacion/:id/edit', requireAdmin, (req, res) => {
+  if (!verifyCsrf(req)) return denyCsrf(res);
+  const it = db.prepare('SELECT * FROM checklist_items WHERE id = ?').get(req.params.id);
+  if (!it) return res.redirect('/admin/informacion');
+  const titulo = String(req.body.titulo || '').trim().slice(0, 300) || it.titulo;
+  const descripcion = String(req.body.descripcion || '').trim().slice(0, 600) || null;
+  db.prepare('UPDATE checklist_items SET titulo = ?, descripcion = ? WHERE id = ?').run(titulo, descripcion, it.id);
+  req.session.flash = { type: 'success', text: 'Punto actualizado.' };
+  res.redirect(`/admin/informacion?proyecto=${it.project_id}`);
+});
+
+// Marcar / desmarcar un punto como validado (recibido y correcto)
+router.post('/informacion/:id/validar', requireAdmin, (req, res) => {
+  if (!verifyCsrf(req)) return denyCsrf(res);
+  const it = db.prepare('SELECT * FROM checklist_items WHERE id = ?').get(req.params.id);
+  if (!it) return res.redirect('/admin/informacion');
+  db.prepare('UPDATE checklist_items SET validado = ? WHERE id = ?').run(it.validado ? 0 : 1, it.id);
+  res.redirect(`/admin/informacion?proyecto=${it.project_id}`);
+});
+
+router.post('/informacion/:id/delete', requireAdmin, (req, res) => {
+  if (!verifyCsrf(req)) return denyCsrf(res);
+  const it = db.prepare('SELECT * FROM checklist_items WHERE id = ?').get(req.params.id);
+  if (!it) return res.redirect('/admin/informacion');
+  db.prepare('SELECT file_path FROM checklist_files WHERE item_id = ?').all(it.id).forEach((f) => {
+    try { fs.unlinkSync(path.join(CHECKLIST_DIR, f.file_path)); } catch (_) { /* ya no existe */ }
+  });
+  db.prepare('DELETE FROM checklist_files WHERE item_id = ?').run(it.id);
+  db.prepare('DELETE FROM checklist_items WHERE id = ?').run(it.id);
+  req.session.flash = { type: 'success', text: 'Punto eliminado del check list.' };
+  res.redirect(`/admin/informacion?proyecto=${it.project_id}`);
+});
+
+// Descargar un archivo entregado por el cliente
+router.get('/informacion/archivo/:fid/descargar', (req, res) => {
+  const f = db.prepare('SELECT * FROM checklist_files WHERE id = ?').get(req.params.fid);
+  if (!f) return res.status(404).send('Archivo no encontrado');
+  const fp = path.join(CHECKLIST_DIR, f.file_path);
+  if (!fs.existsSync(fp)) return res.status(404).send('Archivo no encontrado en servidor');
+  res.download(fp, f.file_name);
+});
+
 router.post('/empresas/:id/delete', requireAdmin, (req, res) => {
   const company = db.prepare('SELECT * FROM companies WHERE id = ?').get(req.params.id);
   if (!company) {
