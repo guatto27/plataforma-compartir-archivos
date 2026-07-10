@@ -31,7 +31,9 @@
           <tr>
             <th style="width:34px">#</th>
             <th>Información solicitada</th>
+            <th>Responsable</th>
             <th>Archivos entregados</th>
+            <th class="nowrap">Última entrega</th>
             <th class="ta-center">Estado</th>
             <th class="ta-actions">Acciones</th>
           </tr>
@@ -46,11 +48,17 @@
                 <% if (it.descripcion) { %><div class="meta"><%= it.descripcion %></div><% } %>
               </td>
               <td>
+                <% if (it.responsable) { %><%= it.responsable %><% } else { %><span class="meta">—</span><% } %>
+              </td>
+              <td>
                 <% if (!fls.length) { %><span class="meta">—</span><% } else { %>
                   <% fls.forEach(function (f) { %>
                     <a class="chk-file-line" href="/app/informacion/archivo/<%= f.id %>/descargar" title="<%= f.file_name %> · <%= fmtDate(f.created_at) %>"><%= f.file_name %></a>
                   <% }) %>
                 <% } %>
+              </td>
+              <td class="nowrap meta">
+                <% if (fls.length) { %><%= fmtDate(fls[fls.length - 1].created_at) %><% } else { %>—<% } %>
               </td>
               <td class="ta-center">
                 <% if (it.validado) { %><span class="st-chip st-fin">Validado ✓</span>
@@ -84,6 +92,11 @@
                   </button>
                 <% } %>
 
+                <!-- Nota / duda del cliente hacia BusinessCool -->
+                <button class="iconbtn <%= it.nota_cliente ? 'has-nota' : '' %>" type="button" data-dialog="chk-nota-<%= it.id %>" title="<%= it.nota_cliente ? 'Ver / editar tu nota' : 'Escribir una nota o duda a BusinessCool' %>" aria-label="Nota para BusinessCool">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+                </button>
+
                 <!-- Eliminar archivos -->
                 <% if (fls.length && !it.validado) { %>
                   <button class="iconbtn danger" type="button" data-dialog="chk-files-<%= it.id %>" title="Eliminar archivos entregados" aria-label="Eliminar archivos">
@@ -116,6 +129,30 @@
       </div>
       <p class="meta" style="margin:0 0 10px"><%= it.titulo %></p>
       <div class="chk-coment" style="max-width:none;display:block"><%= it.comentario %></div>
+    </dialog>
+  <% }) %>
+
+  <!-- Modales: nota / duda del cliente -->
+  <% items.forEach(function (it) { %>
+    <dialog id="chk-nota-<%= it.id %>" class="modal" style="width:min(520px,94vw)" data-strict>
+      <div class="head-row" style="margin-bottom:10px">
+        <h2 style="margin:0;font-size:17px">Nota para BusinessCool</h2>
+        <button class="btn btn-ghost btn-sm" type="button" data-close>✕ Cerrar</button>
+      </div>
+      <p class="meta" style="margin:0 0 10px"><%= it.titulo %></p>
+      <form method="post" action="/app/informacion/<%= it.id %>/nota">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <label>Nota o duda (el equipo de BusinessCool recibirá una notificación)
+          <textarea name="nota" rows="4" maxlength="600" style="width:100%;resize:vertical" placeholder="ej. Esta información no existe como tal; ¿les sirve el reporte del ERP?"><%= it.nota_cliente || '' %></textarea>
+        </label>
+        <label>Responsable de este punto en tu equipo (opcional)
+          <input type="text" name="responsable" value="<%= it.responsable || '' %>" maxlength="120" placeholder="ej. Melissa Aguirre / área de TI" />
+        </label>
+        <div class="modal-actions">
+          <button class="btn btn-primary" type="submit">Guardar y notificar</button>
+          <button class="btn btn-ghost" type="button" data-close>Cancelar</button>
+        </div>
+      </form>
     </dialog>
   <% }) %>
 

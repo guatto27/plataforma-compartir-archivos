@@ -259,10 +259,13 @@ db.exec(`
   );
   CREATE INDEX IF NOT EXISTS idx_chkf_item ON checklist_files(item_id);
 `);
-// Comentario del admin hacia el cliente sobre un punto del check list
+// Comentario del admin, responsable del lado del cliente y nota del cliente
 {
   const chkCols = db.prepare('PRAGMA table_info(checklist_items)').all();
-  if (!chkCols.some((c) => c.name === 'comentario')) db.exec('ALTER TABLE checklist_items ADD COLUMN comentario TEXT');
+  const chkHas = (n) => chkCols.some((c) => c.name === n);
+  if (!chkHas('comentario'))   db.exec('ALTER TABLE checklist_items ADD COLUMN comentario TEXT');
+  if (!chkHas('responsable'))  db.exec('ALTER TABLE checklist_items ADD COLUMN responsable TEXT');
+  if (!chkHas('nota_cliente')) db.exec('ALTER TABLE checklist_items ADD COLUMN nota_cliente TEXT');
 }
 
 // Notificaciones en la plataforma (campanita)

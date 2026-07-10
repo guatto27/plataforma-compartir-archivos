@@ -508,6 +508,28 @@ router.get('/informacion/archivo/:fid/descargar', (req, res) => {
   res.download(fp, f.file_name);
 });
 
+// Nota del cliente hacia BusinessCool sobre un punto (dudas/aclaraciones) + responsable interno
+router.post('/informacion/:id/nota', (req, res) => {
+  if (req.session.role === 'client') return res.redirect('/app/agente');
+  if (!verifyCsrf(req)) return denyCsrf(res);
+  const it = checklistItemAccesible(req, req.params.id);
+  if (!it) {
+    req.session.flash = { type: 'error', text: 'Punto no encontrado.' };
+    return res.redirect('/app/informacion');
+  }
+  const nota = String(req.body.nota || '').trim().slice(0, 600) || null;
+  const responsable = String(req.body.responsable || '').trim().slice(0, 120) || null;
+  db.prepare('UPDATE checklist_items SET nota_cliente = ?, responsable = ? WHERE id = ?').run(nota, responsable, it.id);
+  if (nota && nota !== it.nota_cliente) {
+    try {
+      notifyStaff({ title: 'Nota del cliente en la información requerida', body: `${it.project_name} — ${it.titulo}: ${nota}`.slice(0, 200), link: `/admin/informacion?proyecto=${it.project_id}` });
+    } catch (_) { /* best-effort */ }
+    logAction(req.session.userId, 'checklist_nota', it.titulo, req.ip);
+  }
+  req.session.flash = { type: 'success', text: 'Nota guardada. El equipo de BusinessCool AI fue notificado.' };
+  res.redirect('/app/informacion');
+});
+
 // El cliente puede quitar un archivo mientras el punto no esté validado
 router.post('/informacion/archivo/:fid/eliminar', (req, res) => {
   if (req.session.role === 'client') return res.redirect('/app/agente');

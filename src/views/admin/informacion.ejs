@@ -28,7 +28,7 @@
       <div class="table-wrap">
         <table class="table chk-table">
           <thead>
-            <tr><th style="width:36px">#</th><th>Información solicitada</th><th>Archivos entregados</th><th class="ta-center">Estado</th><th>Comentario al cliente</th><% if (canManage) { %><th class="ta-actions">Acciones</th><% } %></tr>
+            <tr><th style="width:36px">#</th><th>Información solicitada</th><th>Responsable</th><th>Archivos entregados</th><th class="nowrap">Última entrega</th><th class="ta-center">Estado</th><th>Notas</th><% if (canManage) { %><th class="ta-actions">Acciones</th><% } %></tr>
           </thead>
           <tbody>
             <% items.forEach(function (it, idx) { %>
@@ -40,11 +40,17 @@
                   <% if (it.descripcion) { %><div class="meta"><%= it.descripcion %></div><% } %>
                 </td>
                 <td>
+                  <% if (it.responsable) { %><%= it.responsable %><% } else { %><span class="meta">—</span><% } %>
+                </td>
+                <td>
                   <% if (!fls.length) { %><span class="meta">—</span><% } else { %>
                     <% fls.forEach(function (f) { %>
                       <a class="chk-file-line" href="/admin/informacion/archivo/<%= f.id %>/descargar" title="<%= f.file_name %> · <%= fmtDate(f.created_at) %>"><%= f.file_name %></a>
                     <% }) %>
                   <% } %>
+                </td>
+                <td class="nowrap meta">
+                  <% if (fls.length) { %><%= fmtDate(fls[fls.length - 1].created_at) %><% } else { %>—<% } %>
                 </td>
                 <td class="ta-center">
                   <% if (it.validado) { %><span class="st-chip st-fin">Validado</span>
@@ -52,7 +58,9 @@
                   <% } else { %><span class="st-chip st-pau">Pendiente</span><% } %>
                 </td>
                 <td>
-                  <% if (it.comentario) { %><span class="chk-coment"><%= it.comentario %></span><% } else { %><span class="meta">—</span><% } %>
+                  <% if (it.nota_cliente) { %><div class="chk-nota" style="margin-bottom:4px"><strong>Cliente:</strong> <%= it.nota_cliente %></div><% } %>
+                  <% if (it.comentario) { %><div class="chk-coment"><strong>BusinessCool:</strong> <%= it.comentario %></div><% } %>
+                  <% if (!it.nota_cliente && !it.comentario) { %><span class="meta">—</span><% } %>
                 </td>
                 <% if (canManage) { %>
                 <td class="ta-actions">
@@ -119,6 +127,9 @@
           </label>
           <label>Descripción (opcional)
             <input type="text" name="descripcion" value="<%= it.descripcion || '' %>" maxlength="600" />
+          </label>
+          <label>Responsable del lado del cliente (opcional)
+            <input type="text" name="responsable" value="<%= it.responsable || '' %>" maxlength="120" placeholder="ej. Melissa Aguirre / área de TI" />
           </label>
           <label>Comentario para el cliente (se le notifica; úsalo para pedir información adicional)
             <textarea name="comentario" rows="3" maxlength="600" style="width:100%;resize:vertical" placeholder="ej. El Excel de ventas está incompleto: faltan 2024 y 2025 por sucursal."><%= it.comentario || '' %></textarea>

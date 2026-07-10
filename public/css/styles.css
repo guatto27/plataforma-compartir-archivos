@@ -1260,3 +1260,7 @@ mark.bc-hl { background: var(--bc-gold); color: #0b0b0d; border-radius: 2px; pad
 
 /* Check list: columna "Información solicitada" más angosta (se envuelve en 2-3 líneas) */
 .chk-table th:nth-child(2), .chk-table td:nth-child(2) { width: 36%; max-width: 430px; }
+
+/* Nota del cliente (azul, distinta del comentario dorado de BusinessCool) */
+.chk-nota { display: inline-block; background: rgba(96,165,250,.10); border: 1px solid rgba(96,165,250,.35); border-radius: 8px; padding: 6px 10px; font-size: 12.5px; line-height: 1.45; color: var(--bc-text); max-width: 260px; }
+.iconbtn.has-nota { color: #7fb2f0; border-color: rgba(96,165,250,.5); }
