@@ -654,14 +654,31 @@ router.get('/informacion', (req, res) => {
     : [];
   const filesByItem = {};
   const msgsByItem = {};
+  const unreadByItem = {};
+  const uid = req.session.userId;
   items.forEach((it) => {
     filesByItem[it.id] = db.prepare('SELECT * FROM checklist_files WHERE item_id = ? ORDER BY id').all(it.id);
     msgsByItem[it.id] = db.prepare('SELECT * FROM checklist_messages WHERE item_id = ? ORDER BY id').all(it.id);
+    const seen = db.prepare('SELECT last_seen_id FROM checklist_seen WHERE item_id = ? AND user_id = ?').get(it.id, uid);
+    const lastSeen = seen ? seen.last_seen_id : 0;
+    unreadByItem[it.id] = db.prepare("SELECT COUNT(*) AS n FROM checklist_messages WHERE item_id = ? AND role != 'businesscool' AND id > ?").get(it.id, lastSeen).n;
   });
   res.render('admin/informacion', {
     title: 'Información requerida', active: 'informacion',
-    proj, items, filesByItem, msgsByItem, canManage: req.session.role === 'admin',
+    proj, items, filesByItem, msgsByItem, unreadByItem, canManage: req.session.role === 'admin',
   });
+});
+
+// Marcar como leídos los mensajes de un punto (para el usuario actual)
+router.post('/informacion/:id/visto', (req, res) => {
+  if (!verifyCsrf(req)) return res.status(403).json({ ok: false });
+  const it = db.prepare('SELECT id FROM checklist_items WHERE id = ?').get(req.params.id);
+  if (!it) return res.json({ ok: false });
+  const max = db.prepare('SELECT COALESCE(MAX(id), 0) AS m FROM checklist_messages WHERE item_id = ?').get(it.id).m;
+  db.prepare(`INSERT INTO checklist_seen (item_id, user_id, last_seen_id) VALUES (?, ?, ?)
+              ON CONFLICT(item_id, user_id) DO UPDATE SET last_seen_id = excluded.last_seen_id`)
+    .run(it.id, req.session.userId, max);
+  res.json({ ok: true });
 });
 
 // Mensaje del equipo BusinessCool en el hilo de un punto

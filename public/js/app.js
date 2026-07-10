@@ -24,6 +24,20 @@ document.addEventListener('click', function (e) {
       if (obj && !obj.getAttribute('data')) obj.setAttribute('data', obj.getAttribute('data-pdf-src'));
       // Cierra el menú de usuario si el diálogo se abrió desde ahí
       document.querySelectorAll('details.usermenu[open]').forEach(function (d) { d.removeAttribute('open'); });
+      // Marcar como leído (chat de información requerida): quita el globito y avisa al servidor
+      var seenUrl = opener.getAttribute('data-seen-url');
+      if (seenUrl) {
+        var badge = opener.querySelector('.count');
+        if (badge) badge.remove();
+        var csrfEl = dlg.querySelector('input[name="_csrf"]');
+        try {
+          fetch(seenUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: '_csrf=' + encodeURIComponent(csrfEl ? csrfEl.value : ''),
+          });
+        } catch (err) { /* sin conexión: se marcará al recargar */ }
+      }
     }
     return;
   }

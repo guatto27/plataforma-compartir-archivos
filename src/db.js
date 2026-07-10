@@ -281,6 +281,12 @@ db.exec(`
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
   CREATE INDEX IF NOT EXISTS idx_chkmsg_item ON checklist_messages(item_id);
+  CREATE TABLE IF NOT EXISTS checklist_seen (
+    item_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    last_seen_id INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (item_id, user_id)
+  );
 `);
 // Migración única: pasar los comentarios/notas antiguos al hilo y vaciar las columnas
 try {

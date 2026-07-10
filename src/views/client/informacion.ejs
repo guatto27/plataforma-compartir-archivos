@@ -86,10 +86,10 @@
                 <% } %>
 
                 <!-- Conversación (chat) con BusinessCool -->
-                <% var nmsg = (msgsByItem[it.id] || []).length; %>
-                <button class="iconbtn <%= nmsg ? 'has-coment' : '' %>" type="button" data-dialog="chk-chat-<%= it.id %>" title="Conversación con BusinessCool<%= nmsg ? ' ('+nmsg+')' : '' %>" aria-label="Conversación">
+                <% var nmsg = (msgsByItem[it.id] || []).length; var nun = (unreadByItem[it.id] || 0); %>
+                <button class="iconbtn <%= nmsg ? 'has-coment' : '' %>" type="button" data-dialog="chk-chat-<%= it.id %>" data-seen-url="/app/informacion/<%= it.id %>/visto" title="Conversación con BusinessCool" aria-label="Conversación">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                  <% if (nmsg) { %><span class="count"><%= nmsg %></span><% } %>
+                  <% if (nun) { %><span class="count"><%= nun %></span><% } %>
                 </button>
 
                 <!-- Responsable del punto -->
