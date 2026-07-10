@@ -63,6 +63,7 @@
           <% if (r.cont_firmada) { %>
             <form method="post" action="/admin/proyectos/<%= r.id %>/contrato/enviar" class="inline">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <input type="hidden" name="back" value="<%= typeof contratoBack !== 'undefined' ? contratoBack : '/admin/proyectos' %>" />
               <button class="btn <%= r.contrato_enviado ? 'btn-ghost' : 'btn-primary' %> btn-sm" type="submit"><%= r.contrato_enviado ? 'Retirar del cliente' : 'Enviar al cliente responsable' %></button>
             </form>
           <% } %>

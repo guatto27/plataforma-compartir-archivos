@@ -130,7 +130,7 @@
 
   <!-- Contrato de cada proyecto -->
   <% rows.forEach(function (r) { %>
-    <%- include('_contrato-modal', { r: r, csrfToken: csrfToken }) %>
+    <%- include('_contrato-modal', { r: r, csrfToken: csrfToken, contratoBack: '/admin/proyectos' }) %>
   <% }) %>
 <% } %>
 

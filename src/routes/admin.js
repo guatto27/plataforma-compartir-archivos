@@ -579,7 +579,7 @@ router.post('/proyectos/:id/contrato/firmar', requireAdmin,
 // Enviar el contrato al cliente responsable para su firma
 router.post('/proyectos/:id/contrato/enviar', requireAdmin, async (req, res) => {
   if (!verifyCsrf(req)) return denyCsrf(res);
-  const back = req.get('Referer') || '/admin/proyectos';
+  const back = (typeof req.body.back === 'string' && /^\/admin(\/|$|\?)/.test(req.body.back)) ? req.body.back : '/admin/proyectos';
   const proj = db.prepare('SELECT * FROM projects WHERE id = ?').get(req.params.id);
   if (!proj || !proj.contrato_path) return res.redirect(back);
   if (!proj.cont_firmada) {
