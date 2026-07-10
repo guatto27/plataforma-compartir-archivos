@@ -285,18 +285,14 @@ db.exec(`
 // Migración única: pasar los comentarios/notas antiguos al hilo y vaciar las columnas
 try {
   const old = db.prepare('SELECT id, comentario, nota_cliente FROM checklist_items WHERE comentario IS NOT NULL OR nota_cliente IS NOT NULL').all();
-  if (old.length) {
-    const insMsg = db.prepare('INSERT INTO checklist_messages (item_id, role, author, body) VALUES (?, ?, ?, ?)');
-    const clr = db.prepare('UPDATE checklist_items SET comentario = NULL, nota_cliente = NULL WHERE id = ?');
-    db.transaction(() => {
-      old.forEach((it) => {
-        if (it.comentario)   insMsg.run(it.id, 'businesscool', 'BusinessCool AI', it.comentario);
-        if (it.nota_cliente) insMsg.run(it.id, 'cliente', 'Cliente', it.nota_cliente);
-        clr.run(it.id);
-      });
-    })();
-  }
-} catch (_) { /* migración best-effort */ }
+  const insMsg = db.prepare('INSERT INTO checklist_messages (item_id, role, author, body) VALUES (?, ?, ?, ?)');
+  const clr = db.prepare('UPDATE checklist_items SET comentario = NULL, nota_cliente = NULL WHERE id = ?');
+  old.forEach((it) => {
+    if (it.comentario)   insMsg.run(it.id, 'businesscool', 'BusinessCool AI', it.comentario);
+    if (it.nota_cliente) insMsg.run(it.id, 'cliente', 'Cliente', it.nota_cliente);
+    clr.run(it.id);
+  });
+} catch (e) { console.error('[migracion chat]', e.message); }
 
 // Notificaciones en la plataforma (campanita)
 db.exec(`
