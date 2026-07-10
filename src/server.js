@@ -144,9 +144,23 @@ app.use((req, res, next) => {
   };
   res.locals.fmtDate = (s) => {
     if (!s) return '';
-    const [d, t] = String(s).split(' ');
-    const [Y, M, D] = d.split('-');
-    return `${D}/${M}/${Y} ${(t || '').slice(0, 5)}`;
+    const str = String(s).trim();
+    // Los timestamps de SQLite (datetime('now')) están en UTC → mostrarlos en hora de CDMX.
+    if (str.includes(' ') || str.includes('T')) {
+      const iso = str.replace(' ', 'T');
+      const dt = new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(iso) ? iso : iso + 'Z');
+      if (!isNaN(dt)) {
+        const p = new Intl.DateTimeFormat('es-MX', {
+          timeZone: 'America/Mexico_City', year: 'numeric', month: '2-digit', day: '2-digit',
+          hour: '2-digit', minute: '2-digit', hour12: false,
+        }).formatToParts(dt).reduce((a, x) => ((a[x.type] = x.value), a), {});
+        return `${p.day}/${p.month}/${p.year} ${p.hour}:${p.minute}`;
+      }
+    }
+    // Solo fecha (sin hora) o parseo fallido: reformatear sin conversión
+    const [d, t] = str.split(/[ T]/);
+    const [Y, M, D] = (d || '').split('-');
+    return D ? `${D}/${M}/${Y}${t ? ' ' + t.slice(0, 5) : ''}` : str;
   };
   // Nombre propio: "JORGE SANCHEZ LEON" -> "Jorge Sanchez Leon" (respeta partículas)
   res.locals.titleCase = (s) => {
