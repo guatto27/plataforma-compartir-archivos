@@ -309,3 +309,17 @@ document.addEventListener('DOMContentLoaded', bcUpdateThemeLabels);
   var secs = parseInt(el.getAttribute("data-autorefresh"), 10) || 8;
   setTimeout(function () { window.location.reload(); }, secs * 1000);
 })();
+
+// Subir archivos desde un icono: el boton abre el selector y al elegir se envia el formulario
+(function () {
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-upload-trigger]');
+    if (!btn) return;
+    var inp = document.getElementById(btn.getAttribute('data-upload-trigger'));
+    if (inp) inp.click();
+  });
+  document.addEventListener('change', function (e) {
+    var inp = e.target.closest('input[type="file"][data-submit-on-change]');
+    if (inp && inp.files && inp.files.length && inp.form) inp.form.submit();
+  });
+})();

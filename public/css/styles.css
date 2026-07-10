@@ -1252,3 +1252,8 @@ mark.bc-hl { background: var(--bc-gold); color: #0b0b0d; border-radius: 2px; pad
 .chk-upload { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .chk-upload input[type="file"] { max-width: 170px; font-size: 12px; }
 .chk-table td { vertical-align: top; padding-top: 12px; }
+
+/* Archivos entregados: una linea por archivo con elipsis */
+.chk-file-line { display: block; max-width: 210px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 3px 0; }
+/* Icono de comentario con aviso (hay comentario del proveedor) */
+.iconbtn.has-coment { color: #fbbf24; border-color: rgba(251,191,36,.5); }
