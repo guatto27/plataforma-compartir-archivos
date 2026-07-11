@@ -201,7 +201,7 @@
           <div class="sidebar-section">Fases del proyecto</div>
           <nav class="sidebar-nav sidebar-tree">
             <details class="nav-phase"<%= (act === 'entrevistas' || act === 'informacion') ? ' open' : '' %>>
-              <summary data-href="/admin<%= pq %>" class="<%= act === 'entrevistas' ? 'is-current' : '' %>"><span class="phase-title" title="F1 Diagnóstico y Levantamiento">F1 Diagnóstico y Levantamiento</span><%- caret %></summary>
+              <summary><span class="phase-title" title="F1 Diagnóstico y Levantamiento">F1 Diagnóstico y Levantamiento</span><%- caret %></summary>
               <div class="phase-body">
                 <div class="tree-group-label">Actividades</div>
                 <div class="tree-group">
@@ -223,9 +223,9 @@
                 </div>
                 <div class="tree-group-label">Entregables</div>
                 <div class="tree-group">
-                  <a href="/admin/archivos<%= pq %>" class="tree-item <%= act === 'archivos' ? 'active' : '' %>" title="Entregables / Archivos">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg><span>Archivos del proyecto</span>
-                  </a>
+                  <span class="tree-item is-disabled" title="Los entregables de esta fase se publicarán aquí">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg><span>Por definir</span>
+                  </span>
                 </div>
               </div>
             </details>
@@ -236,7 +236,7 @@
                 <div class="tree-group-label">Entregables</div>
                 <div class="tree-group">
                   <span class="tree-item is-disabled" title="Disponible cuando avance esta fase">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg><span>Archivos del proyecto</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg><span>Por definir</span>
                   </span>
                 </div>
               </div>
