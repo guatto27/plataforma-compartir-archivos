@@ -28,18 +28,18 @@
     <div class="table-wrap">
       <table class="table">
         <thead>
-          <tr><th>Usuario</th><th>Tipo</th><th>Empresa</th><th>Correo</th><th>Acceso</th><th>Contraseña temporal</th><th class="ta-actions">Acciones</th></tr>
+          <tr><th>Empresa</th><th>Usuario</th><th>Tipo</th><th>Correo</th><th>Acceso</th><th>Contraseña temporal</th><th class="ta-actions">Acciones</th></tr>
         </thead>
         <tbody>
           <% users.forEach((u) => { %>
             <% var isNew = newCredentials && newCredentials.username === u.username; %>
             <tr class="<%= isNew ? 'row-active' : '' %>">
+              <td><%= u.role === 'colaborador' ? '—' : (u.company_name_real || u.company_name || '—') %></td>
               <td>
                 <strong><%= u.display_name || u.username %></strong>
                 <div class="meta"><%= u.username %></div>
               </td>
               <td><span class="tag"><%= roleLabel(u.role) %></span></td>
-              <td><%= u.role === 'colaborador' ? '—' : (u.company_name_real || u.company_name || '—') %></td>
               <td class="meta"><% if (isNew) { %><span id="cred-user"><%= u.email || u.username %></span><% } else { %><%= u.email || '—' %><% } %></td>
               <td><span class="pill <%= u.active ? 'ok' : 'off' %>"><%= u.active ? 'Activo' : 'Inactivo' %></span></td>
               <td>
