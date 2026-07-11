@@ -53,19 +53,20 @@ router.get('/', (req, res) => {
     : null;
   const minutas = projectFilter
     ? db.prepare(
-        `SELECT m.*, u.display_name AS autor_nombre
-         FROM minutas m LEFT JOIN users u ON u.id = m.created_by
+        `SELECT m.*, u.display_name AS autor_nombre, co.id AS company_row_id, co.logo_path AS company_logo
+         FROM minutas m LEFT JOIN users u ON u.id = m.created_by LEFT JOIN companies co ON co.id = m.company_id
          WHERE m.project_id = ? ORDER BY m.fecha DESC, m.created_at DESC`
       ).all(projectFilter.id)
     : db.prepare(
-        `SELECT m.*, u.display_name AS autor_nombre
-         FROM minutas m LEFT JOIN users u ON u.id = m.created_by
+        `SELECT m.*, u.display_name AS autor_nombre, co.id AS company_row_id, co.logo_path AS company_logo
+         FROM minutas m LEFT JOIN users u ON u.id = m.created_by LEFT JOIN companies co ON co.id = m.company_id
          ORDER BY m.fecha DESC, m.created_at DESC`
       ).all();
   const empresas = db.prepare('SELECT id, name FROM companies ORDER BY name').all();
   // Contratos: todos los proyectos (o el filtrado) con su estado de contrato/firma
   const contratos = db.prepare(
-    `SELECT p.*, c.name AS company FROM projects p JOIN companies c ON c.id = p.company_id
+    `SELECT p.*, c.name AS company, c.id AS company_row_id, c.logo_path AS company_logo
+     FROM projects p JOIN companies c ON c.id = p.company_id
      ${projectFilter ? 'WHERE p.id = ?' : ''} ORDER BY c.name, p.created_at, p.id`
   ).all(...(projectFilter ? [projectFilter.id] : []));
   res.render('admin/minutas', { title: 'Minutas y Contratos', active: 'minutas', minutas, empresas, FORMATOS, projectFilter, contratos, openContrato: !!req.query.contrato });

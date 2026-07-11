@@ -34,7 +34,7 @@
           <% users.forEach((u) => { %>
             <% var isNew = newCredentials && newCredentials.username === u.username; %>
             <tr class="<%= isNew ? 'row-active' : '' %>">
-              <td><%= u.role === 'colaborador' ? '—' : (u.company_name_real || u.company_name || '—') %></td>
+              <td><% if (u.role === 'colaborador') { %><span class="meta">—</span><% } else { %><%- include('../partials/empresa-cell', { cid: u.company_row_id, hasLogo: !!u.company_logo, name: u.company_name_real || u.company_name }) %><% } %></td>
               <td>
                 <strong><%= u.display_name || u.username %></strong>
                 <div class="meta"><%= u.username %></div>

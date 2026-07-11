@@ -1,0 +1,9 @@
+<!-- Celda de empresa: logo (o inicial) + nombre. Requiere: cid, hasLogo, name -->
+<span class="empresa-cell">
+  <% if (typeof cid !== 'undefined' && cid && hasLogo) { %>
+    <img src="/admin/empresas/<%= cid %>/logo" alt="" class="empresa-logo empresa-logo-sm" />
+  <% } else { %>
+    <span class="empresa-logo empresa-logo-sm empresa-logo-ph"><%= String(name || '?').charAt(0).toUpperCase() %></span>
+  <% } %>
+  <span class="empresa-cell-name"><%= name || '—' %></span>
+</span>

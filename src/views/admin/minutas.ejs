@@ -27,18 +27,18 @@
   <section class="card">
     <table class="table">
       <thead>
-        <tr><th>Tipo</th><th>Documento</th><th>Empresa</th><th>Fecha</th><th class="ta-center">Firma BusinessCool</th><th class="ta-center">Firma Cliente</th><th class="ta-center">Enviado al cliente</th><th class="ta-actions">Acciones</th></tr>
+        <tr><th>Empresa</th><th>Tipo</th><th>Documento</th><th>Fecha</th><th class="ta-center">Firma BusinessCool</th><th class="ta-center">Firma Cliente</th><th class="ta-center">Enviado al cliente</th><th class="ta-actions">Acciones</th></tr>
       </thead>
       <tbody>
         <% minutas.forEach(function(m) {
              var fmt = FORMATOS.find(f => f.id === m.formato) || FORMATOS[0]; %>
         <tr>
+          <td><%- include('../partials/empresa-cell', { cid: m.company_row_id, hasLogo: !!m.company_logo, name: m.company_name }) %></td>
           <td><span class="doc-type minuta">Minuta</span></td>
           <td>
             <a href="/admin/minutas/<%= m.id %>"><strong><%= m.titulo %></strong></a>
             <div class="meta"><%= fmt.label %></div>
           </td>
-          <td><%= m.company_name || '—' %></td>
           <td class="nowrap meta"><%= m.fecha %></td>
           <td class="ta-center"><% if (m.firmada) { %><%- chkOk %><% } else { %><span class="meta">—</span><% } %></td>
           <td class="ta-center"><% if (m.firmada_cliente) { %><%- chkOk %><% } else { %><span class="meta">—</span><% } %></td>
@@ -84,12 +84,12 @@
 
         <% (contratos || []).forEach(function (r) { %>
         <tr>
+          <td><%- include('../partials/empresa-cell', { cid: r.company_row_id, hasLogo: !!r.company_logo, name: r.company }) %></td>
           <td><span class="doc-type contrato">Contrato</span></td>
           <td>
             <strong><%= r.name %></strong>
             <div class="meta">Contrato de proyecto</div>
           </td>
-          <td><%= r.company %></td>
           <td class="meta">—</td>
           <td class="ta-center"><% if (r.cont_firmada) { %><%- chkOk %><% } else { %><span class="meta">—</span><% } %></td>
           <td class="ta-center"><% if (r.cont_firmada_cliente) { %><%- chkOk %><% } else { %><span class="meta">—</span><% } %></td>

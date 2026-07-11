@@ -34,7 +34,7 @@
           <% rows.forEach(function (r) { %>
             <% var stCls = r.status === 'Finalizado' ? 'st-fin' : (r.status === 'En pausa' ? 'st-pau' : 'st-vig'); %>
             <tr>
-              <td><%= r.company %></td>
+              <td><%- include('../partials/empresa-cell', { cid: r.company_id, hasLogo: !!r.company_logo, name: r.company }) %></td>
               <td class="fname"><strong><%= r.name %></strong></td>
               <td class="ta-center"><span class="st-chip <%= stCls %>"><%= r.status %></span></td>
               <td class="ta-center"><%= r.files %></td>

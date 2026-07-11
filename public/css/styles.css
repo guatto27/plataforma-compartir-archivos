@@ -1316,3 +1316,9 @@ mark.bc-hl { background: var(--bc-gold); color: #0b0b0d; border-radius: 2px; pad
 }
 .sidebar-tree .tree-caret-btn:hover { background: rgba(251,191,36,.14); border-color: rgba(251,191,36,.5); }
 .sidebar-tree summary.is-current .tree-caret-btn { border-color: rgba(251,191,36,.4); }
+
+/* Celda de empresa con logo pequeño + nombre (tablas de proyectos, usuarios, minutas) */
+.empresa-cell { display: inline-flex; align-items: center; gap: 9px; min-width: 0; }
+.empresa-logo-sm { width: 26px; height: 26px; border-radius: 6px; flex: 0 0 26px; }
+.empresa-logo-sm.empresa-logo-ph { font-size: 12px; }
+.empresa-cell-name { overflow: hidden; text-overflow: ellipsis; }

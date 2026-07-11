@@ -146,13 +146,14 @@ router.get('/inicio', (req, res) => {
 // Proyectos: todos los proyectos de todas las empresas, con su avance
 router.get('/proyectos', (req, res) => {
   const rows = db.prepare(
-    `SELECT p.*, c.name AS company_name
+    `SELECT p.*, c.name AS company_name, c.logo_path AS company_logo
      FROM projects p JOIN companies c ON c.id = p.company_id
      ORDER BY c.name, p.created_at, p.id`
   ).all().map((p) => {
     const cnt = projectsLib.counts(p.id);
     const ph = projectsLib.phaseProgress(p.id);
     return { id: p.id, name: p.name, status: p.status, company: p.company_name,
+             company_id: p.company_id, company_logo: p.company_logo,
              files: cnt.files, minutas: cnt.minutas, interviews: cnt.interviews,
              contrato_path: p.contrato_path, contrato_nombre: p.contrato_nombre,
              contrato_enviado: p.contrato_enviado,
@@ -843,7 +844,7 @@ router.post('/empresas/:id/delete', requireAdmin, (req, res) => {
 router.get('/usuarios', (req, res) => {
   const users = db
     .prepare(
-      `SELECT u.*, co.name AS company_name_real,
+      `SELECT u.*, co.name AS company_name_real, co.id AS company_row_id, co.logo_path AS company_logo,
               (SELECT COUNT(*) FROM files f WHERE f.client_id = u.id AND f.direction = 'to_admin') AS files_in,
               (SELECT COUNT(*) FROM interviews iv WHERE iv.client_id = u.id) AS links
        FROM users u LEFT JOIN companies co ON co.id = u.company_id
