@@ -1288,3 +1288,23 @@ mark.bc-hl { background: var(--bc-gold); color: #0b0b0d; border-radius: 2px; pad
 .chk-msg-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .chk-msg-del { background: none; border: none; color: var(--bc-muted); font-size: 15px; line-height: 1; cursor: pointer; padding: 0 2px; opacity: .6; }
 .chk-msg-del:hover { color: #f87171; opacity: 1; }
+
+/* ── Árbol de fases: encabezados de sección e items con icono ── */
+.sidebar-tree .tree-group-label {
+  padding: 9px 8px 3px; font-size: 10px; font-weight: 700; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--bc-muted); display: flex; align-items: center; white-space: nowrap;
+}
+.sidebar-tree .tree-group-label::before { content: none; }
+.sidebar-tree .tree-item {
+  display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px;
+  font-size: 12px; font-weight: 500; color: var(--bc-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sidebar-tree .tree-item > svg { width: 14px; height: 14px; flex: 0 0 auto; }
+.sidebar-tree .tree-item > span { overflow: hidden; text-overflow: ellipsis; }
+.sidebar-tree a.tree-item { color: var(--bc-text); }
+.sidebar-tree a.tree-item::before { content: none; }
+.sidebar-tree a.tree-item:hover { background: var(--bc-surface-2); color: var(--bc-text); text-decoration: none; }
+.sidebar-tree a.tree-item.active { background: rgba(251,191,36,.12); color: var(--bc-gold); border: 1px solid rgba(251,191,36,.3); }
+.sidebar-tree a.tree-item.active > svg { color: var(--bc-gold); }
+.sidebar-tree .tree-item.is-disabled { color: var(--bc-muted); opacity: .42; cursor: default; }

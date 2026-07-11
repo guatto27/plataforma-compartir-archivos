@@ -84,17 +84,32 @@
             <div class="tree-group-label">Actividades</div>
             <div class="tree-group">
               <% if (role === 'cliente_responsable') { %>
-                <a href="/app/informacion" class="<%= act === 'informacion' ? 'active' : '' %>" title="Información requerida">Información requerida</a>
+                <a href="/app/informacion" class="tree-item <%= act === 'informacion' ? 'active' : '' %>" title="Información requerida">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span>Información requerida</span>
+                </a>
               <% } %>
-              <a href="/app/agente" class="<%= (act === 'agente' || act === 'archivos-empresa') ? 'active' : '' %>" title="Entrevistas y Encuesta IMA">Entrevistas y Encuesta IMA</a>
+              <a href="/app/agente" class="tree-item <%= (act === 'agente' || act === 'archivos-empresa') ? 'active' : '' %>" title="Entrevistas y Encuesta IMA">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg><span>Entrevistas y Encuesta IMA</span>
+              </a>
               <% if (role === 'cliente_responsable') { %>
-                <span class="tree-info" title="Mapeo de Procesos Actuales (AS-IS)">Mapeo de Procesos Actuales (AS-IS)</span>
-                <span class="tree-info" title="Informe de Integración de Hallazgos">Informe de Integración de Hallazgos</span>
-                <span class="tree-info" title="Mapeo de Proceso Deseado (TO-BE)">Mapeo de Proceso Deseado (TO-BE)</span>
+                <span class="tree-item is-disabled" title="Mapeo de Procesos Actuales (AS-IS) · disponible más adelante">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg><span>Mapeo de Procesos Actuales (AS-IS)</span>
+                </span>
+                <span class="tree-item is-disabled" title="Informe de Integración de Hallazgos · disponible más adelante">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span>Informe de Integración de Hallazgos</span>
+                </span>
+                <span class="tree-item is-disabled" title="Mapeo de Proceso Deseado (TO-BE) · disponible más adelante">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg><span>Mapeo de Proceso Deseado (TO-BE)</span>
+                </span>
               <% } %>
             </div>
             <% if (role === 'cliente_responsable') { %>
-              <a href="/app/entregables" class="tree-leaf <%= act === 'entregables' ? 'active' : '' %>" title="Entregables">Entregables</a>
+              <div class="tree-group-label">Entregables</div>
+              <div class="tree-group">
+                <a href="/app/entregables" class="tree-item <%= act === 'entregables' ? 'active' : '' %>" title="Entregables / Archivos del proyecto">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg><span>Archivos del proyecto</span>
+                </a>
+              </div>
             <% } %>
           </div>
         </details>
@@ -103,21 +118,36 @@
         <details class="nav-phase">
           <summary><span class="phase-title" title="F2 Diseño y Arquitectura (Construcción)">F2 Diseño y Arquitectura (Construcción)</span><%- caret %></summary>
           <div class="phase-body">
-            <a href="/app/entregables" class="tree-leaf" title="Entregables">Entregables</a>
+            <div class="tree-group-label">Entregables</div>
+            <div class="tree-group">
+              <span class="tree-item is-disabled" title="Disponible cuando avance esta fase">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg><span>Archivos del proyecto</span>
+              </span>
+            </div>
           </div>
         </details>
 
         <details class="nav-phase">
           <summary><span class="phase-title" title="F3 QA Final, Validación y Lanzamiento">F3 QA Final, Validación y Lanzamiento</span><%- caret %></summary>
           <div class="phase-body">
-            <a href="/app/entregables" class="tree-leaf" title="Entregables">Entregables</a>
+            <div class="tree-group-label">Entregables</div>
+            <div class="tree-group">
+              <span class="tree-item is-disabled" title="Disponible cuando avance esta fase">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg><span>Archivos del proyecto</span>
+              </span>
+            </div>
           </div>
         </details>
 
         <details class="nav-phase">
           <summary><span class="phase-title" title="F4 Operatividad, Soporte y Seguimiento">F4 Operatividad, Soporte y Seguimiento</span><%- caret %></summary>
           <div class="phase-body">
-            <a href="/app/entregables" class="tree-leaf" title="Entregables">Entregables</a>
+            <div class="tree-group-label">Entregables</div>
+            <div class="tree-group">
+              <span class="tree-item is-disabled" title="Disponible cuando avance esta fase">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg><span>Archivos del proyecto</span>
+              </span>
+            </div>
           </div>
         </details>
         <% } %>
@@ -175,27 +205,43 @@
               <div class="phase-body">
                 <div class="tree-group-label">Actividades</div>
                 <div class="tree-group">
-                  <a href="/admin/informacion<%= pq %>" class="<%= act === 'informacion' ? 'active' : '' %>" title="Información requerida">Información requerida</a>
-                  <a href="/admin<%= pq %>" class="<%= act === 'entrevistas' ? 'active' : '' %>" title="Entrevistas y Encuesta IMA">Entrevistas y Encuesta IMA</a>
-                  <span class="tree-info" title="Mapeo de Procesos Actuales (AS-IS)">Mapeo de Procesos Actuales (AS-IS)</span>
-                  <span class="tree-info" title="Informe de Integración de Hallazgos">Informe de Integración de Hallazgos</span>
-                  <span class="tree-info" title="Mapeo de Proceso Deseado (TO-BE)">Mapeo de Proceso Deseado (TO-BE)</span>
+                  <a href="/admin/informacion<%= pq %>" class="tree-item <%= act === 'informacion' ? 'active' : '' %>" title="Información requerida">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span>Información requerida</span>
+                  </a>
+                  <a href="/admin<%= pq %>" class="tree-item <%= act === 'entrevistas' ? 'active' : '' %>" title="Entrevistas y Encuesta IMA">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg><span>Entrevistas y Encuesta IMA</span>
+                  </a>
+                  <span class="tree-item is-disabled" title="Mapeo de Procesos Actuales (AS-IS) · disponible más adelante">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg><span>Mapeo de Procesos Actuales (AS-IS)</span>
+                  </span>
+                  <span class="tree-item is-disabled" title="Informe de Integración de Hallazgos · disponible más adelante">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span>Informe de Integración de Hallazgos</span>
+                  </span>
+                  <span class="tree-item is-disabled" title="Mapeo de Proceso Deseado (TO-BE) · disponible más adelante">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg><span>Mapeo de Proceso Deseado (TO-BE)</span>
+                  </span>
                 </div>
-                <a href="/admin/archivos<%= pq %>" class="tree-leaf" title="Entregables / Archivos">Entregables / Archivos</a>
+                <div class="tree-group-label">Entregables</div>
+                <div class="tree-group">
+                  <a href="/admin/archivos<%= pq %>" class="tree-item <%= act === 'archivos' ? 'active' : '' %>" title="Entregables / Archivos">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg><span>Archivos del proyecto</span>
+                  </a>
+                </div>
               </div>
             </details>
+            <% ['F2 Diseño y Arquitectura (Construcción)', 'F3 QA Final, Validación y Lanzamiento', 'F4 Operatividad, Soporte y Seguimiento'].forEach(function (fase) { %>
             <details class="nav-phase">
-              <summary><span class="phase-title" title="F2 Diseño y Arquitectura (Construcción)">F2 Diseño y Arquitectura (Construcción)</span><%- caret %></summary>
-              <div class="phase-body"><a href="/admin/archivos<%= pq %>" class="tree-leaf" title="Entregables">Entregables</a></div>
+              <summary><span class="phase-title" title="<%= fase %>"><%= fase %></span><%- caret %></summary>
+              <div class="phase-body">
+                <div class="tree-group-label">Entregables</div>
+                <div class="tree-group">
+                  <span class="tree-item is-disabled" title="Disponible cuando avance esta fase">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg><span>Archivos del proyecto</span>
+                  </span>
+                </div>
+              </div>
             </details>
-            <details class="nav-phase">
-              <summary><span class="phase-title" title="F3 QA Final, Validación y Lanzamiento">F3 QA Final, Validación y Lanzamiento</span><%- caret %></summary>
-              <div class="phase-body"><a href="/admin/archivos<%= pq %>" class="tree-leaf" title="Entregables">Entregables</a></div>
-            </details>
-            <details class="nav-phase">
-              <summary><span class="phase-title" title="F4 Operatividad, Soporte y Seguimiento">F4 Operatividad, Soporte y Seguimiento</span><%- caret %></summary>
-              <div class="phase-body"><a href="/admin/archivos<%= pq %>" class="tree-leaf" title="Entregables">Entregables</a></div>
-            </details>
+            <% }) %>
           </nav>
         <% } %>
       <% } %>
