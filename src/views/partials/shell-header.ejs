@@ -152,12 +152,6 @@
           </span>
           Gestión de Minutas y Contratos
         </a>
-        <a href="/admin" class="<%= (act === 'entrevistas' || act === 'archivos') ? 'active' : '' %>">
-          <span class="nav-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          </span>
-          Entrevistas
-        </a>
       </nav>
 
       <% if (typeof adminProjects !== 'undefined' && adminProjects && adminProjects.length) { %>
@@ -182,7 +176,7 @@
                 <div class="tree-group-label">Actividades</div>
                 <div class="tree-group">
                   <a href="/admin/informacion<%= pq %>" class="<%= act === 'informacion' ? 'active' : '' %>" title="Información requerida">Información requerida</a>
-                  <a href="/admin<%= pq %>" title="Entrevistas y Encuesta IMA">Entrevistas y Encuesta IMA</a>
+                  <a href="/admin<%= pq %>" class="<%= act === 'entrevistas' ? 'active' : '' %>" title="Entrevistas y Encuesta IMA">Entrevistas y Encuesta IMA</a>
                   <span class="tree-info" title="Mapeo de Procesos Actuales (AS-IS)">Mapeo de Procesos Actuales (AS-IS)</span>
                   <span class="tree-info" title="Informe de Integración de Hallazgos">Informe de Integración de Hallazgos</span>
                   <span class="tree-info" title="Mapeo de Proceso Deseado (TO-BE)">Mapeo de Proceso Deseado (TO-BE)</span>
