@@ -1308,3 +1308,11 @@ mark.bc-hl { background: var(--bc-gold); color: #0b0b0d; border-radius: 2px; pad
 .sidebar-tree a.tree-item.active { background: rgba(251,191,36,.12); color: var(--bc-gold); border: 1px solid rgba(251,191,36,.3); }
 .sidebar-tree a.tree-item.active > svg { color: var(--bc-gold); }
 .sidebar-tree .tree-item.is-disabled { color: var(--bc-muted); opacity: .42; cursor: default; }
+
+/* Caret de fase como botón separado (cuadrito) */
+.sidebar-tree .tree-caret-btn {
+  width: 24px; height: 24px; padding: 0; margin: 0 0 0 8px; border-radius: 7px;
+  border: 1px solid var(--bc-border); background: rgba(255,255,255,.04); cursor: pointer;
+}
+.sidebar-tree .tree-caret-btn:hover { background: rgba(251,191,36,.14); border-color: rgba(251,191,36,.5); }
+.sidebar-tree summary.is-current .tree-caret-btn { border-color: rgba(251,191,36,.4); }

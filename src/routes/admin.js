@@ -88,8 +88,9 @@ function adminProjectFilter(req) {
 router.get('/seleccionar', (req, res) => {
   const id = parseInt(req.query.id, 10) || null;
   req.session.adminProjectId = (id && db.prepare('SELECT id FROM projects WHERE id = ?').get(id)) ? id : null;
-  if (req.session.adminProjectId) return res.redirect('/admin?proyecto=' + req.session.adminProjectId);
-  return res.redirect('/admin');
+  // Al elegir proyecto se muestra el pipeline de la Fase 1
+  if (req.session.adminProjectId) return res.redirect('/admin/fase?proyecto=' + req.session.adminProjectId);
+  return res.redirect('/admin/inicio');
 });
 
 // Página principal: Entrevistas (de todos los usuarios, o de un proyecto)
