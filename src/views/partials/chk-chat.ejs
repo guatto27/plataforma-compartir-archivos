@@ -1,8 +1,17 @@
-<!-- Modal de conversación (chat) de un punto del check list. Requiere: it, msgs, csrfToken, chatAction -->
+<!-- Modal de conversación (chat) de un punto del check list. Requiere: it, msgs, csrfToken, chatAction. Opcional: canDeleteChat -->
+<% var canDel = (typeof canDeleteChat !== 'undefined' && canDeleteChat); %>
 <dialog id="chk-chat-<%= it.id %>" class="modal" style="width:min(560px,94vw)" data-strict>
   <div class="head-row" style="margin-bottom:8px">
     <h2 style="margin:0;font-size:17px">Conversación</h2>
-    <button class="btn btn-ghost btn-sm" type="button" data-close>✕ Cerrar</button>
+    <div style="display:flex;gap:8px;align-items:center">
+      <% if (canDel && msgs && msgs.length) { %>
+        <form method="post" action="/admin/informacion/<%= it.id %>/conversacion/eliminar" class="inline" data-confirm="¿Eliminar TODA la conversación de este punto? No se puede deshacer.">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <button class="btn btn-ghost btn-sm" type="submit" style="color:var(--bc-error)">Borrar conversación</button>
+        </form>
+      <% } %>
+      <button class="btn btn-ghost btn-sm" type="button" data-close>✕ Cerrar</button>
+    </div>
   </div>
   <p class="meta" style="margin:0 0 10px"><%= it.titulo %></p>
   <div class="chk-chat">
@@ -11,7 +20,15 @@
     <% } else { %>
       <% msgs.forEach(function (m) { %>
         <div class="chk-msg <%= m.role === 'businesscool' ? 'from-bc' : 'from-cli' %>">
-          <div class="chk-msg-meta"><%= m.role === 'businesscool' ? 'BusinessCool AI' : (m.author || 'Cliente') %> · <%= fmtDate(m.created_at) %></div>
+          <div class="chk-msg-meta">
+            <span><%= m.role === 'businesscool' ? 'BusinessCool AI' : (m.author || 'Cliente') %> · <%= fmtDate(m.created_at) %></span>
+            <% if (canDel) { %>
+              <form method="post" action="/admin/informacion/mensaje/<%= m.id %>/eliminar" class="inline" data-confirm="¿Eliminar este mensaje?">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                <button class="chk-msg-del" type="submit" title="Eliminar mensaje" aria-label="Eliminar mensaje">×</button>
+              </form>
+            <% } %>
+          </div>
           <div class="chk-msg-body"><%= m.body %></div>
         </div>
       <% }) %>

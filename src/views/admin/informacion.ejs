@@ -154,7 +154,7 @@
 
     <!-- Conversación (chat) por punto -->
     <% items.forEach(function (it) { %>
-      <%- include('../partials/chk-chat', { it: it, msgs: msgsByItem[it.id], csrfToken: csrfToken, chatAction: '/admin/informacion/' + it.id + '/mensaje' }) %>
+      <%- include('../partials/chk-chat', { it: it, msgs: msgsByItem[it.id], csrfToken: csrfToken, chatAction: '/admin/informacion/' + it.id + '/mensaje', canDeleteChat: canManage }) %>
     <% }) %>
   <% } %>
 <% } %>

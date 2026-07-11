@@ -674,6 +674,30 @@ router.get('/informacion', (req, res) => {
   });
 });
 
+// Eliminar un mensaje del hilo (solo admin)
+router.post('/informacion/mensaje/:mid/eliminar', requireAdmin, (req, res) => {
+  if (!verifyCsrf(req)) return denyCsrf(res);
+  const m = db.prepare(
+    'SELECT cm.id, ci.project_id FROM checklist_messages cm JOIN checklist_items ci ON ci.id = cm.item_id WHERE cm.id = ?'
+  ).get(req.params.mid);
+  if (!m) return res.redirect('/admin/informacion');
+  db.prepare('DELETE FROM checklist_messages WHERE id = ?').run(m.id);
+  logAction(req.session.userId, 'checklist_msg_del', '#' + m.id, req.ip);
+  req.session.flash = { type: 'success', text: 'Mensaje eliminado.' };
+  res.redirect(`/admin/informacion?proyecto=${m.project_id}`);
+});
+
+// Eliminar toda la conversación de un punto (solo admin)
+router.post('/informacion/:id/conversacion/eliminar', requireAdmin, (req, res) => {
+  if (!verifyCsrf(req)) return denyCsrf(res);
+  const it = db.prepare('SELECT id, project_id, titulo FROM checklist_items WHERE id = ?').get(req.params.id);
+  if (!it) return res.redirect('/admin/informacion');
+  db.prepare('DELETE FROM checklist_messages WHERE item_id = ?').run(it.id);
+  logAction(req.session.userId, 'checklist_conv_del', it.titulo, req.ip);
+  req.session.flash = { type: 'success', text: 'Conversación eliminada.' };
+  res.redirect(`/admin/informacion?proyecto=${it.project_id}`);
+});
+
 // Marcar como leídos los mensajes de un punto (para el usuario actual)
 router.post('/informacion/:id/visto', (req, res) => {
   if (!verifyCsrf(req)) return res.status(403).json({ ok: false });
