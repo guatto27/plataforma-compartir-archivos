@@ -1,0 +1,38 @@
+<%- include('../partials/shell-header') %>
+
+<div class="page-head">
+  <h1>Pipeline del proyecto</h1>
+  <p class="muted">El proyecto avanza por fases, cada una con un entregable formal obligatorio.<br>La <strong>Fase 1 — Diagnóstico y Levantamiento</strong> levanta los requerimientos, mapea los procesos actuales e integra los hallazgos.</p>
+</div>
+
+<% if (proj) { %>
+  <div class="flash flash-success">Proyecto: <strong><%= proj.company_name %> — <%= proj.name %></strong></div>
+<% } else { %>
+  <div class="empty-state">Selecciona un proyecto en el panel lateral para ver su pipeline.</div>
+<% } %>
+
+<div class="phase-head">
+  <span class="ph-state <%= phase.state %>"><%= phase.label %></span>
+  <h2>Fase 1 · <%= phase.name %></h2>
+  <span class="muted">· <%= phase.sub %></span>
+</div>
+
+<div class="carousel-row">
+  <button class="carousel-nav" type="button" data-carousel="prev" aria-label="Anterior">‹</button>
+  <div class="steps" id="steps-track">
+    <% phase.items.forEach(function (it) { %>
+      <div class="step-card <%= it.state %>">
+        <div class="step-top">
+          <span class="step-num"><%= it.n %></span>
+          <span class="step-state <%= it.state %>"><%= it.stateLabel %></span>
+        </div>
+        <h3><%= it.t %></h3>
+        <div class="step-paso"><%= it.paso %></div>
+        <p class="step-desc"><%= it.desc %></p>
+      </div>
+    <% }) %>
+  </div>
+  <button class="carousel-nav" type="button" data-carousel="next" aria-label="Siguiente">›</button>
+</div>
+
+<%- include('../partials/shell-footer') %>

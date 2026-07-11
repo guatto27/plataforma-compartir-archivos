@@ -200,8 +200,8 @@
           <% var pq = '?proyecto=' + adminProjectId; %>
           <div class="sidebar-section">Fases del proyecto</div>
           <nav class="sidebar-nav sidebar-tree">
-            <details class="nav-phase"<%= (act === 'entrevistas' || act === 'informacion') ? ' open' : '' %>>
-              <summary><span class="phase-title" title="F1 Diagnóstico y Levantamiento">F1 Diagnóstico y Levantamiento</span><%- caret %></summary>
+            <details class="nav-phase"<%= (act === 'entrevistas' || act === 'informacion' || act === 'fase') ? ' open' : '' %>>
+              <summary data-href="/admin/fase<%= pq %>" class="<%= act === 'fase' ? 'is-current' : '' %>"><span class="phase-title" title="F1 Diagnóstico y Levantamiento">F1 Diagnóstico y Levantamiento</span><%- caret %></summary>
               <div class="phase-body">
                 <div class="tree-group-label">Actividades</div>
                 <div class="tree-group">

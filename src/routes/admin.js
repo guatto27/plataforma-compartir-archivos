@@ -15,6 +15,7 @@ const { makeInterviewActionsRouter, getAccessibleInterview } = require('./interv
 const { sendWelcomeEmail } = require('../lib/mailer');
 const { removeLogoBackground } = require('../lib/logo-bg');
 const projectsLib = require('../lib/projects');
+const { PIPELINE } = require('../lib/pipeline');
 const { firmarContrato, CONTRATOS_DIR } = require('../lib/minuta-firma');
 const { notificarDocumentoEnviado } = require('../lib/notifications');
 
@@ -650,6 +651,15 @@ function checklistProject(req) {
     'SELECT p.*, c.name AS company_name FROM projects p JOIN companies c ON c.id = p.company_id WHERE p.id = ?'
   ).get(pid) || null;
 }
+
+// Pipeline de la Fase 1 (mismo roadmap que ve el cliente)
+router.get('/fase', (req, res) => {
+  const proj = checklistProject(req);
+  res.render('admin/fase', {
+    title: 'Fase 1 · Diagnóstico y Levantamiento', active: 'fase',
+    proj, phase: PIPELINE[0], companyName: proj ? proj.company_name : null,
+  });
+});
 
 // Página del check list (admin ve items + archivos entregados)
 router.get('/informacion', (req, res) => {
