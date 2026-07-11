@@ -53,7 +53,7 @@
 
     <% if (isClient) { %>
       <!-- ────────── Menú CLIENTE (responsable y usuario): fases plegables ────────── -->
-      <% var f1Active = (act === 'proyecto' || act === 'agente' || act === 'entregables' || act === 'archivos-empresa'); %>
+      <% var f1Active = (act === 'proyecto' || act === 'agente' || act === 'entregables' || act === 'archivos-empresa' || act === 'informacion'); %>
       <% if (typeof sidebarProjects !== 'undefined' && sidebarProjects && sidebarProjects.length) { %>
         <div class="sidebar-section">Proyecto</div>
         <form method="get" action="/app/seleccionar" class="sidebar-project">
@@ -67,12 +67,6 @@
       <% } %>
       <% if (role === 'cliente_responsable') { %>
         <nav class="sidebar-nav" style="margin-top:6px">
-          <a href="/app/informacion" class="<%= act === 'informacion' ? 'active' : '' %>">
-            <span class="nav-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-            </span>
-            Información requerida
-          </a>
           <a href="/app/minutas" class="<%= act === 'minutas' ? 'active' : '' %>">
             <span class="nav-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -89,6 +83,9 @@
           <div class="phase-body">
             <div class="tree-group-label">Actividades</div>
             <div class="tree-group">
+              <% if (role === 'cliente_responsable') { %>
+                <a href="/app/informacion" class="<%= act === 'informacion' ? 'active' : '' %>" title="Información requerida">Información requerida</a>
+              <% } %>
               <a href="/app/agente" class="<%= (act === 'agente' || act === 'archivos-empresa') ? 'active' : '' %>" title="Entrevistas y Encuesta IMA">Entrevistas y Encuesta IMA</a>
               <% if (role === 'cliente_responsable') { %>
                 <span class="tree-info" title="Mapeo de Procesos Actuales (AS-IS)">Mapeo de Procesos Actuales (AS-IS)</span>
@@ -177,21 +174,14 @@
 
         <% if (adminProjectId) { %>
           <% var pq = '?proyecto=' + adminProjectId; %>
-          <nav class="sidebar-nav" style="margin-top:6px">
-            <a href="/admin/informacion<%= pq %>" class="<%= act === 'informacion' ? 'active' : '' %>">
-              <span class="nav-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-              </span>
-              Información requerida
-            </a>
-          </nav>
           <div class="sidebar-section">Fases del proyecto</div>
           <nav class="sidebar-nav sidebar-tree">
-            <details class="nav-phase" open>
+            <details class="nav-phase"<%= (act === 'entrevistas' || act === 'informacion') ? ' open' : '' %>>
               <summary data-href="/admin<%= pq %>" class="<%= act === 'entrevistas' ? 'is-current' : '' %>"><span class="phase-title" title="F1 Diagnóstico y Levantamiento">F1 Diagnóstico y Levantamiento</span><%- caret %></summary>
               <div class="phase-body">
                 <div class="tree-group-label">Actividades</div>
                 <div class="tree-group">
+                  <a href="/admin/informacion<%= pq %>" class="<%= act === 'informacion' ? 'active' : '' %>" title="Información requerida">Información requerida</a>
                   <a href="/admin<%= pq %>" title="Entrevistas y Encuesta IMA">Entrevistas y Encuesta IMA</a>
                   <span class="tree-info" title="Mapeo de Procesos Actuales (AS-IS)">Mapeo de Procesos Actuales (AS-IS)</span>
                   <span class="tree-info" title="Informe de Integración de Hallazgos">Informe de Integración de Hallazgos</span>
